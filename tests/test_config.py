@@ -19,7 +19,7 @@ def test_model_configs_exist_and_valid():
     for name in expected:
         path = config_dir / name
         assert path.exists(), f"Missing model config: {name}"
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         assert "model" in cfg, f"{name}: missing 'model' key"
         assert "hf_model_id" in cfg["model"], f"{name}: missing 'hf_model_id'"
@@ -35,7 +35,7 @@ def test_training_configs_exist_and_valid():
     for name in expected:
         path = config_dir / name
         assert path.exists(), f"Missing training config: {name}"
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         assert "training" in cfg, f"{name}: missing 'training' key"
 
@@ -57,7 +57,7 @@ def test_data_configs_exist_and_valid():
     for name in expected:
         path = config_dir / name
         assert path.exists(), f"Missing data config: {name}"
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         assert "data" in cfg, f"{name}: missing 'data' key"
         assert "name" in cfg["data"], f"{name}: missing 'name' in data config"
@@ -67,6 +67,7 @@ def test_eval_configs_exist_and_valid():
     """All evaluation benchmark configs should exist and have valid structure."""
     config_dir = Path("configs/evaluation")
     expected = [
+        "baseline_e4b.yaml",
         "indicnlp_bench.yaml",
         "flores_translation.yaml",
         "mmlu_science.yaml",
@@ -78,7 +79,7 @@ def test_eval_configs_exist_and_valid():
     for name in expected:
         path = config_dir / name
         assert path.exists(), f"Missing eval config: {name}"
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             cfg = yaml.safe_load(f)
         assert "evaluation" in cfg, f"{name}: missing 'evaluation' key"
 
@@ -89,6 +90,7 @@ def test_skills_and_dataset_registry_docs_exist():
     assert Path("DATASET_REGISTRY.md").exists(), "DATASET_REGISTRY.md missing in root"
     assert Path("docs/SKILLS.md").exists(), "docs/SKILLS.md missing"
     assert Path("docs/DATASET_REGISTRY.md").exists(), "docs/DATASET_REGISTRY.md missing"
+    assert Path("docs/BASELINE_EVALUATION.md").exists(), "docs/BASELINE_EVALUATION.md missing"
 
 
 def test_colab_notebooks_valid_json():
@@ -96,6 +98,7 @@ def test_colab_notebooks_valid_json():
     expected_notebooks = [
         "notebooks/01_colab_environment_setup.ipynb",
         "notebooks/02_first_model_validation_e4b.ipynb",
+        "notebooks/03_baseline_evaluation_e4b.ipynb",
     ]
     for nb_rel in expected_notebooks:
         nb_path = Path(nb_rel)

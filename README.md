@@ -14,6 +14,7 @@ You can run our research notebooks directly on Google Colab using free or dedica
 |---|---|---|
 | **01 — Environment Setup** | Verifies Python 3.12, CUDA, GPU VRAM, and pins Gemma 4 ML dependencies. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/foundrypaul-cloud/paul-open/blob/main/notebooks/01_colab_environment_setup.ipynb) |
 | **02 — First Model Validation (E4B)** | Quantized 4-bit loading of `google/gemma-4-E4B-it` on Tesla T4 via `AutoModelForMultimodalLM`. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/foundrypaul-cloud/paul-open/blob/main/notebooks/02_first_model_validation_e4b.ipynb) |
+| **03 — Baseline Evaluation (E4B)** | Evaluates unmodified `google/gemma-4-E4B-it` across 50 benchmark cases (10 domains, 10 languages). | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/foundrypaul-cloud/paul-open/blob/main/notebooks/03_baseline_evaluation_e4b.ipynb) |
 
 ---
 
@@ -33,6 +34,7 @@ You can run our research notebooks directly on Google Colab using free or dedica
 For full mappings of capabilities to candidate resources, licensing, and evaluations, see:
 - 📖 [SKILLS.md](SKILLS.md) — Capability & Skill Matrix
 - 📊 [DATASET_REGISTRY.md](DATASET_REGISTRY.md) — Dataset Provenance, Licenses & Public Release Audits
+- 🧪 [docs/BASELINE_EVALUATION.md](docs/BASELINE_EVALUATION.md) — Phase 2 Baseline Evaluation Framework & Benchmarks
 
 ---
 

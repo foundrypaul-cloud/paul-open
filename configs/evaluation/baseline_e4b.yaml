@@ -1,0 +1,52 @@
+evaluation:
+  name: "paul_open_model_baseline_e4b"
+  description: "Comprehensive 50-case baseline benchmark evaluation of unmodified google/gemma-4-E4B-it in 4-bit NF4."
+  benchmark_version: "1.0.0"
+
+model:
+  hf_model_id: "google/gemma-4-E4B-it"
+  architecture: "gemma4"
+  parameter_count: "4.5B"
+  quantization:
+    load_in_4bit: true
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+    compute_dtype: "float16"
+  device_map: "auto"
+
+sampling:
+  max_new_tokens: 256
+  temperature: 0.7
+  top_p: 0.9
+  do_sample: true
+  enable_thinking: false
+
+output:
+  dir: "results/baseline"
+  export_json: true
+  export_csv: true
+  export_markdown: true
+
+domains:
+  - science_reasoning
+  - life_sciences
+  - scientific_research
+  - socratic_tutoring
+  - student_assistance
+  - teacher_assistance
+  - indic_understanding
+  - multilingual_translation
+  - empathy_human_centered
+  - scientific_explanation
+
+languages:
+  - en
+  - hi
+  - bn
+  - ta
+  - te
+  - mr
+  - gu
+  - kn
+  - ml
+  - pa
