@@ -1,0 +1,63 @@
+# =============================================================================
+# PAUL Open Model — Gemma 4 12B IT Configuration (DEVELOPMENT / FALLBACK)
+# =============================================================================
+# HuggingFace ID: google/gemma-4-12B-it
+# Release: June 2026 Unified Release
+# Role: DEVELOPMENT & FALLBACK MODEL
+# Architecture: gemma4_unified (encoder-free unified multimodal architecture)
+# Parameters: ~12B dense
+# Context window: 262,144 tokens (256K)
+# Modality: Any-to-Any (Native Text, Image, Audio)
+# License: Apache 2.0
+# =============================================================================
+
+model:
+  name: "gemma-4-12b-it"
+  role: "development_fallback"
+  hf_model_id: "google/gemma-4-12B-it"
+  hf_base_model_id: "google/gemma-4-12B"
+  architecture: "gemma4_unified"
+  release_date: "2026-06"
+  pipeline_tag: "any-to-any"
+  parameter_count: "12B"
+  context_length: 262144
+  dtype: "bfloat16"
+  is_multimodal: true
+
+  # Uses gemma4_unified architecture (encoder-free unified multimodal)
+  text_only_requires_mm_ids: true
+
+  quantization:
+    method: "qlora"
+    bits: 4
+    bnb_4bit_compute_dtype: "bfloat16"
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+
+  lora:
+    r: 64
+    alpha: 128
+    target_modules:
+      - "q_proj"
+      - "k_proj"
+      - "v_proj"
+      - "o_proj"
+      - "gate_proj"
+      - "up_proj"
+      - "down_proj"
+    dropout: 0.05
+    task_type: "CAUSAL_LM"
+    modules_to_save: null
+
+  device_map: "auto"
+
+  vram_estimates:
+    bf16_full: "~24 GB"
+    qlora_4bit: "~8 GB"
+    qlora_4bit_training: "~14 GB"
+
+  notes: |
+    DEVELOPMENT AND FALLBACK MODEL.
+    Introduced in Google's June 2026 release with the gemma4_unified architecture.
+    Features an encoder-free unified multimodal design for fast laptop/workstation local execution.
+    Ideal for rapid feature validation, dataset debugging, and test passes.

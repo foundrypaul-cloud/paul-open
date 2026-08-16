@@ -1,0 +1,58 @@
+# =============================================================================
+# PAUL Open Model — SFT + QLoRA Training Configuration
+# =============================================================================
+
+training:
+  method: "sft"
+  
+  # SFTTrainer configuration (TRL >= 1.9.0)
+  sft_config:
+    output_dir: "./results"
+    num_train_epochs: 3
+    per_device_train_batch_size: 4
+    per_device_eval_batch_size: 4
+    gradient_accumulation_steps: 4
+    learning_rate: 2.0e-4
+    weight_decay: 0.01
+    warmup_ratio: 0.03
+    lr_scheduler_type: "cosine"
+    max_seq_length: 4096
+    
+    # Critical for Gemma 4: do NOT strip mm_token_type_ids
+    remove_unused_columns: false
+    
+    # Precision
+    bf16: true
+    fp16: false
+    
+    # Checkpointing
+    save_strategy: "steps"
+    save_steps: 500
+    save_total_limit: 3
+    
+    # Evaluation
+    eval_strategy: "steps"
+    eval_steps: 500
+    
+    # Logging — TensorBoard by default, W&B optional via env
+    logging_steps: 10
+    logging_dir: "./tb_logs"
+    report_to: "tensorboard"  # Override to ["tensorboard", "wandb"] if WANDB_ENABLED=true
+    
+    # Reproducibility
+    seed: 42
+    data_seed: 42
+    
+    # Memory optimization
+    gradient_checkpointing: true
+    optim: "paged_adamw_8bit"
+    max_grad_norm: 0.3
+    
+    # Packing (TRL SFTTrainer)
+    packing: false
+    dataset_text_field: "text"
+
+  # Gemma 4 multimodal workaround for text-only training
+  gemma4_text_only:
+    inject_mm_token_type_ids: true  # Add zero-filled mm_token_type_ids
+    inject_token_type_ids: true     # Add zero-filled token_type_ids

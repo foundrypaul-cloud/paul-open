@@ -1,0 +1,32 @@
+# =============================================================================
+# PAUL Open Model — Teacher Assistance Data Pipeline Configuration
+# =============================================================================
+# Domains: Lesson planning, assessment creation, rubric design, curriculum mapping
+
+data:
+  name: "teacher_assistance"
+  tasks:
+    - "5e_lesson_planning"
+    - "assessment_generation"
+    - "rubric_design"
+    - "differentiated_instruction"
+    - "concept_analogy_generation"
+
+  curriculum_standards:
+    - "NCERT_CBSE_India"
+    - "State_Boards_India"
+    - "International_OER"
+
+  primary_sources:
+    - name: "Curriculum-Aligned Open Educational Resources"
+      license: "Public Domain / CC-BY-4.0"
+      tier: 1
+    - name: "Synthetic Pedagogical Task Corpus"
+      license: "Apache-2.0"
+      tier: 1
+      notes: "Curated templates for Bloom's taxonomy mapping, rubrics, and lesson structures"
+
+  formatting:
+    require_structured_markdown: true
+    include_learning_outcomes: true
+    include_time_allocations: true

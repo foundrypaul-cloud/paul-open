@@ -1,0 +1,120 @@
+[project]
+name = "paul-open-model"
+version = "0.1.0"
+description = "Research project for specializing Google Gemma 4 open-weight models for Indian/multilingual languages, science education, tutoring, and empathetic interaction."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.12,<3.13"
+authors = [
+    { name = "PAUL Open Model Contributors" },
+]
+keywords = [
+    "gemma",
+    "fine-tuning",
+    "multilingual",
+    "indic-nlp",
+    "science-education",
+    "llm",
+]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # Core ML — pinned to compatible versions with verified Gemma 4 support
+    "torch>=2.11.0",
+    "transformers>=5.13.1",
+    "accelerate>=1.2.0",
+    "safetensors>=0.4.0",
+    "pillow>=10.0.0",
+    # Fine-tuning — aligned with Google Gemma 4 QLoRA guidance (peft >= 0.19.0)
+    "peft>=0.19.0",
+    "trl>=1.9.0",
+    "bitsandbytes>=0.45.0",
+    # Data & Hub
+    "datasets>=3.2.0",
+    "huggingface_hub>=0.28.0",
+    "sentencepiece>=0.2.0",
+    "tokenizers>=0.21.0",
+    # Config & Utilities
+    "pyyaml>=6.0",
+    "pydantic>=2.10.0",
+    "python-dotenv>=1.0.0",
+    "rich>=13.0.0",
+    # Experiment tracking (TensorBoard always available, W&B optional)
+    "tensorboard>=2.18.0",
+]
+
+[project.optional-dependencies]
+wandb = [
+    "wandb>=0.19.0",
+]
+eval = [
+    "sacrebleu>=2.4.0",
+    "rouge-score>=0.1.2",
+    "nltk>=3.9.0",
+]
+notebooks = [
+    "jupyter>=1.0.0",
+    "matplotlib>=3.9.0",
+    "seaborn>=0.13.0",
+    "pandas>=2.2.0",
+]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.0",
+]
+all = [
+    "paul-open-model[wandb,eval,notebooks,dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/foundrypaul-cloud/paul-open"
+Repository = "https://github.com/foundrypaul-cloud/paul-open"
+Issues = "https://github.com/foundrypaul-cloud/paul-open/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/paul_open_model"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests", "scripts"]
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific rules
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["paul_open_model"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+mypy_path = "src"

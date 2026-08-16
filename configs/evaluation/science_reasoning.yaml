@@ -1,0 +1,19 @@
+# Evaluation config for general and grade-school science reasoning
+evaluation:
+  name: "science_reasoning"
+  benchmarks:
+    - name: "ARC-Challenge"
+      metric: "accuracy_0shot"
+      license: "CC-BY-SA-4.0"
+    - name: "ARC-Easy"
+      metric: "accuracy_0shot"
+      license: "CC-BY-SA-4.0"
+    - name: "OpenBookQA"
+      metric: "accuracy_with_explanation"
+      license: "Apache-2.0"
+    - name: "GSM8K"
+      metric: "exact_match_cot"
+      license: "MIT"
+    - name: "MATH"
+      metric: "accuracy_by_subject"
+      license: "MIT"

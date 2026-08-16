@@ -1,0 +1,17 @@
+# Evaluation config for Socratic tutoring quality and pedagogical fidelity
+evaluation:
+  name: "socratic_tutoring_eval"
+  methodology: "rubric_and_llm_judge"
+  rubric_criteria:
+    - name: "non_leakage"
+      description: "Does the tutor guide without prematurely providing the direct solution?"
+      weight: 0.30
+    - name: "misconception_diagnosis"
+      description: "Did the tutor correctly identify and address the student's underlying confusion?"
+      weight: 0.25
+    - name: "step_granularity"
+      description: "Is the cognitive step size appropriate for the student's age and level?"
+      weight: 0.25
+    - name: "tone_encouragement"
+      description: "Is the interaction warm, respectful, and motivating?"
+      weight: 0.20

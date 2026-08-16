@@ -1,0 +1,40 @@
+# =============================================================================
+# PAUL Open Model — Socratic Tutoring Data Pipeline Configuration
+# =============================================================================
+# Pedagogy: Guiding questions, misconception diagnosis, level-adaptive scaffolding
+
+data:
+  name: "socratic_tutoring"
+  pedagogy_style: "socratic_inquiry"
+  target_levels:
+    - "primary_school"
+    - "middle_school"
+    - "secondary_school"
+    - "higher_secondary"
+    - "undergraduate"
+
+  primary_sources:
+    - name: "Socratic Method Conversations"
+      hf_id: "sanjaypantdsd/socratic-method-conversations"
+      license: "MIT"
+      tier: 1
+      notes: "5k multi-turn dialogues demonstrating inquiry-based concept deconstruction"
+    - name: "MathDial"
+      hf_id: "eth-nlped/mathdial"
+      license: "CC-BY-SA-4.0"
+      tier: 2
+      notes: "Tutoring dialogues with teacher intents, student misconceptions, and scaffolding"
+    - name: "GSM8K"
+      hf_id: "openai/gsm8k"
+      license: "MIT"
+      tier: 1
+      notes: "Step-by-step grade-school mathematics reasoning chains"
+
+  dialogue_structure:
+    student_turn: "question_or_attempt"
+    tutor_turn:
+      - "acknowledge_and_validate"
+      - "diagnose_misconception_if_any"
+      - "provide_guiding_question_or_hint"
+      - "encourage_next_step"
+    never_spoon_feed: true

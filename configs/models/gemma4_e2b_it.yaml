@@ -1,0 +1,57 @@
+# =============================================================================
+# PAUL Open Model — Gemma 4 E2B IT Configuration (ULTRA-LIGHTWEIGHT / ON-DEVICE)
+# =============================================================================
+# HuggingFace ID: google/gemma-4-E2B-it
+# Role: ULTRA-LIGHTWEIGHT ON-DEVICE
+# Architecture: gemma4 (dense multimodal transformer)
+# Parameters: ~2.3B dense
+# Context window: 131,072 tokens (128K)
+# Modality: Any-to-Any (Text, Image, Audio)
+# License: Apache 2.0
+# =============================================================================
+
+model:
+  name: "gemma-4-e2b-it"
+  role: "edge_ultralight"
+  hf_model_id: "google/gemma-4-E2B-it"
+  hf_base_model_id: "google/gemma-4-E2B"
+  architecture: "gemma4"
+  pipeline_tag: "any-to-any"
+  parameter_count: "2.3B"
+  context_length: 131072
+  dtype: "bfloat16"
+  is_multimodal: true
+
+  text_only_requires_mm_ids: true
+
+  quantization:
+    method: "qlora"
+    bits: 4
+    bnb_4bit_compute_dtype: "bfloat16"
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+
+  lora:
+    r: 32
+    alpha: 64
+    target_modules:
+      - "q_proj"
+      - "k_proj"
+      - "v_proj"
+      - "o_proj"
+      - "gate_proj"
+      - "up_proj"
+      - "down_proj"
+    dropout: 0.05
+    task_type: "CAUSAL_LM"
+    modules_to_save: null
+
+  device_map: "auto"
+
+  vram_estimates:
+    bf16_full: "~5 GB"
+    qlora_4bit: "~1.8 GB"
+    qlora_4bit_training: "~3.5 GB"
+
+  notes: |
+    Ultra-lightweight on-device model.

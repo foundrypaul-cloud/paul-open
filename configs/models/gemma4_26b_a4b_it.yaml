@@ -1,0 +1,63 @@
+# =============================================================================
+# PAUL Open Model — Gemma 4 26B A4B IT Configuration (PRIMARY TARGET)
+# =============================================================================
+# HuggingFace ID: google/gemma-4-26B-A4B-it
+# Role: PRIMARY RESEARCH & SPECIALIZATION TARGET
+# Architecture: gemma4 (Mixture-of-Experts)
+# Parameters: ~26B total parameters (~4B active parameters per token)
+# Context window: 262,144 tokens (256K)
+# Modality: Multimodal (Text, Image, Audio)
+# License: Apache 2.0
+# =============================================================================
+
+model:
+  name: "gemma-4-26b-a4b-it"
+  role: "primary_target"
+  hf_model_id: "google/gemma-4-26B-A4B-it"
+  hf_base_model_id: "google/gemma-4-26B-A4B"
+  architecture: "gemma4"
+  pipeline_tag: "image-text-to-text"
+  parameter_count: "26B"
+  active_parameters: "4B"
+  is_moe: true
+  context_length: 262144
+  dtype: "bfloat16"
+  is_multimodal: true
+
+  # Multimodal metadata injection required for text-only SFT
+  text_only_requires_mm_ids: true
+
+  quantization:
+    method: "qlora"
+    bits: 4
+    bnb_4bit_compute_dtype: "bfloat16"
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+
+  lora:
+    r: 64
+    alpha: 128
+    target_modules:
+      - "q_proj"
+      - "k_proj"
+      - "v_proj"
+      - "o_proj"
+      - "gate_proj"
+      - "up_proj"
+      - "down_proj"
+    dropout: 0.05
+    task_type: "CAUSAL_LM"
+    modules_to_save: null
+
+  device_map: "auto"
+
+  vram_estimates:
+    bf16_full: "~52 GB"
+    qlora_4bit: "~16 GB"
+    qlora_4bit_training: "~22 GB"
+
+  notes: |
+    PRIMARY TARGET for the PAUL Open Model project.
+    Mixture-of-Experts (MoE) architecture provides near-30B capability with the
+    computational footprint of ~4B active parameters during inference.
+    Fits on a single 24 GB GPU (RTX 3090 / 4090 / A5000) for QLoRA fine-tuning.

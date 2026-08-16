@@ -1,0 +1,29 @@
+# Data pipeline config for science education content
+
+data:
+  name: "science_education"
+  focus_areas:
+    - "physics"
+    - "chemistry"
+    - "biology"
+    - "mathematics"
+    - "environmental_science"
+  
+  candidate_sources:
+    - name: "SciQ"
+      type: "qa"
+      license: "CC-BY-NC-3.0"
+      notes: "Science exam questions with explanations"
+    - name: "ARC (AI2 Reasoning Challenge)"
+      type: "qa"
+      license: "CC-BY-SA-4.0"
+      notes: "Grade-school science questions"
+    - name: "OpenBookQA"
+      type: "qa"
+      license: "Apache-2.0"
+      notes: "Open-book science questions requiring reasoning"
+  
+  preprocessing:
+    max_length: 4096
+    include_chain_of_thought: true
+    age_groups: ["middle_school", "high_school"]

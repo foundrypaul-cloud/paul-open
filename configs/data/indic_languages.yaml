@@ -1,0 +1,38 @@
+# Data pipeline config for Indic/multilingual language data
+# Target languages: English, Hindi, Bengali, Assamese, Tamil, Telugu
+
+data:
+  name: "indic_languages"
+  languages:
+    - code: "en"
+      name: "English"
+    - code: "hi"
+      name: "Hindi"
+    - code: "bn"
+      name: "Bengali"
+    - code: "as"
+      name: "Assamese"
+    - code: "ta"
+      name: "Tamil"
+    - code: "te"
+      name: "Telugu"
+  
+  # Candidate datasets (to be evaluated — not downloaded yet)
+  candidate_sources:
+    - name: "IndicCorp v2"
+      type: "monolingual"
+      license: "CC-BY-4.0"
+      notes: "Large-scale monolingual corpora for Indian languages"
+    - name: "Samanantar"
+      type: "parallel"
+      license: "CC-BY-4.0"
+      notes: "Largest publicly available parallel corpora for Indic languages"
+    - name: "IN22"
+      type: "parallel"
+      license: "CC-BY-4.0"
+      notes: "AI4Bharat multi-way parallel evaluation set"
+  
+  preprocessing:
+    max_length: 4096
+    deduplicate: true
+    filter_low_quality: true

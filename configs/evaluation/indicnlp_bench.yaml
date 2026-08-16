@@ -1,0 +1,9 @@
+# Evaluation config for Indic NLP benchmarks
+evaluation:
+  name: "indicnlp_bench"
+  benchmarks:
+    - name: "IndicXTREME"
+      tasks: ["classification", "qa", "paraphrase", "nli"]
+    - name: "IndicSentiment"
+      tasks: ["sentiment_analysis"]
+  languages: ["en", "hi", "bn", "as", "ta", "te"]

@@ -1,0 +1,15 @@
+# Evaluation config for FLORES translation benchmarks
+evaluation:
+  name: "flores_translation"
+  benchmark: "FLORES-200"
+  metrics: ["bleu", "chrf++", "comet"]
+  language_pairs:
+    - {source: "en", target: "hi"}
+    - {source: "en", target: "bn"}
+    - {source: "en", target: "as"}
+    - {source: "en", target: "ta"}
+    - {source: "en", target: "te"}
+    - {source: "hi", target: "en"}
+    - {source: "bn", target: "en"}
+    - {source: "ta", target: "en"}
+    - {source: "te", target: "en"}

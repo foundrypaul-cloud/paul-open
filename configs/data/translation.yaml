@@ -1,0 +1,39 @@
+# Data pipeline config for translation tasks
+
+data:
+  name: "translation"
+  language_pairs:
+    - source: "en"
+      target: "hi"
+    - source: "en"
+      target: "bn"
+    - source: "en"
+      target: "as"
+    - source: "en"
+      target: "ta"
+    - source: "en"
+      target: "te"
+    - source: "hi"
+      target: "en"
+    - source: "bn"
+      target: "en"
+    - source: "ta"
+      target: "en"
+    - source: "te"
+      target: "en"
+  
+  candidate_sources:
+    - name: "FLORES-200"
+      type: "evaluation"
+      license: "CC-BY-SA-4.0"
+      notes: "Multi-way parallel evaluation benchmark — 200 languages"
+    - name: "Samanantar"
+      type: "training"
+      license: "CC-BY-4.0"
+    - name: "IN22"
+      type: "evaluation"
+      license: "CC-BY-4.0"
+  
+  preprocessing:
+    max_length: 2048
+    min_length: 10

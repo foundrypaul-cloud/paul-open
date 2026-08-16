@@ -1,0 +1,29 @@
+# =============================================================================
+# PAUL Open Model — Multimodal Scientific Data Pipeline Configuration
+# =============================================================================
+# Leverages Gemma 4 native multimodal architecture for plots, charts, and diagrams
+
+data:
+  name: "multimodal_science"
+  modality: "vision_and_text"
+  
+  primary_sources:
+    - name: "ChartQA"
+      hf_id: "ahmed-masry/chartqa"
+      license: "CC-BY-4.0"
+      tier: 1
+      notes: "32k QA pairs on scientific charts requiring visual and arithmetic reasoning"
+    - name: "PlotQA"
+      hf_id: "plotqa"
+      license: "MIT"
+      tier: 1
+      notes: "Plot structural understanding and quantitative data extraction"
+    - name: "MathVista (Subset)"
+      hf_id: "AI4Math/MathVista"
+      license: "CC-BY-SA-4.0"
+      tier: 2
+      notes: "Visual mathematical and scientific reasoning problems"
+
+  preprocessing:
+    max_image_resolution: [1024, 1024]
+    include_data_tables_where_available: true

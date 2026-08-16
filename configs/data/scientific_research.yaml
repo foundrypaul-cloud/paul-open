@@ -1,0 +1,35 @@
+# =============================================================================
+# PAUL Open Model — Scientific Research Assistance Data Pipeline Configuration
+# =============================================================================
+# Domains: Scientific literature comprehension, summarization, hypothesis reasoning
+
+data:
+  name: "scientific_research"
+  capabilities:
+    - "literature_comprehension"
+    - "extreme_summarization"
+    - "hypothesis_formulation"
+    - "experimental_reasoning"
+    - "methodology_critique"
+
+  primary_sources:
+    - name: "QASPER"
+      hf_id: "allenai/qasper"
+      license: "CC-BY-4.0"
+      tier: 1
+      notes: "Information seeking over full research papers with evidence paragraph grounding"
+    - name: "SciTLDR"
+      hf_id: "allenai/scitldr"
+      license: "Apache-2.0"
+      tier: 1
+      notes: "Scientific extreme summarization (1-sentence TLDRs written by domain experts)"
+    - name: "SciTail"
+      hf_id: "allenai/scitail"
+      license: "CC-BY-4.0"
+      tier: 1
+      notes: "Scientific textual entailment and factual verification"
+
+  preprocessing:
+    max_length: 4096
+    require_evidence_grounding: true
+    preserve_citations: true

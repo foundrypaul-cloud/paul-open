@@ -1,0 +1,15 @@
+# Evaluation config for MMLU science subtasks
+evaluation:
+  name: "mmlu_science"
+  benchmark: "mmlu"
+  subtasks:
+    - "abstract_algebra"
+    - "astronomy"
+    - "college_biology"
+    - "college_chemistry"
+    - "college_physics"
+    - "high_school_biology"
+    - "high_school_chemistry"
+    - "high_school_physics"
+    - "high_school_mathematics"
+  metrics: ["accuracy"]

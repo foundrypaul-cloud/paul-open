@@ -1,0 +1,25 @@
+# Data pipeline config for tutoring, empathy, and conversational behavior
+
+data:
+  name: "tutoring_empathy"
+  interaction_styles:
+    - "patient_step_by_step"
+    - "encouraging"
+    - "socratic_questioning"
+    - "age_appropriate"
+    - "culturally_sensitive"
+  
+  candidate_sources:
+    - name: "Custom synthetic dialogues"
+      type: "dialogue"
+      license: "Apache-2.0"
+      notes: "To be created — teacher-student tutoring conversations"
+    - name: "Custom empathy dialogues"
+      type: "dialogue"
+      license: "Apache-2.0"
+      notes: "To be created — empathetic response training data"
+  
+  formatting:
+    chat_template: "gemma"  # Use Gemma 4 native chat template
+    include_system_prompt: true
+    max_turns: 10

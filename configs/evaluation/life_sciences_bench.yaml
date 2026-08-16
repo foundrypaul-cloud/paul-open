@@ -1,0 +1,18 @@
+# Evaluation config for life sciences and biomedical reasoning
+evaluation:
+  name: "life_sciences_bench"
+  benchmarks:
+    - name: "MedMCQA"
+      metric: "accuracy"
+      license: "Apache-2.0"
+      subtasks: ["Biochemistry", "Physiology", "Pathology", "Pharmacology", "Microbiology", "Anatomy"]
+    - name: "PubMedQA"
+      metric: "macro_f1"
+      license: "MIT"
+      subset: "pqa_labeled"
+    - name: "QASPER"
+      metric: "answer_f1_and_evidence_f1"
+      license: "CC-BY-4.0"
+    - name: "SciTLDR"
+      metric: "rouge_l_and_bertscore"
+      license: "Apache-2.0"

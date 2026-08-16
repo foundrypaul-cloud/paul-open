@@ -1,0 +1,98 @@
+# ===========================
+# PAUL Open Model .gitignore
+# ===========================
+
+# ----- Python -----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.whl
+.eggs/
+
+# ----- Virtual Environments -----
+.venv/
+venv/
+env/
+.uv/
+
+# ----- IDE & Editors -----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# ----- Jupyter Notebooks -----
+.ipynb_checkpoints/
+
+# ----- Model Weights & Checkpoints -----
+/models/
+/checkpoints/
+*.bin
+*.safetensors
+*.gguf
+*.ggml
+*.pt
+*.pth
+*.onnx
+adapter_model/
+merged_model/
+
+# ----- Datasets & Data Cache (Root level) -----
+/data/
+/datasets/
+/cache/
+*.parquet
+*.arrow
+*.jsonl
+*.jsonl.gz
+*.csv.gz
+*.tar.gz
+*.zip
+
+# ----- Training Outputs & Experiment Tracking -----
+results/*/
+!results/.gitkeep
+!results/README.md
+wandb/
+runs/
+logs/
+*.log
+tensorboard/
+tb_logs/
+
+# ----- Hugging Face & Framework Cache -----
+.cache/
+hf_cache/
+
+# ----- Environment, Secrets & Credentials -----
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*credentials*.json
+*service_account*.json
+*service-account*.json
+*secret*.json
+auth.json
+token.json
+
+# ----- Operating System Files -----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----- Temporary & Scratch Files -----
+*.bak
+*.tmp
+*.temp
+scratch/

@@ -1,0 +1,43 @@
+# =============================================================================
+# PAUL Open Model — Life Sciences Data Pipeline Configuration
+# =============================================================================
+# Domains: Genomics, Molecular/Cellular Biology, Biochemistry, Pharmacology, Neuroscience
+
+data:
+  name: "life_sciences"
+  domains:
+    - "molecular_biology"
+    - "cellular_biology"
+    - "genomics_genetics"
+    - "biochemistry"
+    - "neuroscience"
+    - "pharmacology_therapeutics"
+
+  # Tier 1 (Permissive) Candidates for Training
+  primary_sources:
+    - name: "MedMCQA"
+      hf_id: "openlifescience/medmcqa"
+      license: "Apache-2.0"
+      tier: 1
+      notes: "194k high-yield Indian medical entrance QA instances across 21 biomedical subjects"
+    - name: "PubMedQA"
+      hf_id: "pubmed_qa"
+      license: "MIT"
+      tier: 1
+      notes: "Biomedical question answering with research reasoning"
+    - name: "Reactome Biological Pathways"
+      source: "Reactome Knowledgebase"
+      license: "CC-BY-4.0"
+      tier: 1
+      notes: "Cellular pathways, reaction mechanics, and molecular functions"
+    - name: "Gene Ontology Annotations"
+      source: "Gene Ontology Consortium"
+      license: "CC0-1.0"
+      tier: 1
+      notes: "Cellular components, molecular functions, biological processes"
+
+  preprocessing:
+    max_length: 4096
+    include_scientific_rationale: true
+    validate_biochemical_nomenclature: true
+    gemma_chat_template: true

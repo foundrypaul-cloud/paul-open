@@ -1,0 +1,45 @@
+# =============================================================================
+# PAUL Open Model — Full SFT Training Configuration (no quantization)
+# =============================================================================
+# Requires significant GPU memory. Use for final production training
+# on large GPU instances (A100 80GB, H100, multi-GPU).
+
+training:
+  method: "sft"
+  
+  sft_config:
+    output_dir: "./results"
+    num_train_epochs: 3
+    per_device_train_batch_size: 2
+    per_device_eval_batch_size: 2
+    gradient_accumulation_steps: 8
+    learning_rate: 2.0e-5
+    weight_decay: 0.01
+    warmup_ratio: 0.03
+    lr_scheduler_type: "cosine"
+    max_seq_length: 4096
+    remove_unused_columns: false
+    bf16: true
+    fp16: false
+    save_strategy: "steps"
+    save_steps: 500
+    save_total_limit: 3
+    eval_strategy: "steps"
+    eval_steps: 500
+    logging_steps: 10
+    logging_dir: "./tb_logs"
+    report_to: "tensorboard"
+    seed: 42
+    data_seed: 42
+    gradient_checkpointing: true
+    optim: "adamw_torch"
+    max_grad_norm: 1.0
+    packing: false
+    dataset_text_field: "text"
+    
+    # Full fine-tuning: use DeepSpeed or FSDP for multi-GPU
+    # deepspeed: "configs/training/ds_config_zero3.json"
+
+  gemma4_text_only:
+    inject_mm_token_type_ids: true
+    inject_token_type_ids: true
