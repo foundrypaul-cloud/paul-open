@@ -4,6 +4,7 @@ import json
 import tempfile
 from pathlib import Path
 
+import pytest
 import yaml
 from scripts.analyze_baseline import analyze_experiment, audit_secret_exclusion
 
@@ -19,6 +20,7 @@ from paul_open_model.evaluation import (
     evaluate_case_response,
     get_baseline_benchmark_suite,
 )
+from paul_open_model.evaluation.runner import validate_drive_path
 
 
 def test_benchmark_suite_case_counts():
@@ -110,6 +112,66 @@ def test_evaluate_case_response():
     assert result.peak_vram_gb == 4.5
 
 
+def test_strict_drive_filesystem_scoping():
+    """Verify validate_drive_path strictly enforces the allowed experiment root."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        allowed_root = Path(tmpdir) / "paul-open-experiments"
+        allowed_root.mkdir()
+
+        valid_sub = allowed_root / "baseline" / "exp_001"
+        assert validate_drive_path(valid_sub, allowed_root=allowed_root) == valid_sub
+
+        # Unauthorized path outside allowed root
+        unauthorized = Path(tmpdir) / "other_private_folder"
+        unauthorized.mkdir()
+        with pytest.raises(PermissionError):
+            validate_drive_path(unauthorized, allowed_root=allowed_root)
+
+        # Root itself is not a subpath if checking outside
+        with pytest.raises(PermissionError):
+            validate_drive_path(Path("/etc"), allowed_root=allowed_root)
+
+
+def test_automatic_drive_directory_creation_and_reuse():
+    """Verify automatic creation of non-existent Drive dirs and safe reuse."""
+    suite = get_baseline_benchmark_suite()
+    mini_suite = BenchmarkSuite(version="1.0.0-test", cases=suite.cases[:2])
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        drive_root = Path(tmpdir) / "paul-open-experiments"
+        drive_base = drive_root / "baseline"
+        # Notice drive_root does not exist initially!
+
+        runner_1 = EvaluationRunner(
+            model=None,
+            processor=None,
+            suite=mini_suite,
+            model_id="google/gemma-4-E4B-it",
+            experiment_id="exp_01",
+            output_dir=Path(tmpdir) / "local",
+            drive_backup_dir=drive_base,
+            allowed_drive_root=drive_root,
+        )
+        runner_1.run_all(verbose=False)
+        assert (drive_base / "exp_01" / "STATUS.json").exists()
+
+        # Run a second experiment to test reuse without clobbering previous
+        runner_2 = EvaluationRunner(
+            model=None,
+            processor=None,
+            suite=mini_suite,
+            model_id="google/gemma-4-E4B-it",
+            experiment_id="exp_02",
+            output_dir=Path(tmpdir) / "local",
+            drive_backup_dir=drive_base,
+            allowed_drive_root=drive_root,
+        )
+        runner_2.run_all(verbose=False)
+
+        assert (drive_base / "exp_01" / "STATUS.json").exists()
+        assert (drive_base / "exp_02" / "STATUS.json").exists()
+
+
 def test_evaluation_runner_dual_persistence_and_drive_mirroring():
     """Verify EvaluationRunner executes, mirrors to Drive, and exports clean manifest."""
     suite = get_baseline_benchmark_suite()
@@ -117,7 +179,9 @@ def test_evaluation_runner_dual_persistence_and_drive_mirroring():
 
     with tempfile.TemporaryDirectory() as tmpdir:
         local_dir = Path(tmpdir) / "local"
-        drive_dir = Path(tmpdir) / "drive"
+        drive_root = Path(tmpdir) / "paul-open-experiments"
+        drive_base = drive_root / "baseline"
+        drive_base.mkdir(parents=True, exist_ok=True)
 
         runner = EvaluationRunner(
             model=None,
@@ -126,7 +190,8 @@ def test_evaluation_runner_dual_persistence_and_drive_mirroring():
             model_id="google/gemma-4-E4B-it",
             experiment_id="test_exp_drive_mirror",
             output_dir=local_dir,
-            drive_backup_dir=drive_dir,
+            drive_backup_dir=drive_base,
+            allowed_drive_root=drive_root,
             gpu_device="Test GPU",
             total_vram_gb=14.56,
         )
@@ -146,7 +211,7 @@ def test_evaluation_runner_dual_persistence_and_drive_mirroring():
         assert (local_exp / "execution.log").exists()
 
         # Check drive mirrored files
-        drive_exp = drive_dir / "test_exp_drive_mirror"
+        drive_exp = drive_base / "test_exp_drive_mirror"
         assert (drive_exp / "manifest.json").exists()
         assert (drive_exp / "results.json").exists()
         assert (drive_exp / "STATUS.json").exists()
@@ -158,6 +223,8 @@ def test_evaluation_runner_dual_persistence_and_drive_mirroring():
         assert manifest["persistence_mode"] == "drive_mirrored"
         assert manifest["completed_cases"] == 5
         assert manifest["status"] == "SUCCESS"
+        assert "drive_results_path" in manifest
+        assert manifest["drive_results_path"] is not None
 
         # Check STATUS.json
         with open(local_exp / "STATUS.json", encoding="utf-8") as f:

@@ -1,8 +1,8 @@
 """Evaluation runner engine for executing benchmark suites on Gemma 4 models.
 
 Handles autonomous execution, dual-mode persistence (runtime-local vs Google Drive mirror),
-checkpointing/resume support, latency timing, memory profiling, result aggregation,
-secret sanitization, and multi-format export.
+strict filesystem scoping, automatic directory initialization, checkpointing/resume support,
+latency timing, memory profiling, result aggregation, secret sanitization, and multi-format export.
 """
 
 import csv
@@ -29,6 +29,27 @@ from paul_open_model.evaluation.metrics import (
     evaluate_case_response,
 )
 
+DEFAULT_COLAB_DRIVE_ROOT = Path("/content/drive/MyDrive/paul-open-experiments")
+
+
+def validate_drive_path(
+    drive_dir: str | Path,
+    allowed_root: str | Path | None = None,
+) -> Path:
+    """Validate that a Drive path is strictly confined to the authorized experiment root.
+
+    Raises PermissionError if the target path falls outside the allowed boundary.
+    """
+    target = Path(drive_dir).resolve()
+    root = Path(allowed_root or DEFAULT_COLAB_DRIVE_ROOT).resolve()
+
+    if not target.is_relative_to(root):
+        raise PermissionError(
+            f"SECURITY ERROR: Path '{target}' is outside authorized root '{root}'. "
+            "Drive persistence is strictly confined to paul-open-experiments/."
+        )
+    return target
+
 
 class EvaluationRunner:
     """Orchestrates model inference across a benchmark suite and exports reports."""
@@ -43,6 +64,7 @@ class EvaluationRunner:
         experiment_id: str | None = None,
         output_dir: str | Path = "results/baseline",
         drive_backup_dir: str | Path | None = None,
+        allowed_drive_root: str | Path | None = None,
         max_new_tokens: int = 256,
         temperature: float = 0.7,
         top_p: float = 0.9,
@@ -66,16 +88,22 @@ class EvaluationRunner:
         self.exp_dir = self.base_output_dir / self.experiment_id
         self.exp_dir.mkdir(parents=True, exist_ok=True)
 
-        # Optional Google Drive mirrored backup directory
+        # Optional Google Drive mirrored backup directory with strict filesystem scoping
         self.drive_exp_dir: Path | None = None
         if drive_backup_dir is not None:
-            self.drive_exp_dir = Path(drive_backup_dir) / self.experiment_id
+            validated_base = validate_drive_path(
+                drive_dir=drive_backup_dir,
+                allowed_root=allowed_drive_root,
+            )
+            self.drive_exp_dir = validated_base / self.experiment_id
             try:
                 self.drive_exp_dir.mkdir(parents=True, exist_ok=True)
                 self.persistence_mode = "drive_mirrored"
-            except Exception:
-                self.drive_exp_dir = None
-                self.persistence_mode = "runtime_local"
+            except Exception as e:
+                raise OSError(
+                    f"CRITICAL: Failed to create or access Google Drive directory "
+                    f"'{self.drive_exp_dir}': {e}"
+                ) from e
         else:
             self.persistence_mode = "runtime_local"
 
@@ -219,7 +247,6 @@ class EvaluationRunner:
                     drive_cases = self._load_completed_cases_from_checkpoint(drive_ckpt)
                     if len(drive_cases) > len(completed_cases):
                         completed_cases = drive_cases
-                        # Sync drive checkpoint to local
                         shutil.copy2(drive_ckpt, local_ckpt_path)
                         self.logger.info(
                             f"Restored {len(completed_cases)} cases from Google Drive mirror."
@@ -404,7 +431,6 @@ class EvaluationRunner:
             "status_json": self.export_status(),
             "manifest_json": self.export_manifest(),
         }
-        # Mirror all artifacts and execution log to Google Drive
         if self.drive_exp_dir is not None:
             for p in artifacts.values():
                 self._mirror_file_to_drive(p)
