@@ -2,11 +2,15 @@
 
 from paul_open_model.evaluation.benchmark import (
     BASELINE_VERSION,
+    BEHAVIORAL_VERSION,
+    PRESERVATION_VERSION,
     BenchmarkCase,
     BenchmarkSuite,
     CapabilityDomain,
     DifficultyLevel,
     get_baseline_benchmark_suite,
+    get_behavioral_benchmark_suite,
+    get_preservation_benchmark_suite,
 )
 from paul_open_model.evaluation.metrics import (
     CaseEvaluationResult,
@@ -21,6 +25,8 @@ from paul_open_model.evaluation.runner import EvaluationRunner
 
 __all__ = [
     "BASELINE_VERSION",
+    "BEHAVIORAL_VERSION",
+    "PRESERVATION_VERSION",
     "BenchmarkCase",
     "BenchmarkSuite",
     "CapabilityDomain",
@@ -34,4 +40,6 @@ __all__ = [
     "detect_script",
     "evaluate_case_response",
     "get_baseline_benchmark_suite",
+    "get_behavioral_benchmark_suite",
+    "get_preservation_benchmark_suite",
 ]

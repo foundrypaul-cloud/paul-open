@@ -118,3 +118,8 @@ python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 mypy_path = "src"
+
+[dependency-groups]
+dev = [
+    "types-pyyaml>=6.0.12.20260815",
+]

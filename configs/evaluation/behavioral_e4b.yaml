@@ -1,0 +1,48 @@
+evaluation:
+  name: "paul_open_model_behavioral_e4b"
+  description: "30-case held-out behavioral evaluation of google/gemma-4-E4B-it measuring Socratic, STEM calc, translation, and Indic pedagogical tone."
+  benchmark_version: "1.0.0"
+  suite_type: "behavioral"
+  suite_file: "src/paul_open_model/evaluation/data/behavioral_suite_v1.json"
+
+model:
+  hf_model_id: "google/gemma-4-E4B-it"
+  architecture: "gemma4"
+  parameter_count: "4.5B"
+  quantization:
+    load_in_4bit: true
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+    compute_dtype: "float16"
+  device_map: "auto"
+
+sampling:
+  max_new_tokens: 256
+  temperature: 0.7
+  top_p: 0.9
+  do_sample: true
+  enable_thinking: false
+
+output:
+  dir: "results/behavioral"
+  export_json: true
+  export_csv: true
+  export_markdown: true
+
+domains:
+  - socratic_tutoring
+  - science_reasoning
+  - multilingual_translation
+  - indic_understanding
+
+languages:
+  - en
+  - hi
+  - bn
+  - ta
+  - te
+  - mr
+  - gu
+  - kn
+  - ml
+  - pa

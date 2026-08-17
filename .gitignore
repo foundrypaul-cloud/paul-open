@@ -46,7 +46,9 @@ adapter_model/
 merged_model/
 
 # ----- Datasets & Data Cache (Root level) -----
-/data/
+/data/*
+!/data/schemas/
+!/data/schemas/**
 /datasets/
 /cache/
 *.parquet
@@ -96,3 +98,4 @@ desktop.ini
 *.tmp
 *.temp
 scratch/
+/outputs/

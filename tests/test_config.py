@@ -1,5 +1,7 @@
 """Tests for YAML configuration loading, notebook validity, and documentation."""
 
+from __future__ import annotations
+
 import json
 from pathlib import Path
 
@@ -68,6 +70,8 @@ def test_eval_configs_exist_and_valid():
     config_dir = Path("configs/evaluation")
     expected = [
         "baseline_e4b.yaml",
+        "preservation_e4b.yaml",
+        "behavioral_e4b.yaml",
         "indicnlp_bench.yaml",
         "flores_translation.yaml",
         "mmlu_science.yaml",
@@ -103,7 +107,6 @@ def test_colab_notebooks_valid_json():
     for nb_rel in expected_notebooks:
         nb_path = Path(nb_rel)
         assert nb_path.exists(), f"Colab notebook missing: {nb_rel}"
-        with open(nb_path, encoding="utf-8") as f:
-            nb = json.load(f)
+        nb = json.loads(nb_path.read_text(encoding="utf-8"))
         assert "cells" in nb, f"{nb_rel} missing 'cells' key"
         assert len(nb["cells"]) >= 4, f"{nb_rel} should contain all setup/validation cells"

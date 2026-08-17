@@ -1,0 +1,63 @@
+{
+  "dataset_sft_hash": "4c48d5077a5a6df0da7fed592c17dfd00f172da0f4a00ece0c7b682d7e2ef875",
+  "dataset_dpo_hash": "a613e476cb161ffaddd1638bbd302d8b63c4534e4dabc33936756278cebd245e",
+  "manifest_hash": "36414ac115f075bc8845f274303705c806e33962529624a1d567d774f9473caa",
+  "base_model_id": "REQUIRES_HUMAN_SELECTION",
+  "model_revision": "REQUIRES_HUMAN_SELECTION",
+  "tokenizer": "REQUIRES_HUMAN_SELECTION",
+  "python_version": "REQUIRES_HUMAN_SELECTION",
+  "pytorch_version": "REQUIRES_HUMAN_SELECTION",
+  "cuda_version": "REQUIRES_HUMAN_SELECTION",
+  "transformers_version": "REQUIRES_HUMAN_SELECTION",
+  "trl_version": "REQUIRES_HUMAN_SELECTION",
+  "peft_version": "REQUIRES_HUMAN_SELECTION",
+  "bitsandbytes_version": "REQUIRES_HUMAN_SELECTION",
+  "accelerate_version": "REQUIRES_HUMAN_SELECTION",
+  "gpu": "REQUIRES_HUMAN_SELECTION",
+  "vram": "REQUIRES_HUMAN_SELECTION",
+  "seed": 42,
+  "sft_configuration": {
+    "learning_rate": 0.0002,
+    "per_device_train_batch_size": 4,
+    "gradient_accumulation_steps": 4,
+    "epochs": 3,
+    "max_seq_length": 4096,
+    "warmup_ratio": 0.03,
+    "lr_scheduler_type": "cosine",
+    "weight_decay": 0.01,
+    "optimizer": "paged_adamw_8bit",
+    "gradient_checkpointing": true,
+    "seed": 42
+  },
+  "dpo_configuration": {
+    "learning_rate": 5e-07,
+    "beta": 0.1,
+    "per_device_train_batch_size": 2,
+    "gradient_accumulation_steps": 4,
+    "epochs": 1,
+    "max_prompt_length": 2048,
+    "max_length": 4096,
+    "optimizer": "paged_adamw_8bit"
+  },
+  "lora_configuration": {
+    "r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "quantization_configuration": {
+    "load_in_4bit": true,
+    "bnb_4bit_use_double_quant": true,
+    "bnb_4bit_quant_type": "nf4"
+  },
+  "checkpoint_identifiers": "REQUIRES_HUMAN_SELECTION",
+  "evaluation_results": "REQUIRES_HUMAN_SELECTION"
+}

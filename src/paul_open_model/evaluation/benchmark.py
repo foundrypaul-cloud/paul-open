@@ -1,8 +1,12 @@
-"""PAUL Open Model Baseline Benchmark Suite (v1.0.0).
+"""PAUL Open Model Baseline Benchmark & Evaluation Suites.
 
-Defines curated, version-controlled, original benchmark cases across 10 capability domains
-and 10 languages for evaluating Gemma 4 baseline capabilities and future fine-tuned checkpoints.
+Defines curated, version-controlled benchmark and evaluation suites:
+1. Canonical Baseline Suite v1.0.0 (50 cases - immutable anchor)
+2. Capability Preservation Suite v1.0.0 (30 cases - regression monitoring)
+3. Held-Out Behavioral Suite v1.0.0 (30 cases - target capabilities)
 """
+
+from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
@@ -11,7 +15,13 @@ from pathlib import Path
 from typing import Any
 
 BASELINE_VERSION = "1.0.0"
-_DATA_PATH = Path(__file__).parent / "data" / "baseline_suite_v1.json"
+PRESERVATION_VERSION = "1.0.0"
+BEHAVIORAL_VERSION = "1.0.0"
+
+_DATA_DIR = Path(__file__).parent / "data"
+_BASELINE_DATA_PATH = _DATA_DIR / "baseline_suite_v1.json"
+_PRESERVATION_DATA_PATH = _DATA_DIR / "preservation_suite_v1.json"
+_BEHAVIORAL_DATA_PATH = _DATA_DIR / "behavioral_suite_v1.json"
 
 
 class CapabilityDomain(StrEnum):
@@ -74,7 +84,7 @@ class BenchmarkCase:
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "BenchmarkCase":
+    def from_dict(cls, data: dict[str, Any]) -> BenchmarkCase:
         """Construct BenchmarkCase from dictionary."""
         return cls(
             case_id=data["case_id"],
@@ -98,6 +108,8 @@ class BenchmarkSuite:
     """Collection of benchmark cases representing a full evaluation run."""
 
     version: str = BASELINE_VERSION
+    suite_name: str = "paul_open_model_suite"
+    description: str = ""
     cases: list[BenchmarkCase] = field(default_factory=list)
 
     def filter_by_domain(self, domain: CapabilityDomain) -> list[BenchmarkCase]:
@@ -126,6 +138,8 @@ class BenchmarkSuite:
         """Serialize benchmark suite to dictionary."""
         return {
             "version": self.version,
+            "suite_name": self.suite_name,
+            "description": self.description,
             "case_count": len(self.cases),
             "cases": [c.to_dict() for c in self.cases],
         }
@@ -141,8 +155,8 @@ class BenchmarkSuite:
 def get_baseline_benchmark_suite(
     version: str = BASELINE_VERSION, data_path: str | Path | None = None
 ) -> BenchmarkSuite:
-    """Return the official versioned PAUL Open Model baseline benchmark suite."""
-    target_path = Path(data_path or _DATA_PATH)
+    """Return the official versioned PAUL Open Model baseline benchmark suite (50 cases)."""
+    target_path = Path(data_path or _BASELINE_DATA_PATH)
     if not target_path.exists():
         raise FileNotFoundError(f"Baseline benchmark data file not found at: {target_path}")
 
@@ -150,4 +164,49 @@ def get_baseline_benchmark_suite(
         data = json.load(f)
 
     cases = [BenchmarkCase.from_dict(c) for c in data.get("cases", [])]
-    return BenchmarkSuite(version=version, cases=cases)
+    return BenchmarkSuite(
+        version=version,
+        suite_name=data.get("suite_name", "paul_open_model_baseline_suite"),
+        description=data.get("description", ""),
+        cases=cases,
+    )
+
+
+def get_preservation_benchmark_suite(
+    version: str = PRESERVATION_VERSION, data_path: str | Path | None = None
+) -> BenchmarkSuite:
+    """Return the official Capability Preservation evaluation suite (30 cases)."""
+    target_path = Path(data_path or _PRESERVATION_DATA_PATH)
+    if not target_path.exists():
+        raise FileNotFoundError(f"Preservation benchmark data file not found at: {target_path}")
+
+    with open(target_path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    cases = [BenchmarkCase.from_dict(c) for c in data.get("cases", [])]
+    return BenchmarkSuite(
+        version=version,
+        suite_name=data.get("suite_name", "paul_open_model_capability_preservation_suite"),
+        description=data.get("description", ""),
+        cases=cases,
+    )
+
+
+def get_behavioral_benchmark_suite(
+    version: str = BEHAVIORAL_VERSION, data_path: str | Path | None = None
+) -> BenchmarkSuite:
+    """Return the official Held-Out Behavioral evaluation suite (30 cases)."""
+    target_path = Path(data_path or _BEHAVIORAL_DATA_PATH)
+    if not target_path.exists():
+        raise FileNotFoundError(f"Behavioral benchmark data file not found at: {target_path}")
+
+    with open(target_path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    cases = [BenchmarkCase.from_dict(c) for c in data.get("cases", [])]
+    return BenchmarkSuite(
+        version=version,
+        suite_name=data.get("suite_name", "paul_open_model_behavioral_suite"),
+        description=data.get("description", ""),
+        cases=cases,
+    )

@@ -1,0 +1,586 @@
+{
+  "version": "1.0.0",
+  "suite_name": "paul_open_model_behavioral_suite",
+  "description": "30-case held-out evaluation suite measuring future PAUL fine-tuning on the four core behavioral capabilities: Socratic Tutoring, Concise Numerical STEM Reasoning, Clean Translation, and Natural Indic Pedagogical Tone.",
+  "case_count": 30,
+  "cases": [
+    {
+      "case_id": "BEH-SOC-001",
+      "domain": "socratic_tutoring",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "A student says: 'When we see an apple as red, it is because the apple absorbs red light and reflects all the other colors.' Guide the student Socratically to self-correct.",
+      "expected_criteria": [
+        "Identifies the student's inverted misconception regarding reflection and absorption of light colors.",
+        "Validates the student's focus on color interaction without giving away the complete textbook answer in Turn 1.",
+        "Presents a concrete guiding question or thought experiment (e.g. what reaches your eye).",
+        "Concludes with exactly one probing question."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["eye", "reflect", "absorb", "light", "color", "see"],
+      "forbidden_phrases": ["The correct answer is", "You are wrong, the apple reflects red and absorbs all others"],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 250
+    },
+    {
+      "case_id": "BEH-SOC-002",
+      "domain": "socratic_tutoring",
+      "language": "hi",
+      "language_name": "Hindi",
+      "prompt": "एक छात्र कहता है: 'श्वसन (Respiration) और सांस लेना (Breathing) बिल्कुल एक ही चीज़ हैं क्योंकि दोनों में ऑक्सीजन अंदर ली जाती है।' सुकराती शैली में मार्गदर्शन कीजिए।",
+      "expected_criteria": [
+        "छात्र के अवलोकन की सराहना करता है कि सांस लेना गैसों का आदान-प्रदान है।",
+        "बिना लंबा व्याख्यान दिए, छात्र को कोशिकाओं और ऊर्जा उत्पादन (ATP) के स्तर पर सोचने के लिए प्रेरित करता है।",
+        "अंत में एक मार्गदर्शक प्रश्न पूछता है।"
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["कोशिका", "ऊर्जा", "गैस", "फेफड़े", "भोजन", "ग्लूकोज"],
+      "forbidden_phrases": ["सही उत्तर यह है", "श्वसन का सूत्र है"],
+      "expected_script": "Devanagari",
+      "min_response_tokens": 20,
+      "max_response_tokens": 250
+    },
+    {
+      "case_id": "BEH-SOC-003",
+      "domain": "socratic_tutoring",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "A student struggling with the law of conservation of mass says: 'When wood burns in a campfire, the ash weighs much less than the wood, so mass is destroyed during combustion.' Guide the student Socratically.",
+      "expected_criteria": [
+        "Acknowledges the intuitive physical observation of the remaining ash pile.",
+        "Guides the student to consider escaping invisible products (smoke, gases, water vapor, CO2).",
+        "Avoids lecturing with chemical formulas; asks a single trailing question about burning in a sealed box."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["gas", "smoke", "sealed", "air", "escape", "mass", "container"],
+      "forbidden_phrases": ["The formula is", "The mass of ash plus CO2 equals the wood"],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 250
+    },
+    {
+      "case_id": "BEH-SOC-004",
+      "domain": "socratic_tutoring",
+      "language": "bn",
+      "language_name": "Bengali",
+      "prompt": "একজন ছাত্র বলছে: 'একটি সরল বর্তনীতে (Series circuit) প্রথম বাল্বটি সব বিদ্যুৎ খরচ করে নেয়, তাই দ্বিতীয় বাল্বটি কম উজ্জ্বল হবে।' সুক্রাটি পদ্ধতিতে ছাত্রটিকে বোঝান।",
+      "expected_criteria": [
+        "বিদ্যুৎ প্রবাহ (Current) যে পাইপে জলের প্রবাহের মতো অবিচ্ছিন্ন থাকে তা অনুধাবন করতে সাহায্য করে।",
+        "প্রথমেই সূত্র বা সম্পূর্ণ উত্তর না দিয়ে জলের পাইপ বা সাইকেলের চেইনের চিন্তন পরীক্ষা দেয়।",
+        "শেষে একটি অনুসন্ধিৎসু প্রশ্ন দিয়ে সমাপ্ত করে।"
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["প্রবাহ", "বর্তনী", "কারেন্ট", "ইলেকট্রন", "পাইপ", "জল"],
+      "forbidden_phrases": ["সঠিক উত্তর হলো", "শ্রেণি সমবায়ে কারেন্ট সমান থাকে"],
+      "expected_script": "Bengali",
+      "min_response_tokens": 20,
+      "max_response_tokens": 250
+    },
+    {
+      "case_id": "BEH-SOC-005",
+      "domain": "socratic_tutoring",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "A middle school student says: 'Friction is always a harmful force because it wastes energy and wears out machine parts.' Guide the student Socratically to recognize the dual nature of friction.",
+      "expected_criteria": [
+        "Validates the student's correct observation about heat and mechanical wear.",
+        "Proposes a vivid thought experiment (e.g. attempting to walk or stop a car on completely frictionless ice).",
+        "Ends with a single focused question asking what would happen without friction."
+      ],
+      "difficulty": "beginner",
+      "safety_considerations": [],
+      "rubric_keywords": ["walk", "ice", "shoes", "slip", "stop", "grip", "friction"],
+      "forbidden_phrases": ["Friction is actually both a friend and a foe", "The complete answer is"],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 250
+    },
+    {
+      "case_id": "BEH-SOC-006",
+      "domain": "socratic_tutoring",
+      "language": "te",
+      "language_name": "Telugu",
+      "prompt": "ఒక విద్యార్థి అడుగుతున్నాడు: 'ఇనుప మేకు నీటిలో మునిగిపోతుంది, కానీ భారీ ఇనుప ఓడ ఎందుకు తేలుతుంది? ఓడలో ఇనుము తేలికగా ఉంటుందా?' సుక్రటీస్ బోధనా పద్ధతిలో స్పందించండి.",
+      "expected_criteria": [
+        "ఓడలోని ఇనుము తేలికైనది కాదనే వాస్తవాన్ని సున్నితంగా చర్చిస్తూ ఆకారంపై దృష్టి పెట్టిస్తుంది.",
+        "నీటిని పక్కకు నెట్టడం (Displacement) మరియు ఓడ లోపల ఉండే బోలు గాలి ప్రదేశాన్ని ఆలోచింపజేస్తుంది.",
+        "చివరగా విద్యార్థి సొంతంగా అర్థం చేసుకునేలా ఒక ఆలోచనాత్మక ప్రశ్న అడుగుతుంది."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["ఓడ", "ఆకారం", "నీరు", "గాలి", "సాంద్రత", "తేలడం"],
+      "forbidden_phrases": ["సరైన సమాధానం ఏమిటంటే", "ఆర్కిమెడిస్ సూత్రం ప్రకారం"],
+      "expected_script": "Telugu",
+      "min_response_tokens": 20,
+      "max_response_tokens": 250
+    },
+    {
+      "case_id": "BEH-SOC-007",
+      "domain": "socratic_tutoring",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "An algebra student solving 2(x + 3) = 14 writes 2x + 3 = 14 on their paper. How would a Socratic tutor guide them to catch their distributive error?",
+      "expected_criteria": [
+        "Addresses the omission of distributing the multiplier to the constant term.",
+        "Uses a simple grouping or arithmetic analogy (e.g. 2 bags with x apples and 3 oranges).",
+        "Ends with a single question asking how many total oranges are in 2 bags."
+      ],
+      "difficulty": "beginner",
+      "safety_considerations": [],
+      "rubric_keywords": ["distribute", "multiply", "both", "bracket", "parentheses", "groups"],
+      "forbidden_phrases": ["The correct step is 2x + 6 = 14", "You forgot to multiply 2 by 3"],
+      "expected_script": "Latin",
+      "min_response_tokens": 15,
+      "max_response_tokens": 220
+    },
+    {
+      "case_id": "BEH-SOC-008",
+      "domain": "socratic_tutoring",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "A biology student says: 'Plants only do photosynthesis during the day and do not carry out cellular respiration at all.' Guide the student Socratically.",
+      "expected_criteria": [
+        "Affirms that photosynthesis requires sunlight during daylight hours.",
+        "Probes how plant cells obtain usable cellular energy at night when no sunlight is available.",
+        "Terminates with exactly one guiding question on nighttime plant metabolism."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["night", "energy", "ATP", "mitochondria", "glucose", "cells", "dark"],
+      "forbidden_phrases": ["Plants respire 24/7", "The correct answer is that plants always respire"],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 250
+    },
+    {
+      "case_id": "BEH-NUM-001",
+      "domain": "science_reasoning",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "A motor vehicle accelerates uniformly from an initial velocity of 12 m/s at a constant rate of 3 m/s^2 for 4 seconds. Calculate its final velocity. Show the Given block, formula, substitution, and final boxed answer with units.",
+      "expected_criteria": [
+        "Begins immediately with a concise Given & Target variable block (u=12 m/s, a=3 m/s^2, t=4 s, v=?).",
+        "Uses kinematics formula v = u + at without verbose historical or conceptual preamble.",
+        "Calculates v = 12 + (3)(4) = 24 m/s accurately.",
+        "Highlights/boxes final answer with explicit units (24 m/s)."
+      ],
+      "difficulty": "beginner",
+      "safety_considerations": [],
+      "rubric_keywords": ["12", "3", "4", "24", "m/s", "v = u + at"],
+      "forbidden_phrases": ["In classical Newtonian mechanics, when a physical particle undergoes constant kinematic acceleration"],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-NUM-002",
+      "domain": "science_reasoning",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "A 5 kg block is lifted vertically to a height of 10 meters in Earth's gravitational field where g = 9.8 m/s^2. Calculate the Gravitational Potential Energy gained by the block.",
+      "expected_criteria": [
+        "Provides concise setup: m = 5 kg, g = 9.8 m/s^2, h = 10 m.",
+        "Applies formula PE = m * g * h directly.",
+        "Computes PE = 5 * 9.8 * 10 = 490 J.",
+        "Boxes final answer as 490 J."
+      ],
+      "difficulty": "beginner",
+      "safety_considerations": [],
+      "rubric_keywords": ["5", "9.8", "10", "490", "J", "mgh"],
+      "forbidden_phrases": [],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-NUM-003",
+      "domain": "science_reasoning",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "An electric heater is connected to a 24 V DC power source and draws a current of 0.8 A. Calculate the electrical resistance of the heating element using Ohm's law.",
+      "expected_criteria": [
+        "Givens: V = 24 V, I = 0.8 A, Target: R.",
+        "Formula: R = V / I.",
+        "Calculates R = 24 / 0.8 = 30 ohms.",
+        "Final boxed answer: 30 ohms or 30 Omega."
+      ],
+      "difficulty": "beginner",
+      "safety_considerations": [],
+      "rubric_keywords": ["24", "0.8", "30", "ohm", "Omega", "V = IR", "R = V/I"],
+      "forbidden_phrases": [],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-NUM-004",
+      "domain": "science_reasoning",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "Calculate the number of moles in 88 grams of carbon dioxide (CO2). (Atomic masses: C = 12 g/mol, O = 16 g/mol).",
+      "expected_criteria": [
+        "Molar mass calculation: M(CO2) = 12 + 2(16) = 44 g/mol.",
+        "Formula: n = mass / Molar mass.",
+        "Calculates n = 88 / 44 = 2.0 moles.",
+        "Explicit final boxed answer: 2.0 mol or 2 moles."
+      ],
+      "difficulty": "beginner",
+      "safety_considerations": [],
+      "rubric_keywords": ["44", "88", "2", "2.0", "mol", "moles", "g/mol"],
+      "forbidden_phrases": [],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-NUM-005",
+      "domain": "science_reasoning",
+      "language": "hi",
+      "language_name": "Hindi",
+      "prompt": "एक वस्तु पर 50 N का क्षैतिज बल लगाकर उसे बल की दिशा में 8 मीटर विस्थापित किया जाता है। किए गए कार्य (Work Done) की गणना कीजिए। स्पष्ट 'दिया है', सूत्र, और मात्रक सहित उत्तर लिखिए।",
+      "expected_criteria": [
+        "दिया है (Given): बल (F) = 50 N, विस्थापन (d) = 8 m, कोण (theta) = 0 डिग्री।",
+        "सूत्र: W = F * d = 50 * 8 = 400 J।",
+        "अंतिम उत्तर स्पष्ट रूप से मात्रक (400 जूल / 400 J) के साथ प्रस्तुत करता है।"
+      ],
+      "difficulty": "beginner",
+      "safety_considerations": [],
+      "rubric_keywords": ["50", "8", "400", "J", "जूल", "W = F", "कार्य"],
+      "forbidden_phrases": [],
+      "expected_script": "Devanagari",
+      "min_response_tokens": 20,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-NUM-006",
+      "domain": "science_reasoning",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "A light wave with a frequency of 6.0 x 10^14 Hz travels in a vacuum at a speed of 3.0 x 10^8 m/s. Calculate its wavelength in nanometers (nm).",
+      "expected_criteria": [
+        "Givens: c = 3.0 x 10^8 m/s, f = 6.0 x 10^14 Hz.",
+        "Formula: lambda = c / f = (3.0 x 10^8) / (6.0 x 10^14) = 5.0 x 10^-7 m.",
+        "Unit conversion: 5.0 x 10^-7 m = 500 nm.",
+        "Final boxed answer: 500 nm."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["3.0", "6.0", "500", "nm", "lambda", "wavelength"],
+      "forbidden_phrases": [],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-NUM-007",
+      "domain": "science_reasoning",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "A solid metal cylinder has a mass of 270 g and occupies a volume of 100 cm^3. Calculate its density in g/cm^3 and convert the result to kg/m^3.",
+      "expected_criteria": [
+        "Givens: Mass m = 270 g, Volume V = 100 cm^3.",
+        "Density calculation: rho = m / V = 270 / 100 = 2.7 g/cm^3.",
+        "Conversion: 2.7 g/cm^3 = 2700 kg/m^3 (multiply by 1000).",
+        "Boxed final answer: 2.7 g/cm^3 (2700 kg/m^3)."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["270", "100", "2.7", "2700", "g/cm^3", "kg/m^3", "density"],
+      "forbidden_phrases": [],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-NUM-008",
+      "domain": "science_reasoning",
+      "language": "en",
+      "language_name": "English",
+      "prompt": "A sports car navigates a circular curve of radius 20 m at a constant speed of 10 m/s. Calculate the magnitude of its centripetal acceleration.",
+      "expected_criteria": [
+        "Givens: v = 10 m/s, r = 20 m, Target: a_c.",
+        "Formula: a_c = v^2 / r = (10)^2 / 20 = 100 / 20 = 5.0 m/s^2.",
+        "Direct calculation with no unnecessary verbose introduction.",
+        "Final boxed answer: 5.0 m/s^2 or 5 m/s^2."
+      ],
+      "difficulty": "beginner",
+      "safety_considerations": [],
+      "rubric_keywords": ["10", "20", "5", "5.0", "m/s^2", "centripetal", "v^2/r"],
+      "forbidden_phrases": [],
+      "expected_script": "Latin",
+      "min_response_tokens": 20,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-TRN-001",
+      "domain": "multilingual_translation",
+      "language": "hi",
+      "language_name": "Hindi",
+      "prompt": "Translate this scientific paragraph directly into Hindi. Do not add introductory greetings, explanations, or conversational filler:\n\n'Ribosomes are macromolecular machines found within all biological cells that perform biological protein synthesis. Ribosomes link amino acids together in the order specified by messenger RNA (mRNA) molecules.'",
+      "expected_criteria": [
+        "Outputs direct Hindi translation without conversational prefixes (e.g. 'Here is your translation').",
+        "Accurately translates 'macromolecular machines' and 'protein synthesis'.",
+        "Preserves 'mRNA' and scientific terms appropriately in Devanagari script."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["राइबोसोम", "कोशिका", "प्रोटीन संश्लेषण", "अमीनो अम्ल", "mRNA", "अणु"],
+      "forbidden_phrases": ["Here is the translation", "Certainly! Here is", "Transliteration:"],
+      "expected_script": "Devanagari",
+      "min_response_tokens": 20,
+      "max_response_tokens": 200
+    },
+    {
+      "case_id": "BEH-TRN-002",
+      "domain": "multilingual_translation",
+      "language": "bn",
+      "language_name": "Bengali",
+      "prompt": "Translate directly into Bengali without English conversational meta-talk or transliteration:\n\n'The electromagnetic spectrum encompasses all types of electromagnetic radiation. Photons with higher frequencies, such as X-rays and gamma rays, carry significantly more energy than lower frequency radio waves.'",
+      "expected_criteria": [
+        "Provides direct Bengali translation starting immediately with the content.",
+        "Accurately translates 'electromagnetic spectrum', 'photons', and 'radiation'.",
+        "Contains zero conversational wrapper or transliteration breakdown."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["তড়িৎচৌম্বকীয় বর্ণালী", "বিকিরণ", "ফোটন", "কম্পাঙ্ক", "শক্তি", "রশ্মি"],
+      "forbidden_phrases": ["Here is the Bengali translation", "Sure!", "Transliteration:"],
+      "expected_script": "Bengali",
+      "min_response_tokens": 20,
+      "max_response_tokens": 200
+    },
+    {
+      "case_id": "BEH-TRN-003",
+      "domain": "multilingual_translation",
+      "language": "ta",
+      "language_name": "Tamil",
+      "prompt": "Translate this text directly into Tamil. Output only the translation:\n\n'Newton's law of universal gravitation states that every particle attracts every other particle in the universe with a force proportional to the product of their masses.'",
+      "expected_criteria": [
+        "Direct Tamil output with no English pleasantries.",
+        "Translates 'universal gravitation', 'masses', and 'force'.",
+        "Maintains accurate formal Tamil scientific phrasing."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["ஈர்ப்பு விதி", "நிறை", "விசை", "ஈர்க்கிறது", "அண்டம்"],
+      "forbidden_phrases": ["Here is the translation:", "Tamil translation:"],
+      "expected_script": "Tamil",
+      "min_response_tokens": 20,
+      "max_response_tokens": 200
+    },
+    {
+      "case_id": "BEH-TRN-004",
+      "domain": "multilingual_translation",
+      "language": "te",
+      "language_name": "Telugu",
+      "prompt": "Translate directly into Telugu without introductory meta-commentary:\n\n'The nephron is the microscopic structural and functional unit of the kidney. It filters blood, reabsorbs essential nutrients, and excretes metabolic waste products as urine.'",
+      "expected_criteria": [
+        "Direct Telugu output without English preambles.",
+        "Translates 'nephron', 'filtration', 'nutrients', and 'metabolic waste'.",
+        "Uses standard NCERT Telugu terminology (నెఫ్రాన్, మూత్రపిండం)."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["నెఫ్రాన్", "మూత్రపిండం", "రక్తం", "పోషకాలు", "వ్యర్థాలు"],
+      "forbidden_phrases": ["Here is the Telugu translation:", "Certainly,"],
+      "expected_script": "Telugu",
+      "min_response_tokens": 20,
+      "max_response_tokens": 200
+    },
+    {
+      "case_id": "BEH-TRN-005",
+      "domain": "multilingual_translation",
+      "language": "mr",
+      "language_name": "Marathi",
+      "prompt": "Translate directly into Marathi without English meta-talk or transliteration:\n\n'An exothermic reaction is a chemical reaction that releases energy by light or heat, whereas an endothermic reaction absorbs thermal energy from its surroundings.'",
+      "expected_criteria": [
+        "Direct Marathi translation starting immediately.",
+        "Correctly renders 'exothermic' (उष्मादायी) and 'endothermic' (उष्माग्राही).",
+        "Zero unsolicited conversational English."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["उष्मादायी", "उष्माग्राही", "रासायनिक अभिक्रिया", "ऊर्जा", "उष्णता"],
+      "forbidden_phrases": ["Here is the translation:", "In Marathi:"],
+      "expected_script": "Devanagari",
+      "min_response_tokens": 20,
+      "max_response_tokens": 200
+    },
+    {
+      "case_id": "BEH-TRN-006",
+      "domain": "multilingual_translation",
+      "language": "gu",
+      "language_name": "Gujarati",
+      "prompt": "Translate directly into Gujarati without commentary or transliteration:\n\n'A semiconductor diode allows electrical current to flow easily in one forward direction while blocking current in the reverse direction.'",
+      "expected_criteria": [
+        "Direct Gujarati translation.",
+        "Accurately renders 'semiconductor diode', 'forward direction', and 'electrical current'.",
+        "No conversational English wrapper."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["ડાયોડ", "સેમિકન્ડક્ટર", "વિદ્યુતપ્રવાહ", "દિશા", "અવરોધ"],
+      "forbidden_phrases": ["Here is your translation", "Sure!"],
+      "expected_script": "Gujarati",
+      "min_response_tokens": 15,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-TRN-007",
+      "domain": "multilingual_translation",
+      "language": "kn",
+      "language_name": "Kannada",
+      "prompt": "Translate this scientific sentence directly into Kannada without any English preamble:\n\n'During the light-dependent reactions of photosynthesis, chlorophyll pigments absorb photons to split water molecules and generate ATP and NADPH.'",
+      "expected_criteria": [
+        "Direct Kannada translation.",
+        "Preserves 'ATP', 'NADPH', and chlorophyll concepts accurately.",
+        "Zero conversational filler."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["ದ್ಯುತಿಸಂಶ್ಲೇಷಣೆ", "ಕ್ಲೋರೊಫಿಲ್", "ನೀರು", "ಬೆಳಕು", "ATP", "NADPH"],
+      "forbidden_phrases": ["Here is the Kannada translation", "Hope this helps"],
+      "expected_script": "Kannada",
+      "min_response_tokens": 15,
+      "max_response_tokens": 180
+    },
+    {
+      "case_id": "BEH-IND-001",
+      "domain": "indic_understanding",
+      "language": "hi",
+      "language_name": "Hindi",
+      "prompt": "कक्षा 10 के छात्र को गैसों के गतिज आणविक सिद्धांत (Kinetic Molecular Theory of Gases) को स्वाभाविक और स्पष्ट हिंदी में समझाइए। प्रमुख तकनीकी पदों जैसे 'गतिज ऊर्जा (Kinetic Energy)' को उपयुक्त रूप से कोष्ठक में लिखिए।",
+      "expected_criteria": [
+        "NCERT-संरेखित स्वाभाविक शैक्षणिक हिंदी रजिस्टर का उपयोग करता है।",
+        "अनावश्यक जटिल अप्रचलित संस्कृतनिष्ठ शब्दों के स्थान पर सुगम शब्दावली और अंग्रेजी तकनीकी पद कोष्ठक में लिखता है।",
+        "गैस अणुओं की निरंतर यादृच्छिक गति और संघट्ट (Collisions) को स्पष्ट रूप से समझाता है।"
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["गतिज सिद्धांत", "अणु", "गतिज ऊर्जा", "दबाव", "तापमान", "गैस"],
+      "forbidden_phrases": [],
+      "expected_script": "Devanagari",
+      "min_response_tokens": 35,
+      "max_response_tokens": 350
+    },
+    {
+      "case_id": "BEH-IND-002",
+      "domain": "indic_understanding",
+      "language": "bn",
+      "language_name": "Bengali",
+      "prompt": "মানবদেহে রক্তসংবহন এবং কৈশিক নালীতে (Capillaries) কীভাবে অক্সিজেন ও কার্বন ডাই অক্সাইডের গ্যাসীয় বিনিময় ঘটে তা সহজ এবং প্রাঞ্জল বাংলায় বর্ণনা করুন।",
+      "expected_criteria": [
+        "প্রাঞ্জল এবং স্বাভাবিক বাংলা শিক্ষামূলক ভাষা ব্যবহার করে।",
+        "কৈশিক নালী ও ব্যাপন (Diffusion) প্রক্রিয়ার মাধ্যমে গ্যাস বিনিময় ব্যাখ্যা করে।",
+        "অপ্রয়োজনীয় অপ্রচলিত তৎসম শব্দ পরিহার করে আধুনিক পাঠ্যক্রম-সংলগ্ন শৈলী বজায় রাখে।"
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["রক্তসংবহন", "কৈশিক নালী", "অক্সিজেন", "কার্বন ডাই অক্সাইড", "ব্যাপন", "হিমোগ্লোবিন"],
+      "forbidden_phrases": [],
+      "expected_script": "Bengali",
+      "min_response_tokens": 30,
+      "max_response_tokens": 350
+    },
+    {
+      "case_id": "BEH-IND-003",
+      "domain": "indic_understanding",
+      "language": "ta",
+      "language_name": "Tamil",
+      "prompt": "வேதியியலில் எலக்ட்ரான் பகிர்வு மூலம் சகப்பிணைப்பு (Covalent Bond) எவ்வாறு உருவாகிறது என்பதை 10-ஆம் வகுப்பு மாணவருக்கு இயல்பான எளிய தமிழில் விளக்குக.",
+      "expected_criteria": [
+        "இயல்பான தமிழ் கற்பித்தல் நடையில் (Pedagogical register) சகப்பிணைப்பை விளக்குகிறது.",
+        "ஹைட்ரஜன் (H2) அல்லது மீத்தேன் (CH4) மூலக்கூறுகளின் எலக்ட்ரான் பகிர்வை எளிய எடுத்துக்காட்டுடன் தெளிவுபடுத்துகிறது.",
+        "செயற்கையான அல்லது வழக்கற்றுப்போன சொற்களைத் தவிர்த்து பாடத்திட்டச் சொற்களைப் பயன்படுத்துகிறது."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["சகப்பிணைப்பு", "எலக்ட்ரான்", "பகிர்வு", "மூலக்கூறு", "நிலைப்புத்தன்மை"],
+      "forbidden_phrases": [],
+      "expected_script": "Tamil",
+      "min_response_tokens": 30,
+      "max_response_tokens": 350
+    },
+    {
+      "case_id": "BEH-IND-004",
+      "domain": "indic_understanding",
+      "language": "te",
+      "language_name": "Telugu",
+      "prompt": "జలవిద్యుత్ కేంద్రాలలో (Hydroelectric Power Plants) నీటి యొక్క స్థితిజ శక్తి (Potential Energy) ఎలా విద్యుత్ శక్తిగా మారుతుందో విద్యార్థులకు సులభమైన తెలుగులో వివరించండి.",
+      "expected_criteria": [
+        "సహజమైన విద్యా విషయక తెలుగు శైలిని ఉపయోగిస్తుంది.",
+        "డ్యామ్ నీటి ఎత్తు (స్థితిజ శక్తి) -> ప్రవహించే నీరు (గతిజ శక్తి) -> టర్బైన్లు -> జనరేటర్ ద్వారా విద్యుత్ ఉత్పత్తిని క్రమపద్ధతిలో వివరిస్తుంది.",
+        "అతి సంస్కృతీకరించిన పదాలు కాకుండా స్పష్టమైన సాంకేతిక పదాలను ఉపయోగిస్తుంది."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["జలవిద్యుత్", "స్థితిజ శక్తి", "గతిజ శక్తి", "టర్బైన్", "జనరేటర్", "విద్యుత్"],
+      "forbidden_phrases": [],
+      "expected_script": "Telugu",
+      "min_response_tokens": 30,
+      "max_response_tokens": 350
+    },
+    {
+      "case_id": "BEH-IND-005",
+      "domain": "indic_understanding",
+      "language": "mr",
+      "language_name": "Marathi",
+      "prompt": "पेशीपटल (Cell Membrane) हे निवडक्षम पारपटल (Selectively Permeable) कसे असते आणि परासरण (Osmosis) कसे घडते ते शालेय विद्यार्थ्यासाठी सोप्या मराठीत सांगा.",
+      "expected_criteria": [
+        "नैसर्गिक आणि संवादी मराठी शैक्षणिक भाषा वापरतो.",
+        "द्रावक (पाणी) आणि द्राव्य यांच्या हालचालीचे ऑस्मोसिसच्या संदर्भात स्पष्टीकरण देतो.",
+        "अतिशय बोजड शब्द न वापरता संकल्पना सुस्पष्ट करतो."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["पेशीपटल", "निवडक्षम पारपटल", "परासरण", "पाणी", "सांद्रता", "पेशी"],
+      "forbidden_phrases": [],
+      "expected_script": "Devanagari",
+      "min_response_tokens": 30,
+      "max_response_tokens": 350
+    },
+    {
+      "case_id": "BEH-IND-006",
+      "domain": "indic_understanding",
+      "language": "ml",
+      "language_name": "Malayalam",
+      "prompt": "ശബ്ദ തരംഗങ്ങൾ മാധ്യമത്തിലൂടെ സഞ്ചരിക്കുമ്പോൾ ഉണ്ടാകുന്ന അനുദൈർഘ്യ തരംഗങ്ങളെയും (Longitudinal Waves) ഡോപ്ലർ പ്രഭാവത്തെയും (Doppler Effect) കുറിച്ച് വ്യക്തമായ മലയാളത്തിൽ വിശദീകരിക്കുക.",
+      "expected_criteria": [
+        "സ്വാഭാവിക മലയാളത്തിൽ ഡോപ്ലർ ഇഫക്റ്റും ശബ്ദ തരംഗങ്ങളും വിശദീകരിക്കുന്നു.",
+        "കംപ്രഷൻ (Compression), റെയർഫാക്ഷൻ (Rarefaction) തത്ത്വങ്ങൾ വ്യക്തമാക്കുന്നു.",
+        "വിദ്യാർത്ഥികൾക്ക് അനുയോജ്യമായ സ്കൂൾ പാഠ്യപദ്ധതി ശൈലി നിലനിർത്തുന്നു."
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["ശബ്ദം", "തരംഗം", "ഡോപ്ലർ പ്രഭാവം", "ആവൃത്തി", "മാധ്യമം"],
+      "forbidden_phrases": [],
+      "expected_script": "Malayalam",
+      "min_response_tokens": 25,
+      "max_response_tokens": 350
+    },
+    {
+      "case_id": "BEH-IND-007",
+      "domain": "indic_understanding",
+      "language": "pa",
+      "language_name": "Punjabi",
+      "prompt": "ਤੇਜ਼ਾਬ ਅਤੇ ਖ਼ਾਰ (Acids and Bases) ਦੇ ਉਦਾਸੀਨੀਕਰਨ (Neutralization) ਦੀ ਪ੍ਰਕਿਰਿਆ ਅਤੇ pH ਪੈਮਾਨੇ ਦੀ ਵਰਤੋਂ ਨੂੰ ਆਮ ਅਤੇ ਸਪਸ਼ਟ ਪੰਜਾਬੀ (ਗੁਰਮੁਖੀ) ਵਿੱਚ ਸਮਝਾਓ।",
+      "expected_criteria": [
+        "ਕੁਦਰਤੀ ਅਤੇ ਸਿੱਖਿਅਕ ਪੰਜਾਬੀ (ਗੁਰਮੁਖੀ ਲਿਪੀ) ਵਿੱਚ ਉਦਾਸੀਨੀਕਰਨ ਦੀ ਵਿਆਖਿਆ ਕਰਦਾ ਹੈ।",
+        "ਤੇਜ਼ਾਬ + ਖ਼ਾਰ -> ਲੂਣ + ਪਾਣੀ ਸਮੀਕਰਨ ਨੂੰ ਸਪਸ਼ਟ ਕਰਦਾ ਹੈ।",
+        "pH ਪੈਮਾਨੇ 'ਤੇ 0-14 ਦੇ ਮੁੱਲ ਅਤੇ ਨਿਊਟਰਲ 7 ਦਾ ਅਰਥ ਦੱਸਦਾ ਹੈ।"
+      ],
+      "difficulty": "intermediate",
+      "safety_considerations": [],
+      "rubric_keywords": ["ਤੇਜ਼ਾਬ", "ਖ਼ਾਰ", "ਉਦਾਸੀਨੀਕਰਨ", "ਲੂਣ", "ਪਾਣੀ", "pH"],
+      "forbidden_phrases": [],
+      "expected_script": "Gurmukhi",
+      "min_response_tokens": 25,
+      "max_response_tokens": 350
+    }
+  ]
+}

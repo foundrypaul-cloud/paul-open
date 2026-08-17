@@ -1,0 +1,46 @@
+evaluation:
+  name: "paul_open_model_preservation_e4b"
+  description: "30-case capability preservation evaluation of google/gemma-4-E4B-it in 4-bit NF4 to monitor potential regressions."
+  benchmark_version: "1.0.0"
+  suite_type: "preservation"
+  suite_file: "src/paul_open_model/evaluation/data/preservation_suite_v1.json"
+
+model:
+  hf_model_id: "google/gemma-4-E4B-it"
+  architecture: "gemma4"
+  parameter_count: "4.5B"
+  quantization:
+    load_in_4bit: true
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_use_double_quant: true
+    compute_dtype: "float16"
+  device_map: "auto"
+
+sampling:
+  max_new_tokens: 256
+  temperature: 0.7
+  top_p: 0.9
+  do_sample: true
+  enable_thinking: false
+
+output:
+  dir: "results/preservation"
+  export_json: true
+  export_csv: true
+  export_markdown: true
+
+domains:
+  - teacher_assistance
+  - scientific_explanation
+  - life_sciences
+  - indic_understanding
+  - empathy_human_centered
+
+languages:
+  - en
+  - hi
+  - bn
+  - ta
+  - te
+  - mr
+  - gu
