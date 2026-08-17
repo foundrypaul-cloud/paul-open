@@ -8,9 +8,9 @@ training:
   dpo_config:
     output_dir: "./results"
     num_train_epochs: 1
-    per_device_train_batch_size: 2
-    per_device_eval_batch_size: 2
-    gradient_accumulation_steps: 4
+    per_device_train_batch_size: 1
+    per_device_eval_batch_size: 1
+    gradient_accumulation_steps: 8
     learning_rate: 5.0e-7
     beta: 0.1
     max_length: 4096
