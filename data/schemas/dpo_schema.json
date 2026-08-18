@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PAUL_DPO_Preference_Pair",
+  "description": "Schema for Direct Preference Optimization (DPO) preference pairs in PAUL Open Model Phase 3.",
+  "type": "object",
+  "required": [
+    "id",
+    "track",
+    "domain",
+    "language",
+    "prompt",
+    "chosen",
+    "rejected",
+    "rejection_reason",
+    "metadata"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^paul_dpo_[a-z0-9_]+$",
+      "description": "Unique identifier for the DPO preference pair."
+    },
+    "track": {
+      "type": "string",
+      "enum": [
+        "socratic_tutoring",
+        "concise_stem_calc",
+        "clean_translation",
+        "indic_pedagogical_tone"
+      ],
+      "description": "Behavioral adaptation track targeted by this preference pair."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Subject domain (e.g. physics, chemistry, biology, mathematics, education)."
+    },
+    "subdomain": {
+      "type": "string",
+      "description": "Specific topic or conceptual area."
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-z]{2}(-[a-z]{2})?$",
+      "description": "ISO-639-1 language code."
+    },
+    "prompt": {
+      "type": "string",
+      "minLength": 5,
+      "description": "User query or multi-turn prompt context."
+    },
+    "chosen": {
+      "type": "string",
+      "minLength": 5,
+      "description": "Preferred assistant completion demonstrating target behavior."
+    },
+    "rejected": {
+      "type": "string",
+      "minLength": 5,
+      "description": "Dispreferred completion exhibiting anti-pattern (e.g. lecture dump, preamble verbosity, meta-talk)."
+    },
+    "rejection_reason": {
+      "type": "string",
+      "enum": [
+        "lecture_dumping_in_socratic_mode",
+        "preamble_verbosity_truncation",
+        "conversational_meta_talk_in_translation",
+        "unnatural_or_archaic_indic_register",
+        "multi_question_firing",
+        "missing_units_or_incomplete_calculation",
+        "unsolicited_transliteration"
+      ],
+      "description": "Primary behavioral failure category demonstrated by the rejected response."
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "difficulty",
+        "human_verified",
+        "benchmark_leakage_checked"
+      ],
+      "properties": {
+        "difficulty": {
+          "type": "string",
+          "enum": ["basic", "intermediate", "advanced"],
+          "description": "Conceptual difficulty level."
+        },
+        "human_verified": {
+          "type": "boolean",
+          "description": "Whether this preference pair has received human expert sign-off."
+        },
+        "benchmark_leakage_checked": {
+          "type": "boolean",
+          "description": "Whether this pair has passed automated benchmark leakage checks."
+        },
+        "reviewer_id": {
+          "type": "string",
+          "description": "Identifier of the human reviewer."
+        },
+        "review_status": {
+          "type": "string",
+          "enum": ["pending", "in_review", "approved", "rejected", "needs_revision"],
+          "description": "Human review workflow status."
+        },
+        "review_notes": {
+          "type": "string",
+          "description": "Notes from human reviewer explaining the preference distinction."
+        },
+        "review_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 UTC timestamp of human review."
+        },
+        "approved": {
+          "type": "boolean",
+          "description": "Final approval boolean for training inclusion."
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PAUL_SFT_Example",
+  "description": "Schema for Supervised Fine-Tuning (SFT) training examples in PAUL Open Model Phase 3.",
+  "type": "object",
+  "required": [
+    "id",
+    "track",
+    "domain",
+    "language",
+    "messages",
+    "metadata"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^paul_sft_[a-z0-9_]+$",
+      "description": "Unique identifier for the SFT training example."
+    },
+    "track": {
+      "type": "string",
+      "enum": [
+        "socratic_tutoring",
+        "concise_stem_calc",
+        "clean_translation",
+        "indic_pedagogical_tone",
+        "preservation_core"
+      ],
+      "description": "Behavioral adaptation track or preservation category."
+    },
+    "domain": {
+      "type": "string",
+      "description": "Subject domain (e.g. physics, chemistry, biology, mathematics, education)."
+    },
+    "subdomain": {
+      "type": "string",
+      "description": "Specific topic or conceptual area (e.g. kinematics, thermodynamics, genetics)."
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-z]{2}(-[a-z]{2})?$",
+      "description": "ISO-639-1 language code (e.g. en, hi, bn, ta, te, mr, gu, kn, ml, pa, or translation pair like en-to-hi)."
+    },
+    "messages": {
+      "type": "array",
+      "minItems": 2,
+      "description": "Chronological list of conversation turns in chat format.",
+      "items": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["system", "user", "assistant"],
+            "description": "Role of the turn participant."
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Textual content of the turn."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": [
+        "difficulty",
+        "human_verified",
+        "benchmark_leakage_checked"
+      ],
+      "properties": {
+        "target_grade": {
+          "type": "string",
+          "description": "Target educational tier (e.g. primary, middle_school, high_school, undergraduate, teacher)."
+        },
+        "difficulty": {
+          "type": "string",
+          "enum": ["basic", "intermediate", "advanced"],
+          "description": "Conceptual difficulty level."
+        },
+        "misconception_tag": {
+          "type": "string",
+          "description": "Tag identifying the specific misconception being addressed (for Socratic track)."
+        },
+        "human_verified": {
+          "type": "boolean",
+          "description": "Whether this example has received human expert sign-off."
+        },
+        "benchmark_leakage_checked": {
+          "type": "boolean",
+          "description": "Whether this example has passed the automated benchmark leakage check."
+        },
+        "reviewer_id": {
+          "type": "string",
+          "description": "Identifier of the human reviewer."
+        },
+        "review_status": {
+          "type": "string",
+          "enum": ["pending", "in_review", "approved", "rejected", "needs_revision"],
+          "description": "Human review workflow status."
+        },
+        "review_notes": {
+          "type": "string",
+          "description": "Notes from human reviewer."
+        },
+        "review_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO-8601 UTC timestamp of human review."
+        },
+        "approved": {
+          "type": "boolean",
+          "description": "Final approval boolean for training inclusion."
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
