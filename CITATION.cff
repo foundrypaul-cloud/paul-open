@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software or model, please cite it as below."
+authors:
+  - name: "Paul Foundry Technologies Private Limited"
+title: "PAUL Open Model"
+version: 0.1.0
+date-released: 2026-08-18
+url: "https://github.com/foundrypaul-cloud/paul-open"
+publisher: "Paul Foundry Research Wing"

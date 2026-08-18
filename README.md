@@ -12,9 +12,78 @@ Research project for specializing [Google Gemma 4](https://ai.google.dev/gemma) 
 > * **Canonical reproducibility notebook**: `notebooks/paul_open_model_training_colab.ipynb`
 > * **Dataset schemas**: `data/schemas/sft_schema.json`, `data/schemas/dpo_schema.json`
 
-## Reproducibility
+## Research Reproducibility
 
-The committed reproducibility notebook (`notebooks/paul_open_model_training_colab.ipynb`) contains the complete Phase 0–11 workflow. The required datasets and manifest are now permanently committed, ensuring that the training pipeline and evaluation splits can be exactly reproduced.
+The repository maintains strict separation between source code, training data, and evaluation holdouts to ensure scientific reproducibility. The complete training and evaluation methodology is documented and validated against the documented checks.
+
+- **Reproducibility Workflow:** [notebooks/paul_open_model_training_colab.ipynb](notebooks/paul_open_model_training_colab.ipynb) provides the reference training run and reproducible pipeline.
+- **Documentation:** The methodology is defined in the [Training Guide](docs/TRAINING_GUIDE.md) and [Training Data Specification](docs/TRAINING_DATA_SPECIFICATION.md).
+- **Data Schemas:** [data/schemas/](data/schemas/)
+- **Training Data:** The finalized training corpus ([data/train/](data/train/)) is permanently committed and isolated from the evaluation holdout.
+- **Evaluation Holdout:** A strict evaluation holdout is maintained for benchmark validation as part of the documented methodology.
+- **Generated Model Artifacts:** The final observed results and checkpoints are strictly tracked and preserved.
+
+## Research Identity
+
+PAUL Open is an open research initiative of Paul Foundry Technologies Private Limited, created to explore and develop AI systems that can contribute to research, knowledge, education, and the quality of human life.
+
+PAUL Open is the first open initiation of Paul Foundry's broader research vision: building an open, AI-first environment where researchers, developers, and educators can experiment, collaborate, and build across diverse fields of knowledge.
+
+**CURRENT:**
+- PAUL Open is an open research/model initiative.
+- This repository contains the reference PAUL Open Model workflow, datasets, schemas, and reproducibility documentation.
+
+**FUTURE:**
+- Paul Foundry intends to expand this direction into a broader open research ecosystem.
+- Academy by Paul Foundry is a planned AI-first research and educational initiative associated with this broader vision.
+
+---
+
+## Research Ecosystem
+
+PAUL Open sits at the foundation of our long-term research direction:
+
+`PAUL Open` → `Open research models` → `Reproducible experiments` → `Research tooling` → `Researchers + developers + educators` → `Broader Paul Foundry research ecosystem` → `Academy by Paul Foundry`
+
+*Note: The Academy by Paul Foundry is a planned future initiative.*
+
+---
+
+## Research Philosophy
+
+Paul Foundry's research direction explores how increasingly capable AI systems can become useful instruments for human research, discovery, learning, and knowledge creation, while maintaining transparency, reproducibility, and responsible development.
+
+---
+
+## Provenance
+
+The PAUL Open Model follows a strict, documented provenance chain:
+
+`PAUL Open Model` → `Paul Foundry research implementation` → `SFT` → `DPO` → `Evaluation` → `Model artifact`
+
+**Base model:** `google/gemma-4-E4B-it`
+
+PAUL Open Model is an independently developed Paul Foundry research model derived and fine-tuned from the stated base model. Paul Foundry is the developer and originating research organization for PAUL Open. Google is the upstream origin for the Gemma base model. PAUL Open is not an official Google model and is not affiliated with, endorsed by, or developed in collaboration with Google or Google DeepMind.
+
+---
+
+## How to Cite
+
+**Recommended citation**
+If you utilize this workflow or model in your research, please cite:
+
+```text
+Paul Foundry Technologies Private Limited.
+"PAUL Open Model."
+Paul Foundry Research Wing, 2026.
+
+Repository: https://github.com/foundrypaul-cloud/paul-open
+```
+
+For downstream projects, Paul Foundry recommends acknowledging provenance with language such as:
+> "Based on PAUL Open Model by Paul Foundry Technologies Private Limited."
+
+*This is recommended attribution unless required by the applicable license.*
 
 ---
 
@@ -151,6 +220,8 @@ uv run mypy src/
 
 ---
 
-## License
+## License Boundary
 
-This project's original code and configuration are licensed under the **Apache License 2.0** (see [LICENSE](LICENSE)). Third-party models and datasets remain subject to their respective original licenses.
+The repository's source-code layer is distributed under the **Apache License 2.0** (see [LICENSE](LICENSE)), subject to the separate licenses and terms applicable to third-party components, datasets, and model materials.
+
+Please refer to [NOTICE.md](NOTICE.md) for detailed attribution and third-party provenance. Third-party models (including the google/gemma-4-E4B-it base model) and datasets retain their respective licenses and attribution requirements.
