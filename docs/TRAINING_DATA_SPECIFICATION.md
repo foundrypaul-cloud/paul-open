@@ -165,54 +165,40 @@ DPO pairs reinforce the distinction between optimal educational behavior and rea
 
 ---
 
-## 6. Initial Pilot Dataset Design (20 SFT + 10 DPO)
+## 6. Finalized Dataset Specification
 
-The pilot batch covers all four target behaviors and uses concepts that have been audited and verified distinct from all 110 frozen evaluation cases.
+The finalized training corpus covers all target behaviors and uses concepts that have been thoroughly audited to remain distinct from all frozen evaluation cases.
 
-### Pilot SFT Composition (20 Examples)
-- **Track 1: Socratic Tutoring (6 examples)**
-  - `PILOT-SFT-SOC-001` (`en`, physics): Pascal's hydrostatic paradox (student believes a wider container with the same water depth exerts more pressure at the bottom).
-  - `PILOT-SFT-SOC-002` (`hi`, chemistry): Evaporation vs boiling misconception (student believes liquids only vaporize at $100^\circ\text{C}$).
-  - `PILOT-SFT-SOC-003` (`en`, math): Fraction addition misconception ($1/2 + 1/3 = 2/5$).
-  - `PILOT-SFT-SOC-004` (`bn`, biology): Blood circulation vessel misconception (arteries vs veins and pulmonary exceptions).
-  - `PILOT-SFT-SOC-005` (`en`, astronomy, multi-turn): Moon phases vs lunar eclipses (student believes phases are caused by Earth's shadow).
-  - `PILOT-SFT-SOC-006` (`ta`, optics): Plane mirror field of view misconception (student believes moving back shows more of their body).
-- **Track 2: Concise Numerical STEM (4 examples)**
-  - `PILOT-SFT-NUM-001` (`en`, physics): Kinetic energy calculation ($m=1200\text{ kg}, v=20\text{ m/s}$).
-  - `PILOT-SFT-NUM-002` (`hi`, physics): Electrical resistance from resistivity ($R = \rho L / A$).
-  - `PILOT-SFT-NUM-003` (`en`, chemistry): Ideal gas law pressure calculation ($P = nRT / V$).
-  - `PILOT-SFT-NUM-004` (`te`, physics): Gravitational acceleration at altitude ($g' = g \frac{R^2}{(R+h)^2}$).
-- **Track 3: Clean Direct Translation (4 examples)**
-  - `PILOT-SFT-TRN-001` (`hi`, bio): DNA replication fork and helicase enzyme unzipping.
-  - `PILOT-SFT-TRN-002` (`bn`, physics): Nuclear fission chain reactions and control rods.
-  - `PILOT-SFT-TRN-003` (`ta`, chem): Le Chatelier's principle and chemical equilibrium shift.
-  - `PILOT-SFT-TRN-004` (`mr`, physics): Total internal reflection and optical fibers.
-- **Track 4: Natural Indic Pedagogical Tone (3 examples)**
-  - `PILOT-SFT-IND-001` (`hi`, physics): Acoustic resonance in closed vs open organ pipes.
-  - `PILOT-SFT-IND-002` (`bn`, chem): Electronegativity periodic table trends.
-  - `PILOT-SFT-IND-003` (`te`, bio): Synaptic transmission and chemical neurotransmitters.
-- **Track 5: Capability Preservation (3 examples)**
-  - `PILOT-SFT-PRS-001` (`en`, teacher): Formative 4-question check on enzyme lock-and-key specificity.
-  - `PILOT-SFT-PRS-002` (`hi`, science): Explaining Doppler effect in acoustic sirens.
-  - `PILOT-SFT-PRS-003` (`en`, safety): Handling student asking for AI to write an entire graded essay.
+### SFT Corpus
+- **180 total records** used for supervised fine-tuning.
 
-### Pilot DPO Composition (10 Pairs)
-- **Socratic (4 pairs)**:
-  - `PILOT-DPO-SOC-001` (`en`, physics): Sound propagation speed in air vs dense steel solids.
-  - `PILOT-DPO-SOC-002` (`hi`, physics): Conservation of mechanical energy at pendulum peak.
-  - `PILOT-DPO-SOC-003` (`bn`, biology): Plant mineral nutrition from soil vs carbon assimilation.
-  - `PILOT-DPO-SOC-004` (`en`, physics): Heat thermal energy vs temperature misconception (iceberg at $0^\circ\text{C}$ vs cup of tea at $100^\circ\text{C}$).
-- **Numerical (2 pairs)**:
-  - `PILOT-DPO-NUM-001` (`en`, physics): Step-down transformer turns ratio and voltage ($V_s = V_p \frac{N_s}{N_p}$).
-  - `PILOT-DPO-NUM-002` (`hi`, physics): Specific heat capacity thermal energy ($Q=mc\Delta T$).
-- **Translation (2 pairs)**:
-  - `PILOT-DPO-TRN-001` (`ta`, biology): Mitochondria ATP synthase matrix paragraph.
-  - `PILOT-DPO-TRN-002` (`te`, physics): Newton's third law action-reaction pairs.
-- **Indic Tone (2 pairs)**:
-  - `PILOT-DPO-IND-001` (`hi`, physics): Magnetic field around straight conductor (Right-hand thumb rule).
-  - `PILOT-DPO-IND-002` (`mr`, biology): Photosynthesis Calvin cycle in stroma.
+### DPO Corpus
+- **65 total records**
+- **55 records** used for DPO training.
+- **10 records** permanently held out for deterministic evaluation.
 
----
+#### Permanent Evaluation Holdout IDs
+The DPO training subset is formed by strictly excluding these 10 exact record IDs, which are permanently reserved for final evaluation:
+- `paul_dpo_ind_001`
+- `paul_dpo_ind_007`
+- `paul_dpo_ind_013`
+- `paul_dpo_ind_019`
+- `paul_dpo_soc_005`
+- `paul_dpo_soc_011`
+- `paul_dpo_soc_017`
+- `paul_dpo_stem_003`
+- `paul_dpo_stem_009`
+- `paul_dpo_stem_015`
+
+The pipeline explicitly verifies zero overlap between SFT IDs and DPO IDs before preparing the DPO split.
+
+### Dataset Integrity Verification
+The training pipeline enforces strict SHA-256 integrity checks (Phase 1) on the reproducibility assets prior to loading any data:
+- **SFT SHA-256**: `4c48d5077a5a6df0da7fed592c17dfd00f172da0f4a00ece0c7b682d7e2ef875`
+- **DPO SHA-256**: `a613e476cb161ffaddd1638bbd302d8b63c4534e4dabc33936756278cebd245e`
+- **Manifest SHA-256**: `36414ac115f075bc8845f274303705c806e33962529624a1d567d774f9473caa`
+
+The manifest is located at `data/train/generation_progress_v2.json`.
 
 ## 7. Data-Quality Pipeline & Contamination Prevention Protocol
 

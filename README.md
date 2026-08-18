@@ -2,7 +2,19 @@
 
 Research project for specializing [Google Gemma 4](https://ai.google.dev/gemma) open-weight models for Indian/multilingual languages, science education, Socratic tutoring, teacher assistance, human-centered empathy, and life sciences research.
 
-> **Status**: Scaffolding & Architecture Phase — no training code executed, no model weights downloaded, no datasets downloaded yet.
+> **Status**: PAUL Open Model training pipeline is implemented.
+> * **Reference run ID**: `paul_gemma4_e4b_25d8e53a`
+> * **Base model**: `google/gemma-4-E4B-it`
+> * **SFT corpus**: 180 records
+> * **DPO corpus**: 65 records
+> * **DPO training subset**: 55 records
+> * **Permanent evaluation holdout**: 10 records
+> * **Canonical reproducibility notebook**: `notebooks/paul_open_model_training_colab.ipynb`
+> * **Dataset schemas**: `data/schemas/sft_schema.json`, `data/schemas/dpo_schema.json`
+
+## Reproducibility
+
+The committed reproducibility notebook (`notebooks/paul_open_model_training_colab.ipynb`) contains the complete Phase 0–11 workflow. The required datasets and manifest are now permanently committed, ensuring that the training pipeline and evaluation splits can be exactly reproduced.
 
 ---
 
