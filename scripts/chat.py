@@ -7,6 +7,7 @@ import yaml
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
+from paul_open_model.models.quantization import get_quantization_config
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Chat with a Gemma 4 model")
@@ -22,7 +23,9 @@ def main() -> None:
 
     with open(args.model, "r") as f:
         config = yaml.safe_load(f)
-    hf_model_id = config.get("hf_model_id")
+    model_cfg = config.get("model", {})
+    hf_model_id = model_cfg.get("hf_model_id")
+    quant_cfg = model_cfg.get("quantization")
 
     print(f"Loading configuration from {args.model}...")
     print(f"Loading base model: {hf_model_id}")
@@ -32,10 +35,20 @@ def main() -> None:
         # Using bfloat16 for GPU, fallback to float16
         dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
         
+        bnb_config = get_quantization_config(quant_cfg, dtype)
+        
+        print(f"Device map: auto")
+        print(f"Dtype: {dtype}")
+        if bnb_config:
+            print(f"Quantization: 4-bit (type: {bnb_config.bnb_4bit_quant_type})")
+        else:
+            print(f"Quantization: None")
+            
         model = AutoModelForCausalLM.from_pretrained(
             hf_model_id,
             torch_dtype=dtype,
-            device_map="auto"
+            device_map="auto",
+            quantization_config=bnb_config
         )
         
         if args.mode in ["sft", "dpo"]:
