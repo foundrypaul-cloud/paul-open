@@ -62,6 +62,7 @@ def main() -> None:
     parser.add_argument("--output-dir", default=None, help="Output directory")
     parser.add_argument("--adapter", default=None, help="Path to pre-trained SFT adapter")
     parser.add_argument("--dry-run", action="store_true", help="Perform pre-flight validation without training")
+    parser.add_argument("--smoke-test", action="store_true", help="Perform a 1-step training loop to test memory and backward pass")
     args = parser.parse_args()
 
     print("1. Loading dataset...")
@@ -119,49 +120,40 @@ def main() -> None:
 
     print("5. Loading SFT Adapter...")
     if not args.adapter:
-        print("CRITICAL ERROR: --adapter must be specified for DPO V2 training (requires SFT adapter).")
-        sys.exit(1)
+        raise ValueError("--adapter must be specified for DPO V2 training (requires SFT adapter).")
         
     if not os.path.isdir(args.adapter):
-        print(f"CRITICAL ERROR: Real SFT Adapter directory not found at {args.adapter}.")
-        sys.exit(1)
+        raise FileNotFoundError(f"Real SFT Adapter directory not found at {args.adapter}.")
         
     adapter_config_path = os.path.join(args.adapter, "adapter_config.json")
     if not os.path.exists(adapter_config_path):
-        print(f"CRITICAL ERROR: adapter_config.json not found in {args.adapter}.")
-        sys.exit(1)
+        raise FileNotFoundError(f"adapter_config.json not found in {args.adapter}.")
         
     try:
         with open(adapter_config_path, "r") as f:
             adapter_config = json.load(f)
     except Exception as e:
-        print(f"CRITICAL ERROR: Could not parse adapter_config.json: {e}")
-        sys.exit(1)
+        raise ValueError(f"Could not parse adapter_config.json: {e}")
         
     safetensors_path = os.path.join(args.adapter, "adapter_model.safetensors")
     if not os.path.exists(safetensors_path):
-        print(f"CRITICAL ERROR: adapter_model.safetensors not found in {args.adapter}.")
-        sys.exit(1)
+        raise FileNotFoundError(f"adapter_model.safetensors not found in {args.adapter}.")
         
     if os.path.getsize(safetensors_path) == 0:
-        print(f"CRITICAL ERROR: adapter_model.safetensors is empty in {args.adapter}.")
-        sys.exit(1)
+        raise ValueError(f"adapter_model.safetensors is empty in {args.adapter}.")
 
     adapter_base_model = adapter_config.get("base_model_name_or_path")
     if not adapter_base_model:
-        print("CRITICAL ERROR: base_model_name_or_path missing from adapter_config.json.")
-        sys.exit(1)
+        raise ValueError("base_model_name_or_path missing from adapter_config.json.")
         
     if adapter_base_model != model_id:
-        print(f"CRITICAL ERROR: Adapter base model mismatch. Expected {model_id}, found {adapter_base_model}.")
-        sys.exit(1)
+        raise ValueError(f"Adapter base model mismatch. Expected {model_id}, found {adapter_base_model}.")
         
     print(f"Loading real adapter from: {args.adapter}")
     try:
         model = PeftModel.from_pretrained(model, args.adapter, is_trainable=True)
     except Exception as e:
-        print(f"CRITICAL ERROR: Failed to load adapter model with PeftModel.from_pretrained: {e}")
-        sys.exit(1)
+        raise RuntimeError(f"Failed to load adapter model with PeftModel.from_pretrained: {e}")
 
     print("6. Constructing DPOTrainer...")
     training_args = DPOConfig(
@@ -179,6 +171,11 @@ def main() -> None:
         optim=dpo_cfg.get("optim", "paged_adamw_8bit"),
         seed=dpo_cfg.get("seed", 42),
     )
+    
+    if args.smoke_test:
+        training_args.max_steps = 1
+        training_args.num_train_epochs = 1
+        print("SMOKE TEST MODE ENABLED: Forcing max_steps=1 to verify forward/backward/memory safely.")
 
     trainer = DPOTrainer(
         model=model,
@@ -191,12 +188,18 @@ def main() -> None:
         print("\n=== DRY RUN VALIDATION SUCCESSFUL ===")
         print("DPOTrainer construction: SUCCESS")
         print("Model and Adapter Loaded: SUCCESS")
-        print("Configuration is T4-compatible. Since this is a dry-run on Kaggle with the real model, actual runtime memory has been validated.")
+        print("Configuration parses correctly.")
         print("Training executed: NO")
         sys.exit(0)
         
     print("Starting DPO training...")
     trainer.train()
+    
+    if args.smoke_test:
+        print("\n=== SMOKE TEST SUCCESSFUL ===")
+        print("1-step optimization completed successfully.")
+        print("This verifies memory, forward, and backward passes.")
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
