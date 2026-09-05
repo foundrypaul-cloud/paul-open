@@ -220,7 +220,6 @@ def main() -> None:
         print("\n=== SMOKE TEST SUCCESSFUL ===")
         print("1-step optimization completed successfully.")
         
-        import torch
         if torch.cuda.is_available():
             device_idx = torch.cuda.current_device()
             gpu_name = torch.cuda.get_device_name(device_idx)
