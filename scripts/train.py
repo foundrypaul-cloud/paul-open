@@ -175,8 +175,9 @@ def main() -> None:
         raise RuntimeError(f"Failed to load adapter model with PeftModel.from_pretrained: {e}")
 
     print("6. Constructing DPOTrainer...")
+    output_dir = args.output_dir or dpo_cfg.get("output_dir", "./results/dpo_v2")
     training_args = DPOConfig(
-        output_dir=dpo_cfg.get("output_dir", "./results/dpo_v2"),
+        output_dir=output_dir,
         beta=dpo_cfg.get("beta", 0.1),
         max_length=dpo_cfg.get("max_length", 4096),
         per_device_train_batch_size=dpo_cfg.get("per_device_train_batch_size", 1),
