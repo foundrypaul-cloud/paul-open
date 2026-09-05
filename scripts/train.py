@@ -105,11 +105,29 @@ def main() -> None:
     
     print("4. Loading model and tokenizer...")
     model_id = model_cfg.get("hf_model_id")
-    model_kwargs = {"device_map": "auto"}
+    
+    # GPU Placement Logic
+    model_kwargs = {}
+    ref_kwargs = {}
+    if has_gpu:
+        num_gpus = torch.cuda.device_count()
+        if num_gpus >= 2:
+            print(f"Detected {num_gpus} GPUs. Pinning Policy to GPU 0 and Reference to GPU 1.")
+            model_kwargs["device_map"] = {"": 0}
+            ref_kwargs["device_map"] = {"": 1}
+        else:
+            raise RuntimeError(f"Detected {num_gpus} GPU(s). DPO V2 architecture requires at least 2 CUDA GPUs for explicit policy/reference placement.")
+    else:
+        print("No GPU detected. Using CPU/dry-run behavior.")
+        model_kwargs["device_map"] = "auto"
+        ref_kwargs["device_map"] = "auto"
+
     if bnb_config:
         model_kwargs["quantization_config"] = bnb_config
+        ref_kwargs["quantization_config"] = bnb_config
     else:
         model_kwargs["torch_dtype"] = torch.float32
+        ref_kwargs["torch_dtype"] = torch.float32
 
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     print(f"Loading {model_id}...")
@@ -152,7 +170,7 @@ def main() -> None:
     print("Loading explicit Reference Model...")
     ref_model = AutoModelForCausalLM.from_pretrained(
         model_id,
-        **model_kwargs
+        **ref_kwargs
     )
     ref_model = PeftModel.from_pretrained(ref_model, args.adapter, adapter_name="sft", is_trainable=False)
     for p in ref_model.parameters():
@@ -204,6 +222,11 @@ def main() -> None:
         train_dataset=train_dataset,
         processing_class=tokenizer,
     )
+    
+    if args.smoke_test and has_gpu:
+        # Reset peak memory stats before training step to isolate training memory
+        for i in range(torch.cuda.device_count()):
+            torch.cuda.reset_peak_memory_stats(i)
 
     if args.dry_run:
         print("\n=== DRY RUN VALIDATION SUCCESSFUL ===")
@@ -221,15 +244,17 @@ def main() -> None:
         print("1-step optimization completed successfully.")
         
         if torch.cuda.is_available():
-            device_idx = torch.cuda.current_device()
-            gpu_name = torch.cuda.get_device_name(device_idx)
-            total_memory = torch.cuda.get_device_properties(device_idx).total_memory / (1024**3)
-            peak_allocated = torch.cuda.max_memory_allocated(device_idx) / (1024**3)
-            peak_reserved = torch.cuda.max_memory_reserved(device_idx) / (1024**3)
-            print(f"GPU Model: {gpu_name}")
-            print(f"Total GPU Memory: {total_memory:.2f} GB")
-            print(f"Peak Allocated GPU Memory: {peak_allocated:.2f} GB")
-            print(f"Peak Reserved GPU Memory: {peak_reserved:.2f} GB")
+            print("--- Per-GPU Memory Report ---")
+            for i in range(torch.cuda.device_count()):
+                gpu_name = torch.cuda.get_device_name(i)
+                total_memory = torch.cuda.get_device_properties(i).total_memory / (1024**3)
+                peak_allocated = torch.cuda.max_memory_allocated(i) / (1024**3)
+                peak_reserved = torch.cuda.max_memory_reserved(i) / (1024**3)
+                print(f"GPU {i} ({gpu_name}):")
+                print(f"  Total VRAM: {total_memory:.2f} GB")
+                print(f"  Peak Allocated: {peak_allocated:.2f} GB")
+                print(f"  Peak Reserved: {peak_reserved:.2f} GB")
+            print("-----------------------------")
             
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         print(f"Trainable Parameters: {trainable_params:,}")
