@@ -149,9 +149,28 @@ def main() -> None:
     if adapter_base_model != model_id:
         raise ValueError(f"Adapter base model mismatch. Expected {model_id}, found {adapter_base_model}.")
         
-    print(f"Loading real adapter from: {args.adapter}")
+    print("Loading explicit Reference Model...")
+    ref_model = AutoModelForCausalLM.from_pretrained(
+        model_id,
+        **model_kwargs
+    )
+    ref_model = PeftModel.from_pretrained(ref_model, args.adapter, adapter_name="sft", is_trainable=False)
+    for p in ref_model.parameters():
+        p.requires_grad = False
+    ref_model.eval()
+
+    print("Loading Policy Model and independent DPO adapter...")
+    import shutil
+    import uuid
+    import tempfile
+    
+    # We clone the SFT adapter to initialize the DPO adapter.
+    # This allows DPO to equal SFT + delta, making the initial policy base + SFT.
+    temp_dpo_dir = os.path.join(tempfile.gettempdir(), f"dpo_adapter_init_{uuid.uuid4().hex[:8]}")
+    shutil.copytree(args.adapter, temp_dpo_dir)
+    
     try:
-        model = PeftModel.from_pretrained(model, args.adapter, is_trainable=True)
+        model = PeftModel.from_pretrained(model, temp_dpo_dir, adapter_name="dpo", is_trainable=True)
     except Exception as e:
         raise RuntimeError(f"Failed to load adapter model with PeftModel.from_pretrained: {e}")
 
@@ -179,6 +198,7 @@ def main() -> None:
 
     trainer = DPOTrainer(
         model=model,
+        ref_model=ref_model,
         args=training_args,
         train_dataset=train_dataset,
         processing_class=tokenizer,
@@ -198,6 +218,28 @@ def main() -> None:
     if args.smoke_test:
         print("\n=== SMOKE TEST SUCCESSFUL ===")
         print("1-step optimization completed successfully.")
+        
+        import torch
+        if torch.cuda.is_available():
+            device_idx = torch.cuda.current_device()
+            gpu_name = torch.cuda.get_device_name(device_idx)
+            total_memory = torch.cuda.get_device_properties(device_idx).total_memory / (1024**3)
+            peak_allocated = torch.cuda.max_memory_allocated(device_idx) / (1024**3)
+            peak_reserved = torch.cuda.max_memory_reserved(device_idx) / (1024**3)
+            print(f"GPU Model: {gpu_name}")
+            print(f"Total GPU Memory: {total_memory:.2f} GB")
+            print(f"Peak Allocated GPU Memory: {peak_allocated:.2f} GB")
+            print(f"Peak Reserved GPU Memory: {peak_reserved:.2f} GB")
+            
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        print(f"Trainable Parameters: {trainable_params:,}")
+        
+        import hashlib
+        safetensors_path = os.path.join(args.adapter, "adapter_model.safetensors")
+        with open(safetensors_path, "rb") as f:
+            post_hash = hashlib.sha256(f.read()).hexdigest()
+        print(f"Original SFT Adapter Hash (Post-Train): {post_hash}")
+        
         print("This verifies memory, forward, and backward passes.")
         sys.exit(0)
 
