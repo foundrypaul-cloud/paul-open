@@ -232,6 +232,8 @@ class Movable:
 
 
 class FakeTorch:
+    float32 = "float32"
+
     @staticmethod
     def is_tensor(value):
         return isinstance(value, Movable)
@@ -249,19 +251,46 @@ def test_cross_device_copy_does_not_mutate_policy_batch() -> None:
 def test_trainer_avoids_accelerate_and_implicit_reference() -> None:
     reference = FakeModel(1, [("x.lora_A.sft.weight", FakeTensor(1))])
 
+    class Data:
+        def __init__(self):
+            self.moves = []
+
+        def to(self, dtype):
+            self.moves.append(dtype)
+            return self
+
+    class Policy:
+        def __init__(self):
+            self.peft_config = {"dpo": object()}
+            self.deleted = []
+            self.trainable = SimpleNamespace(requires_grad=True, data=Data())
+
+        def parameters(self):
+            return [self.trainable]
+
+        def delete_adapter(self, name):
+            self.deleted.append(name)
+            self.peft_config.pop(name)
+
     class Base:
-        def __init__(self, *args, ref_model=None, **kwargs):
+        def __init__(self, model, *args, ref_model=None, **kwargs):
             assert ref_model is None
+            # Reproduce TRL 1.10's named-adapter assumption and implicit copy.
+            model.peft_config["ref"] = model.peft_config["default"]
             self.ref_model = None
             self.precompute_ref_logps = False
             self.ld_alpha = None
             self.accelerator = SimpleNamespace(device="cuda:0")
 
+    policy = Policy()
     trainer = external_reference_trainer_class(
         Base, reference, "cuda:1", FakeTorch, lambda *_: None
-    )(ref_model=reference)
+    )(model=policy, ref_model=reference)
     assert trainer.ref_model is reference
     assert trainer._external_reference is reference
+    assert policy.peft_config.keys() == {"dpo"}
+    assert policy.deleted == ["ref"]
+    assert policy.trainable.data.moves == [FakeTorch.float32]
 
 
 @pytest.mark.skipif(not HAS_TORCH, reason="CPU PyTorch is unavailable")
