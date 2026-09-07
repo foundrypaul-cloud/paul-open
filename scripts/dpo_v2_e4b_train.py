@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -24,6 +25,7 @@ from scripts.dpo_v2_e4b_smoke import (
     assert_trainability,
     external_reference_trainer_class,
     load_config,
+    move_reference_inputs,
     validate_adapter,
     validate_dataset,
     validate_hardware,
@@ -33,8 +35,9 @@ from scripts.dpo_v2_e4b_smoke import (
 
 ADAPTER_FILENAMES = ("adapter_config.json", "adapter_model.safetensors")
 CHECKPOINT_PROVENANCE_FILENAME = "checkpoint_provenance.json"
+SOURCE_REVISION_ENV = "PAUL_SOURCE_REVISION"
 
-# This is the independently approved production contract.  Runtime inputs are
+# This is the independently approved production contract. Runtime inputs are
 # projected onto this single representation before any artifact validation.
 LOCKED_EXPERIMENT = {
     "experiment": {
@@ -59,40 +62,63 @@ LOCKED_EXPERIMENT = {
             "bias": "none",
             "modules_to_save": None,
             "target_module_suffixes": [
-                "q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"
-            ],
+                "q_proj",
+                "k_proj",
+                "v_proj",
+                "o_proj",
+                "gate_proj",
+                "up_proj",
+                "down_proj"
+            ]
         },
         "tokenizer": {
             "tokenizer_json_sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
             "chat_template_sha256": "0a2c8073c878ab1da004bee933a998606537bbb62016310352c7285c3f01c5b5",
-            "expected_max_formatted_length": 349,
+            "expected_max_formatted_length": 349
         },
         "runtime": {
-            "transformers_version": "5.15.0", "trl_version": "1.10.0",
-            "peft_version": "0.20.0", "accelerate_version": "1.14.0",
-            "bitsandbytes_version": "0.50.1", "policy_device": 0,
-            "reference_device": 1, "required_gpu_count": 2,
-            "required_gpu_name": "Tesla T4",
-        },
+            "transformers_version": "5.15.0",
+            "trl_version": "1.10.0",
+            "peft_version": "0.20.0",
+            "accelerate_version": "1.14.0",
+            "bitsandbytes_version": "0.50.1",
+            "policy_device": 0,
+            "reference_device": 1,
+            "required_gpu_count": 2,
+            "required_gpu_name": "Tesla T4"
+        }
     },
     "training": {
         "method": "dpo",
         "dpo_config": {
-            "output_dir": "./results/dpo_v2_e4b_corrective", "num_train_epochs": 4,
-            "per_device_train_batch_size": 1, "gradient_accumulation_steps": 8,
-            "learning_rate": 5e-7, "beta": 0.1, "max_length": 4096,
-            "bf16": False, "fp16": True, "gradient_checkpointing": True,
-            "optim": "paged_adamw_8bit", "seed": 42, "report_to": "none",
-            "logging_steps": 1, "save_strategy": "epoch", "save_total_limit": 1,
-            "loss_type": "sigmoid", "precompute_ref_log_probs": False,
-            "sync_ref_model": False,
-        },
+            "output_dir": "./results/dpo_v2_e4b_corrective",
+            "num_train_epochs": 4,
+            "per_device_train_batch_size": 1,
+            "gradient_accumulation_steps": 8,
+            "learning_rate": 5e-7,
+            "beta": 0.1,
+            "max_length": 4096,
+            "bf16": False,
+            "fp16": True,
+            "gradient_checkpointing": True,
+            "optim": "paged_adamw_8bit",
+            "seed": 42,
+            "report_to": "none",
+            "logging_steps": 1,
+            "save_strategy": "epoch",
+            "save_total_limit": 1,
+            "loss_type": "sigmoid",
+            "precompute_ref_log_probs": False,
+            "sync_ref_model": False
+        }
     },
     "topology": {
-        "policy_adapter": "dpo", "reference_adapter": "sft",
-        "trainable_tensor_count": 516, "external_reference": True,
-        "native_amp_owner": "Trainer/Accelerate",
-    },
+        "policy_adapter": "dpo",
+        "reference_adapter": "sft",
+        "trainable_tensor_count": 516,
+        "external_reference": True,
+        "native_amp_owner": "Trainer/Accelerate"
+    }
 }
 
 
@@ -122,16 +148,31 @@ def assert_experiment_lock(config: dict[str, Any]) -> None:
 
 
 def source_revision() -> str:
-    """Return the exact repository revision used to create checkpoints/artifacts."""
+    """Return a verified source SHA from Git, or the verified package injection."""
+    injected = os.environ.get(SOURCE_REVISION_ENV)
+    if injected is not None and re.fullmatch(r"[0-9a-f]{40}", injected) is None:
+        raise RuntimeError(f"{SOURCE_REVISION_ENV} is not a full Git commit SHA")
+
     try:
         revision = subprocess.run(
             ["git", "rev-parse", "HEAD"], check=True, capture_output=True, text=True
         ).stdout.strip()
-        subprocess.run(["git", "diff", "--quiet", "HEAD", "--"], check=True)
     except (OSError, subprocess.CalledProcessError) as error:
-        raise RuntimeError("Cannot establish a clean repository source revision") from error
+        if injected is not None:
+            return injected
+        raise RuntimeError(
+            f"Cannot establish source revision; provide verified {SOURCE_REVISION_ENV} "
+            "for a Git-less package"
+        ) from error
+
     if re.fullmatch(r"[0-9a-f]{40}", revision) is None:
         raise RuntimeError("Repository source revision is not a full Git commit SHA")
+    try:
+        subprocess.run(["git", "diff", "--quiet", "HEAD", "--"], check=True)
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise RuntimeError("Repository working tree is not clean") from error
+    if injected is not None and injected != revision:
+        raise RuntimeError(f"{SOURCE_REVISION_ENV} does not match repository HEAD")
     return revision
 
 
@@ -159,7 +200,7 @@ def validate_resume_checkpoint(checkpoint: Path, expected: dict[str, Any]) -> di
 
 
 def checkpoint_provenance_callback_class(base: type, provenance: dict[str, Any]) -> type:
-    class CheckpointProvenanceCallback(base):  # type: ignore[misc, valid-type]
+    class CheckpointProvenanceCallback(base):
         def on_save(self, args: Any, state: Any, control: Any, **kwargs: Any) -> Any:
             checkpoint = Path(args.output_dir) / f"checkpoint-{state.global_step}"
             checkpoint.mkdir(parents=True, exist_ok=True)
@@ -251,6 +292,115 @@ def native_amp_evidence(trainer: Any) -> dict[str, Any]:
         "owner": LOCKED_EXPERIMENT["topology"]["native_amp_owner"],
         "fp16_enabled": True,
         "final_scale": float(final_scale) if final_scale is not None else None,
+    }
+
+
+def direct_reference_log_probs(
+    reference: Any,
+    inputs: dict[str, Any],
+    reference_device: Any,
+    loss_device: Any,
+    torch: Any,
+    selective_log_softmax: Any,
+    ld_alpha: float | None,
+) -> tuple[Any, Any]:
+    """Independent direct implementation for the post-training reference equivalence gate."""
+    model_inputs = move_reference_inputs(inputs, reference_device, torch)
+    model_inputs["use_cache"] = False
+    with torch.no_grad():
+        output = reference(**model_inputs)
+        labels = model_inputs["input_ids"][..., 1:]
+        mask = inputs["completion_mask"].to(reference_device)[..., 1:]
+        token_logps = selective_log_softmax(output.logits[..., :-1, :], labels)
+        token_logps = token_logps.masked_fill(mask == 0, 0.0)
+        if ld_alpha is None:
+            logps = token_logps.sum(dim=1)
+        else:
+            positions = mask.cumsum(dim=1)
+            lengths = mask.sum(dim=1).long()
+            chosen_lengths, rejected_lengths = lengths.chunk(2, dim=0)
+            shared = torch.minimum(chosen_lengths, rejected_lengths)
+            shared = torch.cat((shared, shared), dim=0)
+            shared_mask = (positions > 0) & (positions <= shared.unsqueeze(1))
+            tail_mask = positions > shared.unsqueeze(1)
+            logps = (token_logps * shared_mask).sum(dim=1) + ld_alpha * (
+                token_logps * tail_mask
+            ).sum(dim=1)
+        chosen, rejected = logps.chunk(2, dim=0)
+    return chosen.to(loss_device), rejected.to(loss_device)
+
+
+def validate_post_training_reference_gate(
+    trainer: Any,
+    policy: Any,
+    reference: Any,
+    torch: Any,
+    selective_log_softmax: Any,
+) -> dict[str, Any]:
+    """Run the real post-training GPU0/GPU1 probe and independent math comparison."""
+    assert_placement(policy, 0, "policy post-training reference gate")
+    assert_placement(reference, 1, "reference post-training reference gate")
+    if trainer.ref_model is not reference:
+        raise RuntimeError("Trainer replaced the external reference before final validation")
+    if reference.training or any(parameter.requires_grad for parameter in reference.parameters()):
+        raise RuntimeError("Reference is not frozen/eval during final validation")
+
+    try:
+        batch = next(iter(trainer.get_train_dataloader()))
+    except StopIteration as error:
+        raise RuntimeError("Cannot run final reference gate on an empty dataloader") from error
+
+    policy_device = torch.device("cuda:0")
+    reference_device = torch.device("cuda:1")
+    policy_inputs = move_reference_inputs(batch, policy_device, torch)
+    policy_inputs["use_cache"] = False
+    with torch.no_grad():
+        policy_output = policy(**policy_inputs)
+    if not torch.isfinite(policy_output.logits).all().item():
+        raise RuntimeError("Non-finite policy logits in final cross-device probe")
+
+    custom_chosen, custom_rejected = trainer.compute_ref_log_probs(reference, batch)
+    direct_chosen, direct_rejected = direct_reference_log_probs(
+        reference,
+        batch,
+        reference_device,
+        custom_chosen.device,
+        torch,
+        selective_log_softmax,
+        trainer.ld_alpha,
+    )
+
+    for label, custom, direct in (
+        ("chosen", custom_chosen, direct_chosen),
+        ("rejected", custom_rejected, direct_rejected),
+    ):
+        if not torch.isfinite(custom).all().item() or not torch.isfinite(direct).all().item():
+            raise RuntimeError(f"Non-finite {label} reference log-probability in final gate")
+        torch.testing.assert_close(custom, direct, rtol=1e-6, atol=1e-6)
+
+    differences = [
+        (custom_chosen - direct_chosen).abs(),
+        (custom_rejected - direct_rejected).abs(),
+    ]
+    max_abs = max(float(value.max().item()) for value in differences)
+    relative = []
+    for custom, direct in (
+        (custom_chosen, direct_chosen),
+        (custom_rejected, direct_rejected),
+    ):
+        floor = torch.full_like(direct, 1e-12)
+        denominator = torch.maximum(direct.abs(), floor)
+        relative.append(((custom - direct).abs() / denominator).max())
+    max_rel = max(float(value.item()) for value in relative)
+    return {
+        "status": "PASS",
+        "rtol": 1e-6,
+        "atol": 1e-6,
+        "max_absolute_difference": max_abs,
+        "max_relative_difference": max_rel,
+        "policy_device": 0,
+        "reference_device": 1,
+        "reference_frozen_eval": True,
     }
 
 
@@ -398,6 +548,10 @@ def main() -> None:
                 "No trainable parameter changed; refusing to emit a final trained adapter"
             )
         completion = validate_final_trainables(trainable, initial_value_digests, torch)
+        reference_gate = validate_post_training_reference_gate(
+            trainer, policy, reference, torch, selective_log_softmax
+        )
+
         final_dir = Path(output_dir) / "final-dpo-adapter"
         trainer.save_model(str(final_dir))
         manifest = {
@@ -431,7 +585,7 @@ def main() -> None:
                 "reference_frozen_eval": "PASS",
                 "policy_reference_storage_independent": "PASS",
                 "optimizer_membership": "PASS",
-                "external_reference_math": "validated_by_pinned_regression",
+                "external_reference_math": reference_gate,
             },
             "checkpoint_provenance": resumed_from,
             "completion_gate": "PASS",
