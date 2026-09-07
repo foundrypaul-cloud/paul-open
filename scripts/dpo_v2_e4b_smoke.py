@@ -213,9 +213,29 @@ def external_reference_trainer_class(
                 raise RuntimeError("Trainer did not receive the approved reference")
             if reference.training or any(value.requires_grad for value in reference.parameters()):
                 raise RuntimeError("Reference must be frozen before trainer construction")
-            # TRL 1.10 only prepares an explicit non-None reference. A PEFT policy
-            # on this branch leaves self.ref_model None and creates no replacement.
-            super().__init__(*args, ref_model=None, **kwargs)
+            # TRL 1.10 assumes a pretrained PEFT adapter is named ``default``
+            # before creating its internal ``ref`` copy. The validated policy is
+            # deliberately named ``dpo`` instead. Expose only a temporary config
+            # alias while upstream initializes, then remove both that alias and
+            # the unused internal copy before installing the external reference.
+            policy = kwargs.get("model", args[0] if args else None)
+            if policy is None or set(policy.peft_config) != {"dpo"}:
+                raise RuntimeError("Trainer policy must contain only the approved dpo adapter")
+            temporary_default = "default" not in policy.peft_config
+            if temporary_default:
+                policy.peft_config["default"] = policy.peft_config["dpo"]
+            try:
+                super().__init__(*args, ref_model=None, **kwargs)
+            finally:
+                if "ref" in policy.peft_config:
+                    policy.delete_adapter("ref")
+                if temporary_default:
+                    policy.peft_config.pop("default", None)
+            # Pinned TRL downcasts every trainable QLoRA tensor to BF16 during
+            # construction. Restore the validated FP32 LoRA optimizer topology.
+            for parameter in policy.parameters():
+                if parameter.requires_grad:
+                    parameter.data = parameter.data.to(torch.float32)
             if self.ref_model is not None:
                 raise RuntimeError("TRL unexpectedly created an implicit reference")
             self.ref_model = reference
