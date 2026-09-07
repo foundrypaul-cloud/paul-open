@@ -1,7 +1,10 @@
 import ast
+import copy
 import hashlib
 import importlib.util
 import json
+import math
+from array import array
 from collections import namedtuple
 from pathlib import Path
 from types import SimpleNamespace
@@ -17,6 +20,18 @@ from scripts.dpo_v2_e4b_smoke import (
     move_reference_inputs,
     validate_adapter,
     validate_dataset,
+)
+from scripts.dpo_v2_e4b_train import (
+    LOCKED_EXPERIMENT,
+    assert_experiment_lock,
+    assert_optimizer_membership,
+    build_run_provenance,
+    checkpoint_provenance_callback_class,
+    resolve_adapter_directory,
+    trainable_digest,
+    trainable_value_digests,
+    validate_final_trainables,
+    validate_resume_checkpoint,
 )
 
 CONFIG = Path("configs/training/dpo_v2_e4b_corrective.yaml")
@@ -44,8 +59,57 @@ def test_exact_experiment_configuration() -> None:
         dpo["num_train_epochs"],
         dpo["per_device_train_batch_size"],
         dpo["gradient_accumulation_steps"],
-    ) == (1, 1, 8)
+    ) == (4, 1, 8)
     assert (dpo["max_length"], dpo["optim"], dpo["seed"]) == (4096, "paged_adamw_8bit", 42)
+    assert (dpo["fp16"], dpo["bf16"], dpo["gradient_checkpointing"]) == (
+        True,
+        False,
+        True,
+    )
+    assert (dpo["save_strategy"], dpo["save_total_limit"], dpo["logging_steps"]) == (
+        "epoch",
+        1,
+        1,
+    )
+    assert_experiment_lock(config)
+    assert config["experiment"]["runtime"]["bitsandbytes_version"] == "0.50.1"
+
+
+def locked_config() -> dict:
+    return {key: copy.deepcopy(LOCKED_EXPERIMENT[key]) for key in ("experiment", "training")}
+
+
+def leaf_paths(value, prefix=()):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            yield from leaf_paths(child, prefix + (key,))
+    elif isinstance(value, list):
+        yield prefix
+    else:
+        yield prefix
+
+
+@pytest.mark.parametrize("path", list(leaf_paths(locked_config())))
+def test_every_locked_configuration_field_rejects_mutation(path) -> None:
+    config = locked_config()
+    target = config
+    for key in path[:-1]:
+        target = target[key]
+    value = target[path[-1]]
+    target[path[-1]] = list(reversed(value)) if isinstance(value, list) else object()
+    with pytest.raises(RuntimeError, match="validated DPO V2 contract"):
+        assert_experiment_lock(config)
+
+
+def test_experiment_lock_rejects_missing_and_extra_fields() -> None:
+    missing = locked_config()
+    del missing["experiment"]["dataset_sha256"]
+    with pytest.raises(RuntimeError, match="validated DPO V2 contract"):
+        assert_experiment_lock(missing)
+    extra = locked_config()
+    extra["training"]["dpo_config"]["max_steps"] = 8
+    with pytest.raises(RuntimeError, match="validated DPO V2 contract"):
+        assert_experiment_lock(extra)
 
 
 def fake_adapter(tmp_path: Path, config: dict, **changes) -> Path:
@@ -80,6 +144,41 @@ def test_adapter_contract_and_rank_mismatch(tmp_path: Path) -> None:
     config["experiment"]["adapter"]["r"] = 16
     with pytest.raises(ValueError, match="r mismatch"):
         validate_adapter(path, config)
+
+
+def write_adapter_files(directory: Path, *, config: bool = True, weights: bool = True) -> None:
+    directory.mkdir(parents=True, exist_ok=True)
+    if config:
+        (directory / "adapter_config.json").write_text("{}")
+    if weights:
+        (directory / "adapter_model.safetensors").write_bytes(b"weights")
+
+
+def test_resolve_adapter_directory_at_mount_root(tmp_path: Path) -> None:
+    write_adapter_files(tmp_path)
+    assert resolve_adapter_directory(tmp_path) == tmp_path
+
+
+def test_resolve_single_nested_adapter_directory(tmp_path: Path) -> None:
+    adapter = tmp_path / "paul_gemma4_e4b_25d8e53a"
+    write_adapter_files(adapter)
+    assert resolve_adapter_directory(tmp_path) == adapter
+
+
+@pytest.mark.parametrize("config,weights", [(False, False), (False, True), (True, False)])
+def test_resolve_adapter_directory_rejects_missing_files(
+    tmp_path: Path, config: bool, weights: bool
+) -> None:
+    write_adapter_files(tmp_path / "incomplete", config=config, weights=weights)
+    with pytest.raises(FileNotFoundError, match="No adapter directory"):
+        resolve_adapter_directory(tmp_path)
+
+
+def test_resolve_adapter_directory_rejects_ambiguity(tmp_path: Path) -> None:
+    write_adapter_files(tmp_path / "adapter-a")
+    write_adapter_files(tmp_path / "adapter-b")
+    with pytest.raises(RuntimeError, match="Ambiguous adapter directories"):
+        resolve_adapter_directory(tmp_path)
 
 
 def test_corrective_dataset_provenance_schema_and_uniqueness() -> None:
@@ -226,3 +325,159 @@ def test_absolute_zero_step_source_safety() -> None:
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
     }
     assert not calls & forbidden
+
+
+def test_optimizer_membership_is_exact_and_rejects_extras() -> None:
+    intended = [("x.lora_A.dpo.weight", object()), ("x.lora_B.dpo.weight", object())]
+    optimizer = SimpleNamespace(param_groups=[{"params": [value for _, value in intended]}])
+    assert_optimizer_membership(SimpleNamespace(optimizer=optimizer), intended)
+
+    unexpected = object()
+    optimizer.param_groups[0]["params"].append(unexpected)
+    with pytest.raises(RuntimeError, match="Optimizer membership"):
+        assert_optimizer_membership(SimpleNamespace(optimizer=optimizer), intended)
+
+
+@pytest.mark.skipif(not HAS_TORCH, reason="CPU PyTorch is unavailable")
+def test_trainable_digest_detects_parameter_change() -> None:
+    import torch
+
+    parameter = torch.nn.Parameter(torch.tensor([1.0], dtype=torch.float32))
+    before = trainable_digest([("x.lora_A.dpo.weight", parameter)])
+    with torch.no_grad():
+        parameter.add_(1.0)
+    assert trainable_digest([("x.lora_A.dpo.weight", parameter)]) != before
+
+
+def test_resume_provenance_accepts_exact_match(tmp_path: Path) -> None:
+    checkpoint = tmp_path / "checkpoint-8"
+    checkpoint.mkdir()
+    expected = build_run_provenance(tmp_path, "abc123")
+    (checkpoint / "checkpoint_provenance.json").write_text(json.dumps(expected))
+    assert validate_resume_checkpoint(checkpoint, expected) == expected
+
+
+def test_checkpoint_callback_writes_machine_readable_provenance(tmp_path: Path) -> None:
+    provenance = build_run_provenance(tmp_path, "abc123")
+    callback = checkpoint_provenance_callback_class(object, provenance)()
+    control = object()
+    assert callback.on_save(
+        SimpleNamespace(output_dir=str(tmp_path)), SimpleNamespace(global_step=8), control
+    ) is control
+    written = json.loads((tmp_path / "checkpoint-8/checkpoint_provenance.json").read_text())
+    assert written == provenance
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        ("source_revision",),
+        ("output_lineage",),
+        ("locked_experiment", "experiment", "id"),
+        ("locked_experiment", "experiment", "model_revision"),
+        ("locked_experiment", "experiment", "dataset_sha256"),
+        ("locked_experiment", "experiment", "adapter", "weights_sha256"),
+        ("locked_experiment", "experiment", "runtime", "trl_version"),
+        ("locked_experiment", "training", "dpo_config", "beta"),
+        ("locked_experiment", "topology", "policy_adapter"),
+    ],
+)
+def test_resume_provenance_rejects_mismatch(tmp_path: Path, mutation) -> None:
+    checkpoint = tmp_path / "checkpoint-8"
+    checkpoint.mkdir()
+    expected = build_run_provenance(tmp_path, "abc123")
+    actual = copy.deepcopy(expected)
+    target = actual
+    for key in mutation[:-1]:
+        target = target[key]
+    target[mutation[-1]] = "foreign"
+    (checkpoint / "checkpoint_provenance.json").write_text(json.dumps(actual))
+    with pytest.raises(RuntimeError, match="does not match"):
+        validate_resume_checkpoint(checkpoint, expected)
+
+
+@pytest.mark.parametrize("contents", [None, "not-json", "[]"])
+def test_resume_provenance_rejects_missing_or_malformed(tmp_path: Path, contents) -> None:
+    checkpoint = tmp_path / "checkpoint-8"
+    checkpoint.mkdir()
+    if contents is not None:
+        (checkpoint / "checkpoint_provenance.json").write_text(contents)
+    with pytest.raises(RuntimeError, match="missing provenance|malformed|does not match"):
+        validate_resume_checkpoint(checkpoint, build_run_provenance(tmp_path, "abc123"))
+
+
+class NumpyParameter:
+    def __init__(self, value) -> None:
+        self.value = array("f", value)
+
+    def detach(self):
+        return self
+
+    def cpu(self):
+        return self
+
+    def contiguous(self):
+        return self
+
+    def numpy(self):
+        return self.value
+
+
+class FiniteResult:
+    def __init__(self, value) -> None:
+        self.value = value
+
+    def all(self):
+        return self
+
+    def item(self):
+        return self.value
+
+
+class NumpyTorch:
+    @staticmethod
+    def isfinite(parameter):
+        return FiniteResult(all(math.isfinite(value) for value in parameter.value))
+
+
+@pytest.mark.parametrize("bad_value", [float("nan"), float("inf"), float("-inf")])
+def test_final_trainables_reject_nonfinite_values(bad_value) -> None:
+    trainable = [
+        (f"layer.{index}.lora_A.dpo.weight", NumpyParameter([1.0]))
+        for index in range(516)
+    ]
+    initial = trainable_value_digests(trainable)
+    trainable[0][1].value[0] = bad_value
+    with pytest.raises(RuntimeError, match="Non-finite"):
+        validate_final_trainables(trainable, initial, NumpyTorch)
+
+
+def test_final_trainables_require_change_and_exact_set() -> None:
+    trainable = [
+        (f"layer.{index}.lora_A.dpo.weight", NumpyParameter([1.0]))
+        for index in range(516)
+    ]
+    initial = trainable_value_digests(trainable)
+    with pytest.raises(RuntimeError, match="No trainable parameter changed"):
+        validate_final_trainables(trainable, initial, NumpyTorch)
+    with pytest.raises(RuntimeError, match="count mismatch"):
+        validate_final_trainables(trainable[:-1], initial, NumpyTorch)
+    replacement = trainable[:-1] + [("unexpected.dpo.weight", trainable[-1][1])]
+    with pytest.raises(RuntimeError, match="tensor set mismatch"):
+        validate_final_trainables(replacement, initial, NumpyTorch)
+    trainable[0][1].value[0] += 1.0
+    evidence = validate_final_trainables(trainable, initial, NumpyTorch)
+    assert evidence == {"finite": True, "intended_tensor_count": 516, "changed_tensor_count": 1}
+
+
+def test_production_entry_uses_native_trainer_amp_and_safe_save_topology() -> None:
+    source = Path("scripts/dpo_v2_e4b_train.py").read_text()
+    tree = ast.parse(source)
+    calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)]
+    attributes = {node.func.attr for node in calls if isinstance(node.func, ast.Attribute)}
+    assert attributes.isdisjoint({"backward", "step", "merge_adapter", "merge_and_unload"})
+    assert "GradScaler" not in source
+    assert "init_scale" not in source
+    assert "trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)" in source
+    assert 'set(policy.peft_config) != {"dpo"}' in source
+    assert 'set(reference.peft_config) != {"sft"}' in source

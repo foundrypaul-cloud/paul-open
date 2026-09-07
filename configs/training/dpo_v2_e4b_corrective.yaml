@@ -29,6 +29,7 @@ experiment:
     trl_version: 1.10.0
     peft_version: 0.20.0
     accelerate_version: 1.14.0
+    bitsandbytes_version: 0.50.1
     policy_device: 0
     reference_device: 1
     required_gpu_count: 2
@@ -37,7 +38,7 @@ training:
   method: dpo
   dpo_config:
     output_dir: ./results/dpo_v2_e4b_corrective
-    num_train_epochs: 1
+    num_train_epochs: 4
     per_device_train_batch_size: 1
     gradient_accumulation_steps: 8
     learning_rate: 5.0e-7
@@ -49,6 +50,9 @@ training:
     optim: paged_adamw_8bit
     seed: 42
     report_to: none
+    logging_steps: 1
+    save_strategy: epoch
+    save_total_limit: 1
     loss_type: sigmoid
     precompute_ref_log_probs: false
     sync_ref_model: false

@@ -94,7 +94,7 @@ def validate_versions(config: Mapping[str, Any]) -> dict[str, str]:
     expected = config["experiment"]["runtime"]
     versions = {
         name: importlib.metadata.version(name)
-        for name in ("transformers", "trl", "peft", "accelerate")
+        for name in ("transformers", "trl", "peft", "accelerate", "bitsandbytes")
     }
     for name, version in versions.items():
         if version != expected[f"{name}_version"]:
