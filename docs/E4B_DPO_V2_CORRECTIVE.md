@@ -93,6 +93,14 @@ uv run python scripts/dpo_v2_e4b_train.py \
   --resume-from-checkpoint /kaggle/working/paul_e4b_dpo_v2_corrective/checkpoint-N
 ```
 
+Every production checkpoint contains `checkpoint_provenance.json`, written by the
+Trainer save callback. Before resume, the entry point requires that record to
+exactly match the current source revision, resolved output lineage, complete
+experiment/runtime lock, adapter topology, dataset, and historical-adapter
+provenance. Missing, malformed, stale, or foreign provenance fails before
+`Trainer.train`; Trainer remains solely responsible for restoring model,
+optimizer, scheduler, scaler, and Trainer state after validation.
+
 After training, verify that the saved adapter is still named `dpo`, remains rank
 16 with alpha 32 and dropout 0.05, contains no `default` or `ref` adapter, and was
 not merged. Re-run the zero-step topology/reference checks against the final
@@ -124,3 +132,9 @@ freezing, optimizer-membership, and cross-device checks pass. In particular,
 `TrainerState.global_step == 8` does not by itself prove learning. The final
 adapter must not be published until the established external-reference probe and
 mathematical-equivalence gate have passed against it.
+
+The production completion gate directly checks all 516 intended final `dpo` LoRA
+tensors for finite values and requires at least one per-tensor value digest to
+change before saving. The manifest records the exact lock and source revision,
+checkpoint provenance when resumed, initial/final aggregate digests, intended and
+changed tensor counts, finite-value success, and the consolidated gate result.
