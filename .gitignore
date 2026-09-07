@@ -87,6 +87,8 @@ hf_cache/
 *secret*.json
 auth.json
 token.json
+kaggle.json
+.kaggle/
 
 # ----- Operating System Files -----
 .DS_Store
