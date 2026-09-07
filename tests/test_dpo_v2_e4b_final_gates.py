@@ -1,12 +1,115 @@
 import importlib.util
+import os
+import subprocess
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+from scripts import dpo_v2_e4b_train as production
 
 HAS_TORCH = importlib.util.find_spec("torch") is not None
 
-from scripts import dpo_v2_e4b_train as production
+
+def test_allocator_contract_is_established_before_torch_import() -> None:
+    source = Path("scripts/dpo_v2_e4b_train.py").read_text(encoding="utf-8")
+    startup_call = "\nconfigure_cuda_allocator_environment()\n"
+    assert source.index(startup_call) < source.index(
+        "from scripts.dpo_v2_e4b_smoke import"
+    )
+    assert source.index(startup_call) < source.index("    import torch")
+    env = os.environ.copy()
+    env[production.CUDA_ALLOCATOR_ENV] = "backend:cudaMallocAsync"
+    result = subprocess.run(
+        [sys.executable, "-c", "import scripts.dpo_v2_e4b_train"],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "must be exactly" in result.stderr
+
+
+def test_cuda_memory_telemetry_is_read_only_and_per_device(capsys) -> None:
+    class FakeCuda:
+        def __init__(self):
+            self.calls = []
+
+        def device_count(self):
+            return 2
+
+        def mem_get_info(self, device):
+            self.calls.append(("mem_get_info", device))
+            return (1000 - device, 2000 + device)
+
+        def memory_allocated(self, device):
+            return 100 + device
+
+        def memory_reserved(self, device):
+            return 200 + device
+
+        def max_memory_allocated(self, device):
+            return 300 + device
+
+        def max_memory_reserved(self, device):
+            return 400 + device
+
+    cuda = FakeCuda()
+    snapshot = production.cuda_memory_telemetry(SimpleNamespace(cuda=cuda), "test")
+    assert snapshot[0]["free_bytes"] == 1000
+    assert snapshot[1]["total_bytes"] == 2001
+    assert cuda.calls == [("mem_get_info", 0), ("mem_get_info", 1)]
+    assert '"label": "test"' in capsys.readouterr().out
+
+
+def test_checkpointing_and_forward_cache_assertions_fail_closed() -> None:
+    inactive = SimpleNamespace(is_gradient_checkpointing=False, modules=lambda: [])
+    with pytest.raises(RuntimeError, match="checkpointing is not active"):
+        production.assert_gradient_checkpointing_active(inactive)
+    with pytest.raises(RuntimeError, match="use_cache=False"):
+        production.assert_forward_cache_disabled("policy", {"use_cache": True})
+    with pytest.raises(RuntimeError, match="use_cache=False"):
+        production.assert_forward_cache_disabled("reference", {})
+    production.assert_forward_cache_disabled("policy", {"use_cache": False})
+
+
+def test_optimizer_state_must_be_unmaterialized_before_first_backward() -> None:
+    production.assert_optimizer_state_unmaterialized(
+        SimpleNamespace(optimizer=SimpleNamespace(state={}))
+    )
+    with pytest.raises(RuntimeError, match="unexpectedly materialized"):
+        production.assert_optimizer_state_unmaterialized(
+            SimpleNamespace(optimizer=SimpleNamespace(state={"parameter": {"step": 0}}))
+        )
+
+
+def test_pretraining_cleanup_releases_only_temporary_resources(tmp_path) -> None:
+    copied_adapter = tmp_path / "copied-adapter"
+    copied_adapter.mkdir()
+    required = SimpleNamespace(policy=object(), reference=object(), trainer=object())
+
+    class FakeCuda:
+        empty_cache_calls = 0
+
+        def empty_cache(self):
+            self.empty_cache_calls += 1
+
+    cuda = FakeCuda()
+    production.release_pretraining_temporaries(SimpleNamespace(cuda=cuda), copied_adapter)
+    assert not copied_adapter.exists()
+    assert cuda.empty_cache_calls == 1
+    assert all(
+        item is not None for item in (required.policy, required.reference, required.trainer)
+    )
+
+
+def test_cleanup_and_instrumentation_precede_authentic_training() -> None:
+    source = Path("scripts/dpo_v2_e4b_train.py").read_text(encoding="utf-8")
+    cleanup = "release_pretraining_temporaries(torch, copied_adapter)"
+    install = "install_runtime_memory_instrumentation(\n            trainer"
+    train = "trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)"
+    assert source.index(cleanup) < source.index(install) < source.index(train)
+    assert "trainer, policy, reference, torch, telemetry_state" in source
 
 
 def test_source_revision_uses_verified_package_sha_without_git(monkeypatch) -> None:
