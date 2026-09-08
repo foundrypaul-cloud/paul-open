@@ -1,0 +1,109 @@
+name: PAUL Open Agentic Maintainer
+
+on:
+  workflow_run:
+    workflows:
+      - DPO V2 Verification
+      - Kaggle DPO V2 Preflight
+    types:
+      - completed
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  continue-pr4:
+    if: ${{ github.event.workflow_run.head_branch == 'codex/authorize-kaggle-dpo-v2-training-run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      REPO: foundrypaul-cloud/paul-open
+      BRANCH: codex/authorize-kaggle-dpo-v2-training-run
+      PR_NUMBER: '4'
+      TRIGGER_WORKFLOW: ${{ github.event.workflow_run.name }}
+      TRIGGER_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+      TRIGGER_RUN_ID: ${{ github.event.workflow_run.id }}
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BRANCH }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Gemini CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install -g @google/gemini-cli
+          gemini --version
+
+      - name: Capture triggering workflow metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/paul-agent-context.txt <<EOF
+          Repository: ${REPO}
+          Pull request: #${PR_NUMBER}
+          Branch: ${BRANCH}
+          Triggering workflow: ${TRIGGER_WORKFLOW}
+          Triggering conclusion: ${TRIGGER_CONCLUSION}
+          Triggering run id: ${TRIGGER_RUN_ID}
+          Current commit: $(git rev-parse HEAD)
+          EOF
+
+      - name: Run autonomous maintainer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          PROMPT=$(cat <<'EOF'
+          You are the autonomous maintainer for PAUL Open PR #4.
+
+          Work only in the checked-out repository and current PR branch. Inspect the repository state, current diff, relevant tests, and the triggering GitHub Actions workflow result. Use the exact existing PAUL Open DPO V2 implementation and experiment lock as source of truth.
+
+          Objectives:
+          1. If the triggering workflow failed, diagnose the failure from GitHub Actions using `gh run view "$TRIGGER_RUN_ID" --log-failed` and make the smallest safe repository fix.
+          2. If it succeeded, inspect whether the next bounded gate in the current PR workflow is already represented in-repo. Do not invent a new methodology. Prefer advancing automation, validation, provenance, or packaging work already implied by repository docs/tests.
+          3. Run relevant tests locally before committing.
+          4. Commit only if you made a necessary verified change.
+          5. Push only to the current PR branch.
+
+          Hard constraints:
+          - Never merge the PR.
+          - Never modify billing, pricing, payment-provider, production-release, or monetization settings.
+          - Never expose secrets, tokens, adapters, checkpoints, or private model artifacts.
+          - Never change the locked DPO model methodology, dataset identity, adapter identity, or training semantics unless an existing failing test proves the repository itself is inconsistent.
+          - Treat `data/train/dpo_v2_corrective.jsonl`, the pinned config, and docs/E4B_DPO_V2_CORRECTIVE.md as authoritative.
+          - Historical adapter identity is `paulfoundry/paul-open-sft`; use only external/Kaggle-mounted copies.
+          - If the next step requires irreversible authorization or an external account action that cannot be performed from CI, leave the repository unchanged and exit successfully after printing a concise blocker.
+
+          Context:
+          EOF
+          )
+          PROMPT="$PROMPT
+$(cat /tmp/paul-agent-context.txt)"
+          gemini -p "$PROMPT" --yolo
+
+      - name: Push verified agent changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No repository changes produced by agent."
+            exit 0
+          fi
+          git config user.name "PAUL Open Agent"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "ci: autonomous maintainer follow-up"
+          git push origin HEAD:${BRANCH}
