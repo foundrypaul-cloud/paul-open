@@ -122,6 +122,8 @@ jobs:
         run: kaggle kernels push -p "$KERNEL_DIR"
 
       - name: Wait for Kaggle preflight to finish
+        id: kaggle_wait
+        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
@@ -140,16 +142,22 @@ jobs:
           exit 1
 
       - name: Download Kaggle preflight output
+        if: always()
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p kaggle-preflight-output
-          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_KERNEL_SLUG" -p kaggle-preflight-output
-          find kaggle-preflight-output -maxdepth 3 -type f -print
+          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_KERNEL_SLUG" -p kaggle-preflight-output || true
+          find kaggle-preflight-output -maxdepth 4 -type f -print || true
 
       - name: Upload Kaggle preflight output
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: kaggle-dpo-v2-preflight-output
           path: kaggle-preflight-output
           if-no-files-found: warn
+
+      - name: Fail if Kaggle preflight failed
+        if: steps.kaggle_wait.outcome != 'success'
+        run: exit 1
