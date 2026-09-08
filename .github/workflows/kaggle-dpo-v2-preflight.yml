@@ -1,7 +1,7 @@
 name: Kaggle DPO V2 Preflight
 
 # Authenticated bridge for the exact PAUL Open PR head. Uses the authoritative
-# historical adapter dataset recorded in docs/E4B_DPO_V2_CORRECTIVE.md.
+# historical adapter dataset and locked uv environment recorded by the repository.
 on:
   push:
     branches:
@@ -11,7 +11,8 @@ on:
       - 'scripts/dpo_v2_e4b_train.py'
       - 'scripts/dpo_v2_e4b_smoke.py'
       - 'configs/training/dpo_v2_e4b_corrective.yaml'
-      - 'requirements.txt'
+      - 'pyproject.toml'
+      - 'uv.lock'
       - 'tests/**'
   workflow_dispatch:
 
@@ -73,11 +74,12 @@ jobs:
           if actual != target_commit:
               raise SystemExit(f'commit mismatch: expected {target_commit}, got {actual}')
 
-          subprocess.run(['python', '-m', 'pip', 'install', '-r', str(repo_dir / 'requirements.txt')], check=True)
+          subprocess.run(['python', '-m', 'pip', 'install', '--upgrade', 'uv'], check=True)
+          subprocess.run(['uv', 'sync', '--frozen'], cwd=repo_dir, check=True)
 
           adapter_root = Path('/kaggle/input') / adapter_dataset.split('/', 1)[-1]
           subprocess.run([
-              'python', str(repo_dir / 'scripts' / 'dpo_v2_e4b_train.py'),
+              'uv', 'run', 'python', str(repo_dir / 'scripts' / 'dpo_v2_e4b_train.py'),
               '--config', str(repo_dir / 'configs' / 'training' / 'dpo_v2_e4b_corrective.yaml'),
               '--adapter', str(adapter_root),
               '--output-dir', '/kaggle/working/paul_e4b_dpo_v2_corrective',
