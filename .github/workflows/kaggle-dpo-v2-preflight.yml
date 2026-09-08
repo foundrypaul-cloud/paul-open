@@ -82,7 +82,21 @@ jobs:
           subprocess.run(['python', '-m', 'pip', 'install', '--upgrade', 'uv'], check=True)
           subprocess.run(['uv', 'sync', '--frozen'], cwd=repo_dir, check=True)
 
-          adapter_root = Path('/kaggle/input') / adapter_dataset.split('/', 1)[-1]
+          adapter_files = ('adapter_config.json', 'adapter_model.safetensors')
+          input_root = Path('/kaggle/input')
+          adapter_matches = sorted({
+              path.parent
+              for path in input_root.rglob('adapter_config.json')
+              if all((path.parent / name).is_file() for name in adapter_files)
+          })
+          if len(adapter_matches) != 1:
+              raise SystemExit(
+                  f'expected exactly one mounted SFT adapter from {adapter_dataset} under '
+                  f'{input_root}, found {len(adapter_matches)}: {adapter_matches}'
+              )
+          adapter_root = adapter_matches[0]
+          print(f'Resolved historical adapter mount: {adapter_root}')
+
           subprocess.run([
               'uv', 'run', 'python', str(repo_dir / 'scripts' / 'dpo_v2_e4b_train.py'),
               '--config', str(repo_dir / 'configs' / 'training' / 'dpo_v2_e4b_corrective.yaml'),
@@ -196,23 +210,25 @@ jobs:
           subprocess.run(['python', '-m', 'pip', 'install', '--upgrade', 'uv'], check=True)
           subprocess.run(['uv', 'sync', '--frozen', '--extra', 'eval'], cwd=repo_dir, check=True)
 
-          adapter_mount = Path('/kaggle/input') / adapter_dataset.split('/', 1)[-1]
           adapter_files = ('adapter_config.json', 'adapter_model.safetensors')
-          if adapter_mount.is_dir() and all((adapter_mount / name).is_file() for name in adapter_files):
-              sft_adapter = adapter_mount
-          else:
-              matches = [
-                  child for child in adapter_mount.iterdir()
-                  if child.is_dir() and all((child / name).is_file() for name in adapter_files)
-              ]
-              if len(matches) != 1:
-                  raise SystemExit(f'expected exactly one SFT adapter directory under {adapter_mount}, found {len(matches)}')
-              sft_adapter = matches[0]
+          input_root = Path('/kaggle/input')
+          adapter_matches = sorted({
+              path.parent
+              for path in input_root.rglob('adapter_config.json')
+              if all((path.parent / name).is_file() for name in adapter_files)
+          })
+          if len(adapter_matches) != 1:
+              raise SystemExit(
+                  f'expected exactly one mounted SFT adapter from {adapter_dataset} under '
+                  f'{input_root}, found {len(adapter_matches)}: {adapter_matches}'
+              )
+          sft_adapter = adapter_matches[0]
+          print(f'Resolved historical adapter mount: {sft_adapter}')
 
           subprocess.run([
               'uv', 'run', 'python', str(repo_dir / 'scripts' / 'dpo_v2_e4b_train.py'),
               '--config', str(repo_dir / 'configs' / 'training' / 'dpo_v2_e4b_corrective.yaml'),
-              '--adapter', str(adapter_mount),
+              '--adapter', str(sft_adapter),
               '--output-dir', str(train_output),
           ], cwd=repo_dir, check=True)
 
