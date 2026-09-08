@@ -1,5 +1,6 @@
 name: Kaggle DPO V2 Preflight
 
+# Touch this file to intentionally re-run the authenticated Kaggle preflight bridge.
 on:
   push:
     branches:
@@ -52,8 +53,6 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY' >> "$GITHUB_ENV"
-          import json
-          import os
           import subprocess
 
           queries = ['paul open sft adapter', 'paul-open-sft-adapter', 'paul open sft']
