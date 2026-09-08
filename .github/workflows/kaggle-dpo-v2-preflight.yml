@@ -38,69 +38,67 @@ jobs:
       - name: Install Kaggle CLI
         run: python -m pip install --upgrade kaggle
 
-      - name: Verify Kaggle authentication and resolve account
+      - name: Verify Kaggle authentication
         shell: bash
         run: |
           set -euo pipefail
           test -n "$KAGGLE_API_TOKEN"
           kaggle auth print-access-token --expiration 5m >/dev/null
-          python - <<'PY' >> "$GITHUB_ENV"
-          import json
-          import os
-          import urllib.request
-
-          token = os.environ['KAGGLE_API_TOKEN']
-          request = urllib.request.Request(
-              'https://www.kaggle.com/api/v1/account/current',
-              headers={'Authorization': f'Bearer {token}'},
-          )
-          with urllib.request.urlopen(request) as response:
-              account = json.load(response)
-          username = account.get('username') or account.get('displayName')
-          if not username:
-              raise SystemExit('Unable to resolve Kaggle username from authenticated account')
-          print(f'KAGGLE_USERNAME={username}')
-          PY
+          kaggle datasets list --search "paul" --page-size 1 >/dev/null
           echo "Kaggle authentication: OK"
 
-      - name: Resolve historical SFT adapter dataset
+      - name: Resolve historical SFT adapter dataset and owner
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY' >> "$GITHUB_ENV"
           import json
           import os
-          import urllib.parse
-          import urllib.request
+          import subprocess
 
-          token = os.environ['KAGGLE_API_TOKEN']
-          queries = [
-              'paul open sft adapter',
-              'paul-open-sft-adapter',
-              'paul open sft',
-          ]
-          headers = {'Authorization': f'Bearer {token}'}
+          queries = ['paul open sft adapter', 'paul-open-sft-adapter', 'paul open sft']
           candidates = []
           for query in queries:
-              url = 'https://www.kaggle.com/api/v1/datasets/list?' + urllib.parse.urlencode({'search': query})
-              request = urllib.request.Request(url, headers=headers)
-              with urllib.request.urlopen(request) as response:
-                  rows = json.load(response)
-              for row in rows:
-                  ref = row.get('ref')
-                  title = (row.get('title') or '').lower()
-                  if ref and ('sft' in ref.lower() or 'sft' in title) and ('paul' in ref.lower() or 'paul' in title):
+              result = subprocess.run(
+                  ['kaggle', 'datasets', 'list', '--search', query, '--csv'],
+                  check=True,
+                  capture_output=True,
+                  text=True,
+              )
+              lines = [line for line in result.stdout.splitlines() if line.strip()]
+              if not lines:
+                  continue
+              header = [part.strip() for part in lines[0].split(',')]
+              try:
+                  ref_index = header.index('ref')
+                  title_index = header.index('title')
+              except ValueError:
+                  continue
+              for line in lines[1:]:
+                  parts = [part.strip() for part in line.split(',')]
+                  if len(parts) <= max(ref_index, title_index):
+                      continue
+                  ref = parts[ref_index]
+                  title = parts[title_index].lower()
+                  low_ref = ref.lower()
+                  if ref and ('sft' in low_ref or 'sft' in title) and ('paul' in low_ref or 'paul' in title):
                       candidates.append(ref)
+
           seen = []
           for ref in candidates:
               if ref not in seen:
                   seen.append(ref)
           if not seen:
               raise SystemExit('Could not auto-resolve the historical PAUL Open SFT adapter dataset from Kaggle')
-          print(f'ADAPTER_DATASET={seen[0]}')
+
+          adapter_dataset = seen[0]
+          owner = adapter_dataset.split('/', 1)[0]
+          print(f'ADAPTER_DATASET={adapter_dataset}')
+          print(f'KAGGLE_USERNAME={owner}')
           print(f'ADAPTER_DATASET_CANDIDATES={";".join(seen)}')
           PY
           echo "Resolved adapter dataset: $ADAPTER_DATASET"
+          echo "Using Kaggle owner: $KAGGLE_USERNAME"
 
       - name: Build exact-head private preflight kernel
         shell: bash
