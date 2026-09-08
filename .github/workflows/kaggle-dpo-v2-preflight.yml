@@ -1,6 +1,7 @@
 name: Kaggle DPO V2 Preflight
 
-# Touch this file to intentionally re-run the authenticated Kaggle preflight bridge.
+# Authenticated bridge for the exact PAUL Open PR head. Uses the authoritative
+# historical adapter dataset recorded in docs/E4B_DPO_V2_CORRECTIVE.md.
 on:
   push:
     branches:
@@ -24,6 +25,8 @@ jobs:
       KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
       REPO_URL: https://github.com/foundrypaul-cloud/paul-open.git
       TARGET_COMMIT: ${{ github.sha }}
+      ADAPTER_DATASET: paulfoundry/paul-open-sft
+      KAGGLE_USERNAME: paulfoundry
       KAGGLE_KERNEL_SLUG: paul-open-dpo-v2-pr4-preflight
       MACHINE_SHAPE: NvidiaTeslaT4
 
@@ -39,55 +42,14 @@ jobs:
       - name: Install Kaggle CLI
         run: python -m pip install --upgrade kaggle
 
-      - name: Verify Kaggle authentication
+      - name: Verify Kaggle authentication and adapter dataset
         shell: bash
         run: |
           set -euo pipefail
           test -n "$KAGGLE_API_TOKEN"
-          kaggle datasets list --search "paul" --page-size 1 >/dev/null
+          kaggle datasets files "$ADAPTER_DATASET" >/dev/null
           echo "Kaggle authentication: OK"
-
-      - name: Resolve historical SFT adapter dataset and owner
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY' >> "$GITHUB_ENV"
-          import csv
-          import io
-          import subprocess
-
-          queries = ['paul open sft adapter', 'paul-open-sft-adapter', 'paul open sft']
-          candidates = []
-          for query in queries:
-              result = subprocess.run(
-                  ['kaggle', 'datasets', 'list', '--search', query, '--csv'],
-                  check=True,
-                  capture_output=True,
-                  text=True,
-              )
-              rows = csv.DictReader(io.StringIO(result.stdout))
-              for row in rows:
-                  ref = (row.get('ref') or '').strip()
-                  title = (row.get('title') or '').lower()
-                  low_ref = ref.lower()
-                  if ref and ('sft' in low_ref or 'sft' in title) and ('paul' in low_ref or 'paul' in title):
-                      candidates.append(ref)
-
-          seen = []
-          for ref in candidates:
-              if ref not in seen:
-                  seen.append(ref)
-          if not seen:
-              raise SystemExit('Could not auto-resolve the historical PAUL Open SFT adapter dataset from Kaggle')
-
-          adapter_dataset = seen[0]
-          owner = adapter_dataset.split('/', 1)[0]
-          print(f'ADAPTER_DATASET={adapter_dataset}')
-          print(f'KAGGLE_USERNAME={owner}')
-          print(f'ADAPTER_DATASET_CANDIDATES={";".join(seen)}')
-          PY
-          echo "Resolved adapter dataset: $ADAPTER_DATASET"
-          echo "Using Kaggle owner: $KAGGLE_USERNAME"
+          echo "Historical adapter dataset: $ADAPTER_DATASET"
 
       - name: Build exact-head private preflight kernel
         shell: bash
@@ -114,15 +76,11 @@ jobs:
           subprocess.run(['python', '-m', 'pip', 'install', '-r', str(repo_dir / 'requirements.txt')], check=True)
 
           adapter_root = Path('/kaggle/input') / adapter_dataset.split('/', 1)[-1]
-          candidates = list(adapter_root.rglob('adapter_config.json'))
-          if not candidates:
-              raise SystemExit(f'No adapter_config.json found under {adapter_root}')
-          adapter_dir = candidates[0].parent
-
           subprocess.run([
               'python', str(repo_dir / 'scripts' / 'dpo_v2_e4b_train.py'),
               '--config', str(repo_dir / 'configs' / 'training' / 'dpo_v2_e4b_corrective.yaml'),
-              '--adapter', str(adapter_dir),
+              '--adapter', str(adapter_root),
+              '--output-dir', '/kaggle/working/paul_e4b_dpo_v2_corrective',
               '--preflight-only',
           ], cwd=repo_dir, check=True)
           PY
