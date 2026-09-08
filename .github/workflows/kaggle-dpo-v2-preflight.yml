@@ -44,7 +44,6 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$KAGGLE_API_TOKEN"
-          kaggle auth print-access-token --expiration 5m >/dev/null
           kaggle datasets list --search "paul" --page-size 1 >/dev/null
           echo "Kaggle authentication: OK"
 
@@ -53,6 +52,8 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY' >> "$GITHUB_ENV"
+          import csv
+          import io
           import subprocess
 
           queries = ['paul open sft adapter', 'paul-open-sft-adapter', 'paul open sft']
@@ -64,21 +65,10 @@ jobs:
                   capture_output=True,
                   text=True,
               )
-              lines = [line for line in result.stdout.splitlines() if line.strip()]
-              if not lines:
-                  continue
-              header = [part.strip() for part in lines[0].split(',')]
-              try:
-                  ref_index = header.index('ref')
-                  title_index = header.index('title')
-              except ValueError:
-                  continue
-              for line in lines[1:]:
-                  parts = [part.strip() for part in line.split(',')]
-                  if len(parts) <= max(ref_index, title_index):
-                      continue
-                  ref = parts[ref_index]
-                  title = parts[title_index].lower()
+              rows = csv.DictReader(io.StringIO(result.stdout))
+              for row in rows:
+                  ref = (row.get('ref') or '').strip()
+                  title = (row.get('title') or '').lower()
                   low_ref = ref.lower()
                   if ref and ('sft' in low_ref or 'sft' in title) and ('paul' in low_ref or 'paul' in title):
                       candidates.append(ref)
