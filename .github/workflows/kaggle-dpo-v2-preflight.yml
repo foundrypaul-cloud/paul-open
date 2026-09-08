@@ -1,21 +1,17 @@
 name: Kaggle DPO V2 Preflight
 
 on:
+  push:
+    branches:
+      - codex/authorize-kaggle-dpo-v2-training-run
+    paths:
+      - '.github/workflows/kaggle-dpo-v2-preflight.yml'
+      - 'scripts/dpo_v2_e4b_train.py'
+      - 'scripts/dpo_v2_e4b_smoke.py'
+      - 'configs/training/dpo_v2_e4b_corrective.yaml'
+      - 'requirements.txt'
+      - 'tests/**'
   workflow_dispatch:
-    inputs:
-      kaggle_username:
-        description: Kaggle username/owner slug for the temporary private kernel
-        required: true
-        type: string
-      adapter_dataset:
-        description: Kaggle dataset slug containing the historical SFT adapter (owner/dataset-slug)
-        required: true
-        type: string
-      machine_shape:
-        description: Kaggle accelerator shape
-        required: false
-        default: NvidiaTeslaT4
-        type: string
 
 permissions:
   contents: read
@@ -25,11 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
-      KAGGLE_USERNAME_INPUT: ${{ inputs.kaggle_username }}
-      ADAPTER_DATASET: ${{ inputs.adapter_dataset }}
-      MACHINE_SHAPE: ${{ inputs.machine_shape }}
       REPO_URL: https://github.com/foundrypaul-cloud/paul-open.git
       TARGET_COMMIT: ${{ github.sha }}
+      KAGGLE_KERNEL_SLUG: paul-open-dpo-v2-pr4-preflight
+      MACHINE_SHAPE: NvidiaTeslaT4
 
     steps:
       - name: Checkout exact revision
@@ -43,11 +38,69 @@ jobs:
       - name: Install Kaggle CLI
         run: python -m pip install --upgrade kaggle
 
-      - name: Verify Kaggle authentication
+      - name: Verify Kaggle authentication and resolve account
+        shell: bash
         run: |
+          set -euo pipefail
           test -n "$KAGGLE_API_TOKEN"
-          kaggle auth print-access-token --expiration 5m >/dev/null 2>&1 || kaggle kernels list --user "$KAGGLE_USERNAME_INPUT" --page-size 1 >/dev/null
+          kaggle auth print-access-token --expiration 5m >/dev/null
+          python - <<'PY' >> "$GITHUB_ENV"
+          import json
+          import os
+          import urllib.request
+
+          token = os.environ['KAGGLE_API_TOKEN']
+          request = urllib.request.Request(
+              'https://www.kaggle.com/api/v1/account/current',
+              headers={'Authorization': f'Bearer {token}'},
+          )
+          with urllib.request.urlopen(request) as response:
+              account = json.load(response)
+          username = account.get('username') or account.get('displayName')
+          if not username:
+              raise SystemExit('Unable to resolve Kaggle username from authenticated account')
+          print(f'KAGGLE_USERNAME={username}')
+          PY
           echo "Kaggle authentication: OK"
+
+      - name: Resolve historical SFT adapter dataset
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY' >> "$GITHUB_ENV"
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+
+          token = os.environ['KAGGLE_API_TOKEN']
+          queries = [
+              'paul open sft adapter',
+              'paul-open-sft-adapter',
+              'paul open sft',
+          ]
+          headers = {'Authorization': f'Bearer {token}'}
+          candidates = []
+          for query in queries:
+              url = 'https://www.kaggle.com/api/v1/datasets/list?' + urllib.parse.urlencode({'search': query})
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request) as response:
+                  rows = json.load(response)
+              for row in rows:
+                  ref = row.get('ref')
+                  title = (row.get('title') or '').lower()
+                  if ref and ('sft' in ref.lower() or 'sft' in title) and ('paul' in ref.lower() or 'paul' in title):
+                      candidates.append(ref)
+          seen = []
+          for ref in candidates:
+              if ref not in seen:
+                  seen.append(ref)
+          if not seen:
+              raise SystemExit('Could not auto-resolve the historical PAUL Open SFT adapter dataset from Kaggle')
+          print(f'ADAPTER_DATASET={seen[0]}')
+          print(f'ADAPTER_DATASET_CANDIDATES={";".join(seen)}')
+          PY
+          echo "Resolved adapter dataset: $ADAPTER_DATASET"
 
       - name: Build exact-head private preflight kernel
         shell: bash
@@ -57,13 +110,12 @@ jobs:
           mkdir -p "$KERNEL_DIR"
 
           cat > "$KERNEL_DIR/preflight.py" <<'PY'
-          import os
           import subprocess
           from pathlib import Path
 
-          repo_url = os.environ['PAUL_REPO_URL']
-          target_commit = os.environ['PAUL_TARGET_COMMIT']
-          adapter_dataset = os.environ['PAUL_ADAPTER_DATASET']
+          repo_url = '__PAUL_REPO_URL__'
+          target_commit = '__PAUL_TARGET_COMMIT__'
+          adapter_dataset = '__PAUL_ADAPTER_DATASET__'
           repo_dir = Path('/kaggle/working/paul-open')
 
           subprocess.run(['git', 'clone', repo_url, str(repo_dir)], check=True)
@@ -88,9 +140,22 @@ jobs:
           ], cwd=repo_dir, check=True)
           PY
 
+          python - "$KERNEL_DIR/preflight.py" <<'PY'
+          import os
+          import pathlib
+          import sys
+
+          path = pathlib.Path(sys.argv[1])
+          text = path.read_text()
+          text = text.replace('__PAUL_REPO_URL__', os.environ['REPO_URL'])
+          text = text.replace('__PAUL_TARGET_COMMIT__', os.environ['TARGET_COMMIT'])
+          text = text.replace('__PAUL_ADAPTER_DATASET__', os.environ['ADAPTER_DATASET'])
+          path.write_text(text)
+          PY
+
           cat > "$KERNEL_DIR/kernel-metadata.json" <<JSON
           {
-            "id": "${KAGGLE_USERNAME_INPUT}/paul-open-dpo-v2-pr4-preflight",
+            "id": "${KAGGLE_USERNAME}/${KAGGLE_KERNEL_SLUG}",
             "title": "PAUL Open DPO V2 PR4 Preflight",
             "code_file": "preflight.py",
             "language": "python",
@@ -106,35 +171,10 @@ jobs:
           }
           JSON
 
-          {
-            echo "PAUL_REPO_URL=$REPO_URL"
-            echo "PAUL_TARGET_COMMIT=$TARGET_COMMIT"
-            echo "PAUL_ADAPTER_DATASET=$ADAPTER_DATASET"
-          } > "$KERNEL_DIR/.paul-env"
-
-          # Inline the exact revision and adapter dataset into the script so Kaggle does not
-          # depend on GitHub Actions environment propagation after upload.
-          python - "$KERNEL_DIR/preflight.py" <<'PY'
-          import os
-          import pathlib
-          import sys
-          path = pathlib.Path(sys.argv[1])
-          text = path.read_text()
-          replacements = {
-              "os.environ['PAUL_REPO_URL']": repr(os.environ['REPO_URL']),
-              "os.environ['PAUL_TARGET_COMMIT']": repr(os.environ['TARGET_COMMIT']),
-              "os.environ['PAUL_ADAPTER_DATASET']": repr(os.environ['ADAPTER_DATASET']),
-          }
-          for old, new in replacements.items():
-              text = text.replace(old, new)
-          path.write_text(text)
-          PY
-
-          rm "$KERNEL_DIR/.paul-env"
           echo "KERNEL_DIR=$KERNEL_DIR" >> "$GITHUB_ENV"
 
       - name: Push and start Kaggle preflight
         run: kaggle kernels push -p "$KERNEL_DIR"
 
       - name: Show Kaggle kernel status
-        run: kaggle kernels status "$KAGGLE_USERNAME_INPUT/paul-open-dpo-v2-pr4-preflight"
+        run: kaggle kernels status "$KAGGLE_USERNAME/$KAGGLE_KERNEL_SLUG"
