@@ -1,0 +1,140 @@
+name: Kaggle DPO V2 Preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      kaggle_username:
+        description: Kaggle username/owner slug for the temporary private kernel
+        required: true
+        type: string
+      adapter_dataset:
+        description: Kaggle dataset slug containing the historical SFT adapter (owner/dataset-slug)
+        required: true
+        type: string
+      machine_shape:
+        description: Kaggle accelerator shape
+        required: false
+        default: NvidiaTeslaT4
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  launch-kaggle-preflight:
+    runs-on: ubuntu-latest
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME_INPUT: ${{ inputs.kaggle_username }}
+      ADAPTER_DATASET: ${{ inputs.adapter_dataset }}
+      MACHINE_SHAPE: ${{ inputs.machine_shape }}
+      REPO_URL: https://github.com/foundrypaul-cloud/paul-open.git
+      TARGET_COMMIT: ${{ github.sha }}
+
+    steps:
+      - name: Checkout exact revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+
+      - name: Verify Kaggle authentication
+        run: |
+          test -n "$KAGGLE_API_TOKEN"
+          kaggle auth print-access-token --expiration 5m >/dev/null 2>&1 || kaggle kernels list --user "$KAGGLE_USERNAME_INPUT" --page-size 1 >/dev/null
+          echo "Kaggle authentication: OK"
+
+      - name: Build exact-head private preflight kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          KERNEL_DIR="$RUNNER_TEMP/paul-open-kaggle-preflight"
+          mkdir -p "$KERNEL_DIR"
+
+          cat > "$KERNEL_DIR/preflight.py" <<'PY'
+          import os
+          import subprocess
+          from pathlib import Path
+
+          repo_url = os.environ['PAUL_REPO_URL']
+          target_commit = os.environ['PAUL_TARGET_COMMIT']
+          adapter_dataset = os.environ['PAUL_ADAPTER_DATASET']
+          repo_dir = Path('/kaggle/working/paul-open')
+
+          subprocess.run(['git', 'clone', repo_url, str(repo_dir)], check=True)
+          subprocess.run(['git', '-C', str(repo_dir), 'checkout', target_commit], check=True)
+          actual = subprocess.check_output(['git', '-C', str(repo_dir), 'rev-parse', 'HEAD'], text=True).strip()
+          if actual != target_commit:
+              raise SystemExit(f'commit mismatch: expected {target_commit}, got {actual}')
+
+          subprocess.run(['python', '-m', 'pip', 'install', '-r', str(repo_dir / 'requirements.txt')], check=True)
+
+          adapter_root = Path('/kaggle/input') / adapter_dataset.split('/', 1)[-1]
+          candidates = list(adapter_root.rglob('adapter_config.json'))
+          if not candidates:
+              raise SystemExit(f'No adapter_config.json found under {adapter_root}')
+          adapter_dir = candidates[0].parent
+
+          subprocess.run([
+              'python', str(repo_dir / 'scripts' / 'dpo_v2_e4b_train.py'),
+              '--config', str(repo_dir / 'configs' / 'training' / 'dpo_v2_e4b_corrective.yaml'),
+              '--adapter', str(adapter_dir),
+              '--preflight-only',
+          ], cwd=repo_dir, check=True)
+          PY
+
+          cat > "$KERNEL_DIR/kernel-metadata.json" <<JSON
+          {
+            "id": "${KAGGLE_USERNAME_INPUT}/paul-open-dpo-v2-pr4-preflight",
+            "title": "PAUL Open DPO V2 PR4 Preflight",
+            "code_file": "preflight.py",
+            "language": "python",
+            "kernel_type": "script",
+            "is_private": "true",
+            "enable_gpu": "true",
+            "enable_internet": "true",
+            "machine_shape": "${MACHINE_SHAPE}",
+            "dataset_sources": ["${ADAPTER_DATASET}"],
+            "competition_sources": [],
+            "kernel_sources": [],
+            "model_sources": []
+          }
+          JSON
+
+          {
+            echo "PAUL_REPO_URL=$REPO_URL"
+            echo "PAUL_TARGET_COMMIT=$TARGET_COMMIT"
+            echo "PAUL_ADAPTER_DATASET=$ADAPTER_DATASET"
+          } > "$KERNEL_DIR/.paul-env"
+
+          # Inline the exact revision and adapter dataset into the script so Kaggle does not
+          # depend on GitHub Actions environment propagation after upload.
+          python - "$KERNEL_DIR/preflight.py" <<'PY'
+          import os
+          import pathlib
+          import sys
+          path = pathlib.Path(sys.argv[1])
+          text = path.read_text()
+          replacements = {
+              "os.environ['PAUL_REPO_URL']": repr(os.environ['REPO_URL']),
+              "os.environ['PAUL_TARGET_COMMIT']": repr(os.environ['TARGET_COMMIT']),
+              "os.environ['PAUL_ADAPTER_DATASET']": repr(os.environ['ADAPTER_DATASET']),
+          }
+          for old, new in replacements.items():
+              text = text.replace(old, new)
+          path.write_text(text)
+          PY
+
+          rm "$KERNEL_DIR/.paul-env"
+          echo "KERNEL_DIR=$KERNEL_DIR" >> "$GITHUB_ENV"
+
+      - name: Push and start Kaggle preflight
+        run: kaggle kernels push -p "$KERNEL_DIR"
+
+      - name: Show Kaggle kernel status
+        run: kaggle kernels status "$KAGGLE_USERNAME_INPUT/paul-open-dpo-v2-pr4-preflight"
