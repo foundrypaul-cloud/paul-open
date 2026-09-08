@@ -121,5 +121,35 @@ jobs:
       - name: Push and start Kaggle preflight
         run: kaggle kernels push -p "$KERNEL_DIR"
 
-      - name: Show Kaggle kernel status
-        run: kaggle kernels status "$KAGGLE_USERNAME/$KAGGLE_KERNEL_SLUG"
+      - name: Wait for Kaggle preflight to finish
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 90); do
+            STATUS=$(kaggle kernels status "$KAGGLE_USERNAME/$KAGGLE_KERNEL_SLUG" || true)
+            echo "$STATUS"
+            if echo "$STATUS" | grep -qi 'complete'; then
+              exit 0
+            fi
+            if echo "$STATUS" | grep -Eqi 'error|failed|cancel'; then
+              exit 1
+            fi
+            sleep 20
+          done
+          echo "Timed out waiting for Kaggle preflight"
+          exit 1
+
+      - name: Download Kaggle preflight output
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p kaggle-preflight-output
+          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_KERNEL_SLUG" -p kaggle-preflight-output
+          find kaggle-preflight-output -maxdepth 3 -type f -print
+
+      - name: Upload Kaggle preflight output
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-dpo-v2-preflight-output
+          path: kaggle-preflight-output
+          if-no-files-found: warn
