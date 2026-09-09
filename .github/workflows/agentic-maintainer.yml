@@ -85,7 +85,7 @@ jobs:
           EOF
           )
           PROMPT="$PROMPT
-$(cat /tmp/paul-agent-context.txt)"
+          $(cat /tmp/paul-agent-context.txt)"
           gemini -p "$PROMPT" --yolo
 
       - name: Push verified agent changes
