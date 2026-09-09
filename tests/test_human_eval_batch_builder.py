@@ -22,9 +22,10 @@ def _record(
     prompt: str | None = None,
     cohort: str = "general_user",
 ) -> HumanEvalRecord:
+    synthetic_number = case_id.rsplit("-", maxsplit=1)[-1]
     return HumanEvalRecord(
         case_id=case_id,
-        prompt=prompt or f"Synthetic question for {case_id}?",
+        prompt=prompt or f"Synthetic question number {synthetic_number}?",
         response=response,
         domain="synthetic_domain",
         language="en",
@@ -32,7 +33,9 @@ def _record(
     )
 
 
-def _paired_sources(count: int = 5) -> tuple[dict[str, HumanEvalRecord], dict[str, HumanEvalRecord]]:
+def _paired_sources(
+    count: int = 5,
+) -> tuple[dict[str, HumanEvalRecord], dict[str, HumanEvalRecord]]:
     left: dict[str, HumanEvalRecord] = {}
     right: dict[str, HumanEvalRecord] = {}
     for index in range(count):
@@ -79,6 +82,11 @@ def test_public_bundle_never_exposes_source_labels_or_internal_case_ids() -> Non
     assert "DPO_INTERNAL_DO_NOT_SHOW" not in serialized_public
     for case_id in left:
         assert case_id not in serialized_public
+    for variant in batch.public_variants:
+        for comparison in variant["comparisons"]:
+            assert "case_id" not in comparison
+            assert "response_a_source" not in comparison
+            assert "response_b_source" not in comparison
 
     serialized_private = json.dumps(batch.private_mapping, sort_keys=True)
     assert "SFT_INTERNAL_DO_NOT_SHOW" in serialized_private
