@@ -1,0 +1,103 @@
+human_evaluation:
+  protocol_version: "1.0"
+  status: "protocol_only"
+  frozen_step2_revision: "ac899e879f930f25b2081550bd8c5dd5c983df35"
+
+  partitions:
+    development:
+      code: "DHE"
+      may_inform_future_training: true
+      reusable_for_final_superiority_claim: false
+    sealed_assurance:
+      code: "SHAE"
+      may_inform_current_candidate: false
+      public_prompt_storage_before_use: false
+      candidate_must_be_frozen_before_release: true
+      retire_if_used_to_change_model: true
+
+  form:
+    target_completion_minutes: 4
+    default_research_comparisons: 3
+    max_short_response_comparisons: 4
+    max_long_response_comparisons: 2
+    required_choices:
+      - "a_better"
+      - "b_better"
+      - "about_equal"
+      - "neither_good"
+      - "not_sure"
+    optional_final_comment: true
+    collect_email_default: false
+    progress_bar: true
+    publish_response_summary: false
+    allow_response_edits: false
+    show_submit_another_response_link: false
+
+  blinding:
+    reveal_model_identity_to_reviewer: false
+    reveal_automated_scores_to_reviewer: false
+    counterbalance_ab_assignment: true
+    deterministic_variant_seed: true
+    shuffle_answer_choice_labels: false
+    generate_case_order_variants: true
+
+  review_allocation:
+    initial_valid_judgments_per_case: 3
+    disagreement_escalation_total: 5
+    exceptional_hard_cap: 7
+    control_injection_form_rate: 0.20
+    control_items_in_model_win_rate: false
+
+  reviewer_cohorts:
+    - "general_user"
+    - "educator"
+    - "bilingual"
+    - "stem_capable"
+    - "domain_expert"
+
+  hard_pre_form_gates:
+    - "generation_completed"
+    - "nonempty_output"
+    - "automated_safety_gate"
+    - "malformed_output_gate"
+    - "evaluation_partition_integrity"
+    - "contamination_gate"
+
+  translation:
+    protected_technical_spans: true
+    ordinary_prose_native_script_expected: true
+    broad_romanization_is_failure: true
+    forced_translation_of_conventional_technical_terms_required: false
+
+  analysis:
+    report_candidate_preferred: true
+    report_reference_preferred: true
+    report_about_equal: true
+    report_neither_good: true
+    report_not_sure: true
+    stratify_by_domain: true
+    stratify_by_language: true
+    stratify_by_reviewer_cohort: true
+    report_inter_rater_agreement: true
+    bootstrap_confidence_intervals: true
+    bradley_terry_for_multi_model_only: true
+
+  privacy_and_contamination:
+    store_sealed_prompts_in_public_repo: false
+    collect_unnecessary_personal_data: false
+    copy_human_comments_directly_into_training_data: false
+    sealed_cases_are_one_way_after_release: true
+    public_results_must_label_partition: true
+
+  automation_states:
+    - "CANDIDATE_FROZEN"
+    - "AUTO_EVAL_PASSED"
+    - "HUMAN_BATCH_BUILT"
+    - "FORMS_GENERATED"
+    - "COLLECTING"
+    - "TARGET_REACHED"
+    - "FORMS_CLOSED"
+    - "ANALYSIS_LOCKED"
+    - "UNBLINDED"
+    - "DECISION_RECORDED"
+    - "RETIRED"
