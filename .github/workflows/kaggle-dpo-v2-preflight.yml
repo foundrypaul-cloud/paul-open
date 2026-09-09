@@ -4,6 +4,11 @@ name: Kaggle DPO V2 Preflight
 # historical adapter dataset and locked uv environment recorded by the repository.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/kaggle-dpo-v2-preflight.yml'
 
 permissions:
   contents: read
@@ -254,7 +259,7 @@ jobs:
           cat > "$PROD_DIR/kernel-metadata.json" <<JSON
           {
             "id": "${KAGGLE_USERNAME}/${KAGGLE_PRODUCTION_SLUG}",
-            "title": "PAUL Open DPO V2 PR4 Production and Evaluation",
+            "title": "${KAGGLE_PRODUCTION_SLUG}",
             "code_file": "run.py",
             "language": "python",
             "kernel_type": "script",
