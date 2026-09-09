@@ -407,6 +407,17 @@ function recoverPaulHumanEvalResponses() {
   return recovered;
 }
 
+function setClosedFormState_(form, message) {
+  form.setAcceptingResponses(false);
+  try {
+    form.setCustomClosedFormMessage(message);
+  } catch (error) {
+    console.warn(
+        `Form ${form.getId()} was closed, but its custom closed message could not be set: ${error}`,
+    );
+  }
+}
+
 function maybeCloseSandboxForm_(form, config) {
   const target = config.sandbox_auto_close_after_submissions;
   if (config.environment !== 'sandbox' || target === null || target === undefined) {
@@ -416,11 +427,10 @@ function maybeCloseSandboxForm_(form, config) {
     throw new Error('Invalid sandbox auto-close target in runtime config.');
   }
   if (form.getResponses().length >= target) {
-    form
-        .setAcceptingResponses(false)
-        .setCustomClosedFormMessage(
-            'This sandbox form has reached its test response target. Thank you.',
-        );
+    setClosedFormState_(
+        form,
+        'This sandbox form has reached its test response target. Thank you.',
+    );
   }
 }
 
@@ -515,9 +525,7 @@ function closePaulHumanEvalSandboxForms() {
     }
     const formId = key.slice(PAUL_FORM_PROPERTY_PREFIX.length);
     const form = FormApp.openById(formId);
-    form
-        .setAcceptingResponses(false)
-        .setCustomClosedFormMessage('This sandbox evaluation is closed. Thank you.');
+    setClosedFormState_(form, 'This sandbox evaluation is closed. Thank you.');
     closed.push({packet_id: config.packet_id, form_id: formId});
   }
   console.log(JSON.stringify(closed, null, 2));
