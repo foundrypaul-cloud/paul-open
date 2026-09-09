@@ -87,6 +87,10 @@ Normalized fields are:
 
 The form-submit trigger uses the Google Form response ID to make normalization idempotent: a repeated trigger execution must not duplicate the same submission.
 
+### Why the trigger test needs real respondent submissions
+
+Google Apps Script explicitly documents that script executions and API requests do **not** fire installable triggers; calling `FormResponse.submit()` programmatically therefore does not exercise the real Forms submit trigger. H2 must use genuine submissions through the respondent URL for its final trigger/normalization acceptance test. This is intentional and prevents a false-positive sandbox validation.
+
 ## H2 acceptance test
 
 H2 is complete only after all of the following pass on a disposable Google Form:
@@ -97,7 +101,7 @@ H2 is complete only after all of the following pass on a disposable Google Form:
 4. Email is not collected.
 5. Response summary is not published.
 6. Response editing and submit-another links are disabled.
-7. Three test submissions create nine normalized comparison rows with three unique response IDs.
+7. Three real respondent submissions create nine normalized comparison rows with three unique response IDs.
 8. Replaying/duplicating a trigger does not duplicate normalized rows.
 9. After the configured third submission, the sandbox form stops accepting responses.
 10. `verifyPaulHumanEvalSandboxForms()` reports the expected state.
