@@ -1,0 +1,21 @@
+name: Launch Kaggle DPO V2 Once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/launch-kaggle-dpo-v2-once.yml'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch locked Kaggle DPO V2 workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run kaggle-dpo-v2-preflight.yml --ref main
