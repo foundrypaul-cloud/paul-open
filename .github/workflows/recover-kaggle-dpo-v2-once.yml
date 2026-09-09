@@ -1,0 +1,81 @@
+name: Recover Kaggle DPO V2 Once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/recover-kaggle-dpo-v2-once.yml'
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cancel superseded workflow run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh run cancel 34310650096 --repo foundrypaul-cloud/paul-open || true
+          for _ in $(seq 1 30); do
+            STATUS=$(gh run view 34310650096 --repo foundrypaul-cloud/paul-open --json status --jq .status)
+            echo "superseded run status: $STATUS"
+            if [ "$STATUS" = "completed" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Superseded run did not stop in time"
+          exit 1
+
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch only Kaggle output-capture plumbing
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/kaggle-dpo-v2-preflight.yml')
+          text = path.read_text()
+
+          old_repo = "repo_dir = Path('/kaggle/working/paul-open')"
+          if text.count(old_repo) != 2:
+              raise SystemExit(f'expected exactly two Kaggle working repo_dir entries, found {text.count(old_repo)}')
+          text = text.replace(old_repo, "repo_dir = Path('/tmp/paul-open')")
+
+          old_if = '        if: always()'
+          if text.count(old_if) < 4:
+              raise SystemExit('expected preflight and production always() output steps')
+          text = text.replace(old_if, "        if: steps.kaggle_wait.outcome != 'success'", 2)
+
+          path.write_text(text)
+          PY
+          git diff --check
+          git diff -- .github/workflows/kaggle-dpo-v2-preflight.yml
+
+      - name: Commit operational fix
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "No patch required."
+            exit 0
+          fi
+          git config user.name "PAUL Foundry"
+          git config user.email "actions@users.noreply.github.com"
+          git add .github/workflows/kaggle-dpo-v2-preflight.yml
+          git commit -m "ci: keep Kaggle environment out of captured outputs"
+          git push origin HEAD:main
+
+      - name: Dispatch corrected Kaggle DPO V2 workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run kaggle-dpo-v2-preflight.yml --repo foundrypaul-cloud/paul-open --ref main
