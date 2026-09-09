@@ -48,7 +48,7 @@ jobs:
 
       - name: Build disposable synthetic Google Forms packet
         run: |
-          python scripts/build_google_forms_sandbox.py \
+          PYTHONPATH=src python scripts/build_google_forms_sandbox.py \
             --variant tests/fixtures/human_eval_sandbox_variant.json \
             --output-dir /tmp/paul-h2-sandbox \
             --auto-close-after-submissions 3
