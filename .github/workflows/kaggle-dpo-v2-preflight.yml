@@ -57,7 +57,7 @@ jobs:
           repo_url = '__PAUL_REPO_URL__'
           target_commit = '__PAUL_TARGET_COMMIT__'
           adapter_dataset = '__PAUL_ADAPTER_DATASET__'
-          repo_dir = Path('/kaggle/working/paul-open')
+          repo_dir = Path('/tmp/paul-open')
 
           subprocess.run(['git', 'clone', repo_url, str(repo_dir)], check=True)
           subprocess.run(['git', '-C', str(repo_dir), 'checkout', target_commit], check=True)
@@ -149,7 +149,7 @@ jobs:
           exit 1
 
       - name: Download Kaggle preflight output
-        if: always()
+        if: steps.kaggle_wait.outcome != 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -158,7 +158,7 @@ jobs:
           find kaggle-preflight-output -maxdepth 4 -type f -print || true
 
       - name: Upload Kaggle preflight output
-        if: always()
+        if: steps.kaggle_wait.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
           name: kaggle-dpo-v2-preflight-output
@@ -183,7 +183,7 @@ jobs:
           repo_url = '__PAUL_REPO_URL__'
           target_commit = '__PAUL_TARGET_COMMIT__'
           adapter_dataset = '__PAUL_ADAPTER_DATASET__'
-          repo_dir = Path('/kaggle/working/paul-open')
+          repo_dir = Path('/tmp/paul-open')
           train_output = Path('/kaggle/working/paul_e4b_dpo_v2_corrective')
           eval_output = Path('/kaggle/working/paul_e4b_dpo_v2_evaluation')
 
