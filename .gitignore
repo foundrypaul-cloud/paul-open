@@ -70,6 +70,11 @@ logs/
 tensorboard/
 tb_logs/
 
+# ----- Human Evaluation Private / Sealed Material -----
+/.human-eval-private/
+/human_eval_sealed/
+/sealed_evaluation/
+
 # ----- Hugging Face & Framework Cache -----
 .cache/
 hf_cache/
