@@ -1,0 +1,24 @@
+name: Launch Validated Gemma4 DPO V2 Once
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/launch-dpo-v2-e51d46-once.yml'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch validated Kaggle DPO V2 workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run kaggle-dpo-v2-preflight.yml \
+            --repo foundrypaul-cloud/paul-open \
+            --ref run/dpo-v2-production-e51d46
