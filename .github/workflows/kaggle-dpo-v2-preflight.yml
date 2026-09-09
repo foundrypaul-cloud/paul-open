@@ -3,20 +3,6 @@ name: Kaggle DPO V2 Preflight
 # Authenticated bridge for the exact PAUL Open PR head. Uses the authoritative
 # historical adapter dataset and locked uv environment recorded by the repository.
 on:
-  push:
-    branches:
-      - codex/authorize-kaggle-dpo-v2-training-run
-    paths:
-      - '.github/workflows/kaggle-dpo-v2-preflight.yml'
-      - 'scripts/dpo_v2_e4b_train.py'
-      - 'scripts/dpo_v2_e4b_smoke.py'
-      - 'scripts/evaluate.py'
-      - 'configs/training/dpo_v2_e4b_corrective.yaml'
-      - 'configs/evaluation/baseline_e4b.yaml'
-      - 'configs/models/gemma4_e4b_it.yaml'
-      - 'pyproject.toml'
-      - 'uv.lock'
-      - 'tests/**'
   workflow_dispatch:
 
 permissions:
