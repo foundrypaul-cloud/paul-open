@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import json
 import os
@@ -16,10 +17,28 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+CUDA_ALLOCATOR_ENV = "PYTORCH_CUDA_ALLOC_CONF"
+CUDA_ALLOCATOR_CONFIG = "expandable_segments:True"
+
+
+def configure_cuda_allocator_environment() -> None:
+    """Establish the production allocator contract before importing Torch."""
+    existing = os.environ.get(CUDA_ALLOCATOR_ENV)
+    if existing not in (None, CUDA_ALLOCATOR_CONFIG):
+        raise RuntimeError(
+            f"{CUDA_ALLOCATOR_ENV} must be exactly {CUDA_ALLOCATOR_CONFIG!r}, found {existing!r}"
+        )
+    if "torch" in sys.modules:
+        raise RuntimeError("Torch was imported before the CUDA allocator contract was established")
+    os.environ[CUDA_ALLOCATOR_ENV] = CUDA_ALLOCATOR_CONFIG
+
+
+configure_cuda_allocator_environment()
+
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.dpo_v2_e4b_smoke import (
+from scripts.dpo_v2_e4b_smoke import (  # noqa: E402
     assert_placement,
     assert_quantization,
     assert_trainability,
@@ -72,8 +91,12 @@ LOCKED_EXPERIMENT = {
             ]
         },
         "tokenizer": {
-            "tokenizer_json_sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
-            "chat_template_sha256": "0a2c8073c878ab1da004bee933a998606537bbb62016310352c7285c3f01c5b5",
+            "tokenizer_json_sha256": (
+                "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f"
+            ),
+            "chat_template_sha256": (
+                "0a2c8073c878ab1da004bee933a998606537bbb62016310352c7285c3f01c5b5"
+            ),
             "expected_max_formatted_length": 349
         },
         "runtime": {
@@ -287,11 +310,292 @@ def validate_final_trainables(
 
 def native_amp_evidence(trainer: Any) -> dict[str, Any]:
     scaler = getattr(trainer.accelerator, "scaler", None)
-    final_scale = scaler.get_scale() if scaler is not None and hasattr(scaler, "get_scale") else None
+    final_scale = (
+        scaler.get_scale() if scaler is not None and hasattr(scaler, "get_scale") else None
+    )
     return {
         "owner": LOCKED_EXPERIMENT["topology"]["native_amp_owner"],
         "fp16_enabled": True,
         "final_scale": float(final_scale) if final_scale is not None else None,
+    }
+
+
+POLICY_LOGIT_CHUNK_TOKENS = 16
+
+
+def sigmoid_dpo_losses(
+    policy_chosen: Any,
+    policy_rejected: Any,
+    reference_chosen: Any,
+    reference_rejected: Any,
+    beta: float,
+    torch: Any,
+) -> tuple[Any, Any, Any]:
+    chosen_rewards = beta * (policy_chosen - reference_chosen)
+    rejected_rewards = beta * (policy_rejected - reference_rejected)
+    losses = -torch.nn.functional.logsigmoid(chosen_rewards - rejected_rewards)
+    return losses, chosen_rewards, rejected_rewards
+
+
+def chunked_selected_logps(
+    hidden_states: Any,
+    labels: Any,
+    lm_head: Any,
+    softcap: float | None,
+    torch: Any,
+    selective_log_softmax: Any,
+    chunk_tokens: int = POLICY_LOGIT_CHUNK_TOKENS,
+) -> Any:
+    """Checkpoint vocabulary projection chunks and retain only selected token log-probs."""
+    from torch.utils.checkpoint import checkpoint
+
+    if hidden_states.shape[:-1] != labels.shape or chunk_tokens <= 0:
+        raise RuntimeError("Invalid hidden-state/label topology for chunked policy log-probs")
+
+    def project(chunk: Any, chunk_labels: Any) -> Any:
+        logits = lm_head(chunk)
+        if softcap is not None:
+            logits = logits / softcap
+            logits = torch.tanh(logits)
+            logits = logits * softcap
+        return selective_log_softmax(logits, chunk_labels)
+
+    selected = []
+    for start in range(0, hidden_states.shape[1], chunk_tokens):
+        stop = min(start + chunk_tokens, hidden_states.shape[1])
+        selected.append(
+            checkpoint(
+                project,
+                hidden_states[:, start:stop],
+                labels[:, start:stop],
+                use_reentrant=False,
+            )
+        )
+    return torch.cat(selected, dim=1)
+
+
+def memory_efficient_policy_loss(
+    trainer: Any, model: Any, inputs: dict[str, Any], return_outputs: bool
+) -> Any:
+    """Pinned sigmoid-DPO policy loss without a retained full-vocabulary logits tensor."""
+    import torch
+
+    if return_outputs:
+        raise RuntimeError("Memory-efficient production policy loss does not return full logits")
+    if (
+        trainer.loss_types != ["sigmoid"]
+        or trainer.loss_weights != [1.0]
+        or trainer.f_divergence_type != "reverse_kl"
+        or trainer.ld_alpha is not None
+        or trainer.use_weighting
+    ):
+        raise RuntimeError("Pinned TRL sigmoid-DPO policy-loss contract changed")
+    model_kwargs = {
+        key: value
+        for key, value in inputs.items()
+        if key not in {"completion_mask", "ref_chosen_logps", "ref_rejected_logps"}
+    }
+    model_kwargs["use_cache"] = False
+    if trainer.aux_loss_enabled:
+        model_kwargs["output_router_logits"] = True
+    assert_forward_cache_disabled("policy", model_kwargs)
+    assert_placement(model, 0, "policy")
+    record = getattr(trainer, "_paul_record_memory", None)
+    if record is None:
+        raise RuntimeError("Policy memory instrumentation was not installed")
+    record("immediately_before_policy_forward")
+
+    causal_model = model.base_model.model
+    backbone = getattr(causal_model, "model", None)
+    lm_head = causal_model.get_output_embeddings()
+    has_softcap_contract = hasattr(causal_model.config, "final_logit_softcapping")
+    if backbone is None or lm_head is None or not has_softcap_contract:
+        raise RuntimeError("Pinned Gemma policy projection contract changed")
+    outputs = backbone(**model_kwargs)
+    hidden_states = outputs.last_hidden_state[:, :-1]
+    labels = inputs["input_ids"][:, 1:]
+    completion_mask = inputs["completion_mask"][:, 1:]
+    per_token_logps = chunked_selected_logps(
+        hidden_states,
+        labels,
+        lm_head,
+        causal_model.config.final_logit_softcapping,
+        torch,
+        trainer._paul_selective_log_softmax,
+    )
+    per_token_logps = per_token_logps.masked_fill(completion_mask == 0, 0.0)
+    chosen_logps, rejected_logps = per_token_logps.sum(dim=1).chunk(2, dim=0)
+    record("after_policy_forward")
+
+    ref_chosen = inputs["ref_chosen_logps"]
+    ref_rejected = inputs["ref_rejected_logps"]
+    losses, chosen_rewards_live, rejected_rewards_live = sigmoid_dpo_losses(
+        chosen_logps,
+        rejected_logps,
+        ref_chosen,
+        ref_rejected,
+        trainer.beta,
+        torch,
+    )
+    loss = losses.mean()
+    if trainer.aux_loss_enabled:
+        aux_loss = getattr(outputs, "aux_loss", None)
+        if aux_loss is None:
+            raise RuntimeError("Pinned Gemma auxiliary-loss contract changed")
+        loss = loss + trainer.router_aux_loss_coef * aux_loss
+
+    mode = "train" if trainer.model.training else "eval"
+    if mode == "train":
+        tokens = trainer.accelerator.gather_for_metrics(inputs["attention_mask"].sum()).sum().item()
+        trainer._total_train_tokens += tokens
+    trainer._metrics[mode]["num_tokens"] = [trainer._total_train_tokens]
+    chosen_rewards = chosen_rewards_live.detach()
+    rejected_rewards = rejected_rewards_live.detach()
+    trainer._metrics[mode]["rewards/chosen"].append(
+        trainer.accelerator.gather(chosen_rewards).mean().item()
+    )
+    trainer._metrics[mode]["rewards/rejected"].append(
+        trainer.accelerator.gather(rejected_rewards).mean().item()
+    )
+    trainer._metrics[mode]["rewards/accuracies"].append(
+        trainer.accelerator.gather(chosen_rewards > rejected_rewards).float().mean().item()
+    )
+    trainer._metrics[mode]["rewards/margins"].append(
+        trainer.accelerator.gather(chosen_rewards - rejected_rewards).mean().item()
+    )
+    trainer._metrics[mode]["logps/chosen"].append(
+        trainer.accelerator.gather(chosen_logps).mean().item()
+    )
+    trainer._metrics[mode]["logps/rejected"].append(
+        trainer.accelerator.gather(rejected_logps).mean().item()
+    )
+    return loss
+
+
+def assert_cuda_allocator_runtime(torch: Any) -> None:
+    """Fail if the process no longer carries the allocator contract."""
+    if os.environ.get(CUDA_ALLOCATOR_ENV) != CUDA_ALLOCATOR_CONFIG:
+        raise RuntimeError("CUDA allocator contract changed after startup")
+
+
+def cuda_memory_telemetry(
+    torch: Any, label: str, previous: dict[int, dict[str, int]] | None = None
+) -> dict[int, dict[str, int]]:
+    """Read and emit per-device CUDA allocator state without resetting counters."""
+    snapshot: dict[int, dict[str, int]] = {}
+    for device in range(torch.cuda.device_count()):
+        free, total = torch.cuda.mem_get_info(device)
+        current = {
+            "allocated_bytes": int(torch.cuda.memory_allocated(device)),
+            "reserved_bytes": int(torch.cuda.memory_reserved(device)),
+            "free_bytes": int(free),
+            "total_bytes": int(total),
+            "max_allocated_bytes": int(torch.cuda.max_memory_allocated(device)),
+            "max_reserved_bytes": int(torch.cuda.max_memory_reserved(device)),
+        }
+        if previous is not None and device in previous:
+            for key in tuple(current):
+                current[f"delta_{key}"] = current[key] - previous[device][key]
+        snapshot[device] = current
+    print(
+        "CUDA_MEMORY_TELEMETRY="
+        + json.dumps({"label": label, "devices": snapshot}, sort_keys=True),
+        flush=True,
+    )
+    return snapshot
+
+
+def assert_gradient_checkpointing_active(policy: Any) -> None:
+    """Require checkpointing to be active on the authentic train-time model."""
+    active = bool(getattr(policy, "is_gradient_checkpointing", False)) or any(
+        bool(getattr(module, "gradient_checkpointing", False)) for module in policy.modules()
+    )
+    if not active:
+        raise RuntimeError("Gradient checkpointing is not active before backward")
+
+
+def assert_optimizer_state_unmaterialized(trainer: Any) -> None:
+    """The pinned paged AdamW optimizer must be state-free before first backward."""
+    state = getattr(trainer.optimizer, "state", None)
+    if state is None or len(state) != 0:
+        raise RuntimeError("Optimizer state unexpectedly materialized before first backward")
+
+
+def assert_forward_cache_disabled(label: str, kwargs: dict[str, Any]) -> None:
+    if kwargs.get("use_cache") is not False:
+        raise RuntimeError(f"{label} forward must explicitly use use_cache=False")
+
+
+def release_pretraining_temporaries(torch: Any, copied_adapter: Path) -> None:
+    """Remove the consumed adapter copy and release only unreferenced cached storage."""
+    shutil.rmtree(copied_adapter, ignore_errors=True)
+    gc.collect()
+    torch.cuda.empty_cache()
+
+
+def install_runtime_memory_instrumentation(
+    trainer: Any,
+    policy: Any,
+    reference: Any,
+    torch: Any,
+    telemetry_state: dict[str, Any],
+) -> None:
+    """Install observational forward/backward boundary checks for production."""
+
+    def record(label: str) -> None:
+        telemetry_state["snapshot"] = cuda_memory_telemetry(
+            torch, label, telemetry_state.get("snapshot")
+        )
+
+    def forward_pre(label: str, expected_device: int):
+        def hook(module: Any, args: tuple[Any, ...], kwargs: dict[str, Any]) -> None:
+            assert_forward_cache_disabled(label, kwargs)
+            assert_placement(module, expected_device, label)
+            record(f"immediately_before_{label}_forward")
+
+        return hook
+
+    def forward_post(label: str):
+        def hook(module: Any, args: tuple[Any, ...], kwargs: dict[str, Any], output: Any) -> None:
+            record(f"after_{label}_forward")
+
+        return hook
+
+    handles = [
+        reference.register_forward_pre_hook(forward_pre("reference", 1), with_kwargs=True),
+        reference.register_forward_hook(forward_post("reference"), with_kwargs=True),
+    ]
+    trainer._paul_record_memory = record
+    original_backward = trainer.accelerator.backward
+    first_backward = True
+
+    def audited_backward(loss: Any, **kwargs: Any) -> Any:
+        nonlocal first_backward
+        if first_backward:
+            assert_cuda_allocator_runtime(torch)
+            assert_gradient_checkpointing_active(policy)
+            trainable = assert_adapter_topology(policy, reference, torch)
+            assert_optimizer_membership(trainer, trainable)
+            assert_optimizer_state_unmaterialized(trainer)
+        boundary = (
+            "immediately_before_first_backward"
+            if first_backward
+            else "immediately_before_backward"
+        )
+        record(boundary)
+        try:
+            result = original_backward(loss, **kwargs)
+        except BaseException:
+            record("after_first_backward_failed" if first_backward else "after_backward_failed")
+            raise
+        record("after_first_backward" if first_backward else "after_backward")
+        first_backward = False
+        return result
+
+    trainer.accelerator.backward = audited_backward
+    trainer._paul_runtime_instrumentation = {
+        "forward_hook_handles": handles,
+        "original_backward": original_backward,
     }
 
 
@@ -433,14 +737,28 @@ def main() -> None:
     versions = validate_versions(config)
 
     import torch
+
+    assert_cuda_allocator_runtime(torch)
     from datasets import Dataset
     from huggingface_hub import hf_hub_download
     from peft import PeftModel
-    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig, TrainerCallback
+    from transformers import (
+        AutoModelForCausalLM,
+        AutoTokenizer,
+        BitsAndBytesConfig,
+        TrainerCallback,
+    )
     from trl import DPOConfig, DPOTrainer
     from trl.trainer.utils import selective_log_softmax
 
     validate_hardware(torch, config)
+    telemetry_state: dict[str, Any] = {"snapshot": None}
+
+    def record_memory(label: str) -> None:
+        telemetry_state["snapshot"] = cuda_memory_telemetry(
+            torch, label, telemetry_state["snapshot"]
+        )
+
     revision = experiment["model_revision"]
     for filename, key in (
         ("tokenizer.json", "tokenizer_json_sha256"),
@@ -462,12 +780,14 @@ def main() -> None:
         device_map={"": 0},
         quantization_config=quantization,
     )
+    record_memory("after_policy_load")
     reference = AutoModelForCausalLM.from_pretrained(
         experiment["model_id"],
         revision=revision,
         device_map={"": 1},
         quantization_config=quantization,
     )
+    record_memory("after_reference_load")
     reference = PeftModel.from_pretrained(
         reference, adapter_directory, adapter_name="sft", is_trainable=False
     )
@@ -486,6 +806,7 @@ def main() -> None:
         assert_quantization(policy, torch, "policy")
         assert_quantization(reference, torch, "reference")
         trainable = assert_adapter_topology(policy, reference, torch)
+        record_memory("after_adapter_loading_and_validation")
 
         output_dir = args.output_dir or dpo["output_dir"]
         output_path = Path(output_dir)
@@ -516,7 +837,12 @@ def main() -> None:
         )
         dataset = Dataset.from_list(records)
         trainer_type = external_reference_trainer_class(
-            DPOTrainer, reference, torch.device("cuda:1"), torch, selective_log_softmax
+            DPOTrainer,
+            reference,
+            torch.device("cuda:1"),
+            torch,
+            selective_log_softmax,
+            policy_loss=memory_efficient_policy_loss,
         )
         trainer = trainer_type(
             model=policy,
@@ -526,11 +852,14 @@ def main() -> None:
             processing_class=tokenizer,
             callbacks=[checkpoint_provenance_callback_class(TrainerCallback, provenance)()],
         )
+        trainer._paul_selective_log_softmax = selective_log_softmax
+        record_memory("after_dpo_trainer_construction")
         assert_placement(policy, 0, "policy after trainer")
         assert_placement(reference, 1, "reference after trainer")
         trainable = assert_adapter_topology(policy, reference, torch)
         trainer.create_optimizer()
         assert_optimizer_membership(trainer, trainable)
+        assert_optimizer_state_unmaterialized(trainer)
         pre_train_digest = trainable_digest(trainable)
         initial_value_digests = trainable_value_digests(trainable)
 
@@ -538,6 +867,22 @@ def main() -> None:
             print("DPO V2 PRODUCTION PREFLIGHT: PASS")
             return
 
+        # The trainer owns every object needed from this point. These local aliases and
+        # the consumed on-disk adapter copy are not part of authentic training.
+        del dataset, trainer_type, training_args, quantization, records
+        shutil.rmtree(copied_adapter, ignore_errors=True)
+        record_memory("after_temporary_adapter_and_alias_cleanup")
+        release_pretraining_temporaries(torch, copied_adapter)
+        record_memory("after_gc_collect_and_cuda_empty_cache")
+        assert_placement(policy, 0, "policy before training")
+        assert_placement(reference, 1, "reference before training")
+        trainable = assert_adapter_topology(policy, reference, torch)
+        assert_optimizer_membership(trainer, trainable)
+        assert_optimizer_state_unmaterialized(trainer)
+        install_runtime_memory_instrumentation(
+            trainer, policy, reference, torch, telemetry_state
+        )
+        record_memory("immediately_before_trainer_train")
         result = trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
         assert_placement(policy, 0, "policy after training")
         assert_placement(reference, 1, "reference after training")

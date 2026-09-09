@@ -204,6 +204,7 @@ def external_reference_trainer_class(
     reference_device: Any,
     torch: Any,
     selective_log_softmax: Callable[[Any, Any], Any],
+    policy_loss: Callable[..., Any] | None = None,
 ) -> type:
     """Keep the independent reference outside incompatible Accelerate preparation."""
 
@@ -259,6 +260,8 @@ def external_reference_trainer_class(
             augmented = dict(inputs)
             augmented["ref_chosen_logps"] = chosen
             augmented["ref_rejected_logps"] = rejected
+            if policy_loss is not None:
+                return policy_loss(self, model, augmented, return_outputs)
             previous = self.precompute_ref_logps
             self.precompute_ref_logps = True
             try:
