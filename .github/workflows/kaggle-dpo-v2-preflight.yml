@@ -4,11 +4,6 @@ name: Kaggle DPO V2 Preflight
 # historical adapter dataset and locked uv environment recorded by the repository.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/kaggle-dpo-v2-preflight.yml'
 
 permissions:
   contents: read
