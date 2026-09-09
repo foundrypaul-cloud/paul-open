@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "status_as_of": "2026-09-10",
+  "project": {
+    "name": "PAUL Open",
+    "organization": "Paul Foundry Technologies Private Limited",
+    "repository": "https://github.com/foundrypaul-cloud/paul-open",
+    "website": "https://open.paulfoundry.com/",
+    "research_source_of_truth": "repository"
+  },
+  "model_research": {
+    "base_model": "google/gemma-4-E4B-it",
+    "reference_checkpoint": "SFT",
+    "experimental_checkpoint": "DPO V2 Corrective",
+    "superiority_established": false,
+    "current_conclusion": "SFT remains the safer reference checkpoint. DPO V2 is technically valid with mixed behavioral effects and is not established as superior."
+  },
+  "step2_freeze": {
+    "branch": "research-freeze/step2-dpo-v2-20260909",
+    "sha": "ac899e879f930f25b2081550bd8c5dd5c983df35",
+    "immutable": true
+  },
+  "dpo_v2": {
+    "experiment_id": "paul_e4b_dpo_v2_corrective",
+    "technical_validity": "pass",
+    "dataset_records": 14,
+    "trainable_tensors_changed": {
+      "changed": 516,
+      "intended": 516
+    },
+    "train_loss": 0.687744140625,
+    "train_runtime_seconds": 238.58,
+    "behavioral_result": "mixed",
+    "promoted_over_reference": false
+  },
+  "evaluation": {
+    "current_50_case_comparison": "diagnostic_contaminated_for_dpo_v2",
+    "clean_superiority_evaluation_available": false,
+    "aggregate_score_is_sufficient_for_superiority": false,
+    "details": "docs/EXPERIMENT_JOURNEY_E4B.md"
+  },
+  "human_evaluation": {
+    "stage": "H2",
+    "formal_acceptance": "pending",
+    "sandbox_native_responses": 6,
+    "sandbox_normalized_rows": 18,
+    "sandbox_backup_rows": 6,
+    "verifier": "pass",
+    "remaining_blocker": "Sync the live standalone Apps Script runtime with the merged closed-message best-effort patch and complete controlled recovery/closure acceptance."
+  },
+  "canonical_docs": {
+    "project_status": "docs/PROJECT_STATUS.md",
+    "experiment_journey": "docs/EXPERIMENT_JOURNEY_E4B.md",
+    "dpo_v2": "docs/E4B_DPO_V2_CORRECTIVE.md",
+    "human_evaluation_protocol": "docs/HUMAN_EVALUATION_PROTOCOL.md",
+    "website_integration": "docs/WEBSITE_INTEGRATION.md",
+    "agent_context": "AGENTS.md"
+  },
+  "public_claims": {
+    "may_say_dpo_v2_is_technically_valid": true,
+    "may_say_dpo_v2_is_superior_to_sft": false,
+    "may_describe_50_case_result_as_clean_held_out": false,
+    "may_say_h2_is_formally_complete": false
+  }
+}

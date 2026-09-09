@@ -1,227 +1,222 @@
-# PAUL Open Model
+# PAUL Open
 
-Research project for specializing [Google Gemma 4](https://ai.google.dev/gemma) open-weight models for Indian/multilingual languages, science education, Socratic tutoring, teacher assistance, human-centered empathy, and life sciences research.
+**PAUL Open** is Paul Foundry's public, open-source research initiative for building and evaluating reproducible AI systems for multilingual knowledge work, science education, tutoring, teacher assistance, human-centered interaction, and scientific research.
 
-> **Status**: PAUL Open Model training pipeline is implemented.
-> * **Reference run ID**: `paul_gemma4_e4b_25d8e53a`
-> * **Base model**: `google/gemma-4-E4B-it`
-> * **SFT corpus**: 180 records
-> * **DPO corpus**: 65 records
-> * **DPO training subset**: 55 records
-> * **Permanent evaluation holdout**: 10 records
-> * **Canonical reproducibility notebook**: `notebooks/paul_open_model_training_colab.ipynb`
-> * **Dataset schemas**: `data/schemas/sft_schema.json`, `data/schemas/dpo_schema.json`
+[Website](https://open.paulfoundry.com/) · [Current research status](docs/PROJECT_STATUS.md) · [E4B experiment journey](docs/EXPERIMENT_JOURNEY_E4B.md) · [Contributing](CONTRIBUTING.md)
 
-## Research Reproducibility
+> [!IMPORTANT]
+> **Current research state — 10 September 2026**
+>
+> - Base model: `google/gemma-4-E4B-it`.
+> - The historical SFT adapter remains the **reference checkpoint**.
+> - DPO V2 Corrective is a **technically valid research checkpoint with mixed behavioral effects**. It has **not** been established as superior to SFT.
+> - The existing 50-case SFT-vs-DPO V2 comparison is useful diagnostically but is **contaminated for DPO V2** and must not be used as clean held-out superiority evidence.
+> - Human-evaluation infrastructure has completed genuine sandbox collection and verifier checks. Final H2 recovery/closure acceptance is still being completed after a live Google Forms runtime incompatibility was isolated and patched in the repository.
+> - Immutable Step 2 research freeze: `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
-The repository maintains strict separation between source code, training data, and evaluation holdouts to ensure scientific reproducibility. The complete training and evaluation methodology is documented and validated against the documented checks.
-
-- **Reproducibility Workflow:** [notebooks/paul_open_model_training_colab.ipynb](notebooks/paul_open_model_training_colab.ipynb) provides the reference training run and reproducible pipeline.
-- **Documentation:** The methodology is defined in the [Training Guide](docs/TRAINING_GUIDE.md) and [Training Data Specification](docs/TRAINING_DATA_SPECIFICATION.md).
-- **Data Schemas:** [data/schemas/](data/schemas/)
-- **Training Data:** The finalized training corpus ([data/train/](data/train/)) is permanently committed and isolated from the evaluation holdout.
-- **Evaluation Holdout:** A strict evaluation holdout is maintained for benchmark validation as part of the documented methodology.
-- **Generated Model Artifacts:** The final observed results and checkpoints are strictly tracked and preserved.
-
-## Research Identity
-
-PAUL Open is an open research initiative of Paul Foundry Technologies Private Limited, created to explore and develop AI systems that can contribute to research, knowledge, education, and the quality of human life.
-
-PAUL Open is the first open initiation of Paul Foundry's broader research vision: building an open, AI-first environment where researchers, developers, and educators can experiment, collaborate, and build across diverse fields of knowledge.
-
-**CURRENT:**
-- PAUL Open is an open research/model initiative.
-- This repository contains the reference PAUL Open Model workflow, datasets, schemas, and reproducibility documentation.
-
-**FUTURE:**
-- Paul Foundry intends to expand this direction into a broader open research ecosystem.
-- Academy by Paul Foundry is a planned AI-first research and educational initiative associated with this broader vision.
+The detailed, evidence-oriented status is maintained in [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md).
 
 ---
 
-## Research Ecosystem
+## Repository is the research source of truth
 
-PAUL Open sits at the foundation of our long-term research direction:
+The public GitHub repository is authoritative for PAUL Open research claims, experiment definitions, datasets that are intended to be public, evaluation protocols, manifests, and reproducibility documentation.
 
-`PAUL Open` → `Open research models` → `Reproducible experiments` → `Research tooling` → `Researchers + developers + educators` → `Broader Paul Foundry research ecosystem` → `Academy by Paul Foundry`
+`open.paulfoundry.com` is the public presentation and participation layer. It may render research status, documentation, and human-evaluation entry points, but it must not independently redefine experimental facts. If the website and repository disagree, the versioned repository evidence takes precedence.
 
-*Note: The Academy by Paul Foundry is a planned future initiative.*
+For machine-readable website integration, see:
 
----
+- [`public/research-status.json`](public/research-status.json)
+- [`public/human-evaluation.json`](public/human-evaluation.json)
+- [`docs/WEBSITE_INTEGRATION.md`](docs/WEBSITE_INTEGRATION.md)
 
-## Research Philosophy
-
-Paul Foundry's research direction explores how increasingly capable AI systems can become useful instruments for human research, discovery, learning, and knowledge creation, while maintaining transparency, reproducibility, and responsible development.
-
----
-
-## Provenance
-
-The PAUL Open Model follows a strict, documented provenance chain:
-
-`PAUL Open Model` → `Paul Foundry research implementation` → `SFT` → `DPO` → `Evaluation` → `Model artifact`
-
-**Base model:** `google/gemma-4-E4B-it`
-
-PAUL Open Model is an independently developed Paul Foundry research model derived and fine-tuned from the stated base model. Paul Foundry is the developer and originating research organization for PAUL Open. Google is the upstream origin for the Gemma base model. PAUL Open is not an official Google model and is not affiliated with, endorsed by, or developed in collaboration with Google or Google DeepMind.
+For coding agents and IDEs, start with [`AGENTS.md`](AGENTS.md).
 
 ---
 
-## How to Cite
+## Research question
 
-**Recommended citation**
-If you utilize this workflow or model in your research, please cite:
+PAUL Open is not a leaderboard-optimization project. The working question is:
 
-```text
-Paul Foundry Technologies Private Limited.
-"PAUL Open Model."
-Paul Foundry Research Wing, 2026.
+> **For the intended user and task, does post-training produce responses that are actually more useful, correct, clear, natural, and appropriately calibrated while preserving existing strengths?**
 
-Repository: https://github.com/foundrypaul-cloud/paul-open
-```
+A higher aggregate score alone is not sufficient evidence that a checkpoint is better.
 
-For downstream projects, Paul Foundry recommends acknowledging provenance with language such as:
-> "Based on PAUL Open Model by Paul Foundry Technologies Private Limited."
+The project separates four evidence layers:
 
-*This is recommended attribution unless required by the applicable license.*
+1. **Technical validity** — did training execute exactly as intended?
+2. **Automated regression signal** — what observable indicators changed?
+3. **Behavioral quality** — are responses actually better under task-specific review?
+4. **Model superiority** — does improvement hold under clean evaluation, preservation checks, robustness testing, and blinded human preference?
 
----
-
-## Google Colab Notebooks
-
-You can run our research notebooks directly on Google Colab using free or dedicated NVIDIA GPUs:
-
-| Notebook | Description | Colab Launch Link |
-|---|---|---|
-| **01 — Environment Setup** | Verifies Python 3.12, CUDA, GPU VRAM, and pins Gemma 4 ML dependencies. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/foundrypaul-cloud/paul-open/blob/main/notebooks/01_colab_environment_setup.ipynb) |
-| **02 — First Model Validation (E4B)** | Quantized 4-bit loading of `google/gemma-4-E4B-it` on Tesla T4 via `AutoModelForMultimodalLM`. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/foundrypaul-cloud/paul-open/blob/main/notebooks/02_first_model_validation_e4b.ipynb) |
-| **03 — Baseline Evaluation (E4B)** | Evaluates unmodified `google/gemma-4-E4B-it` across 50 benchmark cases (10 domains, 10 languages). | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/foundrypaul-cloud/paul-open/blob/main/notebooks/03_baseline_evaluation_e4b.ipynb) |
+The current DPO V2 result passes the first layer. The fourth has not been established.
 
 ---
 
-## Target Capabilities & Research Scope
+## Current E4B experiment
 
-1. **Indian Multilingual AI**: Native fluency and reasoning in English, Hindi, Bengali, Assamese, Tamil, Telugu, with extensibility to all 22 scheduled Indian languages.
-2. **Multilingual Translation & Code-Switching**: Bidirectional translation (English ↔ Indic, Indic ↔ Indic), transliteration, and conversational code-switching (e.g., Hinglish, Tanglish, Benglish).
-3. **Science Education**: Rigorous, curriculum-aligned conceptual explanations across Physics, Chemistry, Biology, Mathematics, and General Science.
-4. **Student Tutoring**: Adaptive explanations, Socratic inquiry, misconception detection, step-by-step guidance, and grade-level adaptation (primary to undergraduate).
-5. **Teacher Assistance**: Lesson planning (e.g., 5E model), assessment item generation, rubric design, Bloom's taxonomy mapping, and educational material creation.
-6. **Empathy & Human-Centered Interaction**: Warm, supportive, and emotionally aware communication guided by the project's **PAUL Human-Centered Interaction / Anti-Anthropomorphism Guideline** (zero false claims of biological feelings, human memories, or physical life).
-7. **Scientific Research Assistance**: Scientific literature comprehension, extreme summarization (SciTLDR style), hypothesis formulation, experimental design critique, and technical communication.
-8. **Life Sciences & Biomedical Domains**: Genomics, molecular and cellular biology, biochemistry, pharmacology, neuroscience, and biological pathway reasoning.
-9. **General Reasoning & Instruction Following**: Multi-step deduction, complex mathematics, and strict structured output adherence.
-10. **Multimodal Scientific Capabilities**: Visual reasoning over scientific charts, plots, textbook diagrams, and geometry figures leveraging Gemma 4's native multimodal architecture.
+The current research line follows:
 
-For full mappings of capabilities to candidate resources, licensing, and evaluations, see:
-- 📖 [SKILLS.md](SKILLS.md) — Capability & Skill Matrix
-- 📊 [DATASET_REGISTRY.md](DATASET_REGISTRY.md) — Dataset Provenance, Licenses & Public Release Audits
-- 🧪 [docs/BASELINE_EVALUATION.md](docs/BASELINE_EVALUATION.md) — Phase 2 Baseline Evaluation Framework & Benchmarks
+`Gemma 4 E4B` → `PAUL SFT reference` → `DPO V1 diagnosis` → `DPO V2 Corrective` → `clean evaluation + blinded human review`
 
----
+### DPO V2 Corrective
 
-## Model Strategy & Target Tiers
+The final DPO V2 production run is reproducible and technically validated:
 
-The project targets the Gemma 4 open-weights model family (Apache 2.0) with an extensible dynamic registry in `src/paul_open_model/models/loader.py`:
+- experiment: `paul_e4b_dpo_v2_corrective`
+- corrective dataset: [`data/train/dpo_v2_corrective.jsonl`](data/train/dpo_v2_corrective.jsonl)
+- records: 14
+- training: DPO sigmoid loss, `beta=0.1`, 4 epochs
+- topology: 2 × Tesla T4; policy on GPU 0, frozen external reference on GPU 1
+- quantization: 4-bit NF4 base models
+- final completion gate: PASS
+- intended trainable tensors changed: 516 / 516
+- train loss: `0.687744140625`
+- train runtime: `238.58 s`
 
-| Role / Tier | Model Name | Hugging Face ID | Architecture | Parameter Count | Context | Typical QLoRA VRAM |
-|---|---|---|---|---|---|---|
-| **Primary Target** ⭐ | **Gemma 4 26B A4B IT** | `google/gemma-4-26B-A4B-it` | `gemma4` (MoE) | 26B total (~4B active) | 256K | ~22 GB |
-| **Development / Fallback** 🛠️ | **Gemma 4 12B IT** | `google/gemma-4-12B-it` | `gemma4_unified` (June 2026) | 12B dense | 256K | ~14 GB |
-| **Maximum Capability** 🚀 | **Gemma 4 31B IT** | `google/gemma-4-31B-it` | `gemma4` | 31B dense | 256K | ~28 GB |
-| **Edge / Lightweight** 📱 | **Gemma 4 E4B IT** | `google/gemma-4-E4B-it` | `gemma4` | 4.5B dense | 128K | ~6 GB |
-| **Ultra-Lightweight** ⚡ | **Gemma 4 E2B IT** | `google/gemma-4-E2B-it` | `gemma4` | 2.3B dense | 128K | ~3.5 GB |
+The technically valid run does **not** imply behavioral superiority. The current evidence shows both improvements and meaningful regressions, including multilingual/script fidelity and factual-risk cases.
 
-⭐ **Primary Target**: Gemma 4 26B A4B IT provides near-30B quality with ~4B active inference compute.  
-🛠️ **Development / Fallback**: Gemma 4 12B IT (June 2026 Unified release) features an encoder-free unified multimodal architecture for fast iteration.  
-🚀 **Maximum Capability**: Gemma 4 31B IT establishes the dense scaling ceiling.
+Read the full evidence chain:
 
-See [docs/MODELS.md](docs/MODELS.md) for full architectural details and memory profiles.
+- [`docs/E4B_DPO_V2_CORRECTIVE.md`](docs/E4B_DPO_V2_CORRECTIVE.md)
+- [`docs/EXPERIMENT_JOURNEY_E4B.md`](docs/EXPERIMENT_JOURNEY_E4B.md)
 
 ---
 
-## Quick Start
+## Evaluation integrity
 
-### Prerequisites
-- [uv](https://docs.astral.sh/uv/) (Python package manager)
-- Python 3.12 (managed automatically by uv in `.venv`)
-- NVIDIA GPU with CUDA (for remote training — local development works on any workstation)
+PAUL Open treats evaluation contamination as a research failure, not a documentation detail.
 
-### Setup
+The canonical 50-case baseline was later found to overlap with DPO V2 source material at exact, content, template, or concept level. Therefore the current 50-case SFT-vs-DPO V2 comparison is explicitly labeled:
+
+> **Diagnostic / contaminated for DPO V2 — not a clean held-out superiority evaluation.**
+
+Future training datasets must be checked against the full frozen evaluation registry before acceptance. Human review is also being added as a first-class evidence layer rather than using heuristic benchmark numbers as the final judge.
+
+---
+
+## Human evaluation
+
+PAUL Open uses blinded pairwise comparison: reviewers see a prompt and Response A / Response B without model identity, checkpoint identity, score hints, or hidden winner labels.
+
+The research instrument and durability path are versioned in this repository. Google Forms is currently used as a collection surface, with normalized storage and an independent checksum-backed backup ledger.
+
+The public website can provide a more approachable entry point, but the following rules remain fixed:
+
+- reviewer links must be respondent-facing `/viewform` URLs only;
+- editor/admin links and response spreadsheets must never be exposed;
+- model/checkpoint identity must stay blinded;
+- optional comments remain optional;
+- the website must not create a second, divergent research protocol;
+- when no reviewed evaluation packet is open, the website should show the evaluation as closed/preparing rather than exposing a sandbox instrument.
+
+See [`docs/WEBSITE_INTEGRATION.md`](docs/WEBSITE_INTEGRATION.md) and [`docs/HUMAN_EVALUATION_PROTOCOL.md`](docs/HUMAN_EVALUATION_PROTOCOL.md).
+
+---
+
+## Target capabilities
+
+PAUL Open currently explores:
+
+- Indian and multilingual language understanding and generation
+- translation, native-script fidelity, transliteration, and code-switching
+- science education and rigorous conceptual explanation
+- Socratic tutoring and misconception-guided learning
+- student and teacher assistance
+- human-centered interaction without false anthropomorphic claims
+- scientific research assistance
+- life-science and biomedical reasoning
+- general reasoning and instruction following
+- multimodal scientific understanding
+
+Capability and dataset research notes:
+
+- [`SKILLS.md`](SKILLS.md)
+- [`DATASET_REGISTRY.md`](DATASET_REGISTRY.md)
+- [`docs/BASELINE_EVALUATION.md`](docs/BASELINE_EVALUATION.md)
+
+---
+
+## Reproducing the research
+
+The project uses versioned source, datasets, configs, manifests, and remote GPU execution. Kaggle is the current production GPU environment for the E4B DPO V2 workflow.
+
+Useful entry points:
+
+- [`notebooks/paul_open_model_training_kaggle.ipynb`](notebooks/paul_open_model_training_kaggle.ipynb)
+- [`scripts/dpo_v2_e4b_train.py`](scripts/dpo_v2_e4b_train.py)
+- [`configs/training/dpo_v2_e4b_corrective.yaml`](configs/training/dpo_v2_e4b_corrective.yaml)
+- [`docs/TRAINING_GUIDE.md`](docs/TRAINING_GUIDE.md)
+
+### Local setup
 
 ```bash
-# Clone the repository
 git clone https://github.com/foundrypaul-cloud/paul-open.git
 cd paul-open
 
-# Create virtual environment and install core dependencies
 uv sync
-
-# Configure environment variables
 cp .env.example .env
-# Edit .env with your HF_TOKEN and preferred HF_NAMESPACE
-
-# Verify installation
-uv run python -c "import paul_open_model; print(paul_open_model.__version__)"
-```
-
-### Install Optional Dependency Groups
-
-```bash
-uv sync --extra eval        # Evaluation benchmarks (sacrebleu, etc.)
-uv sync --extra notebooks   # Jupyter & plotting tools
-uv sync --extra wandb       # Weights & Biases (optional)
-uv sync --extra dev         # Testing, linting, formatting
-uv sync --extra all         # Full environment
-```
-
----
-
-## Project Structure
-
-```
-paul-open/
-├── SKILLS.md                 # Full capability-to-resource-to-eval matrix
-├── DATASET_REGISTRY.md       # Dataset licensing, provenance & release audits
-├── configs/                  # Modular YAML configurations
-│   ├── models/               # Model configs (26B-A4B, 12B Unified, 31B, E4B, E2B)
-│   ├── training/             # Recipes: SFT QLoRA, SFT Full, DPO
-│   ├── data/                 # Data pipelines for all 10 capability domains
-│   └── evaluation/           # Standardized & custom benchmark configs
-├── src/paul_open_model/      # Core research library
-│   ├── models/               # Dynamic registry, loader, quantization, PEFT adapters
-│   ├── data/                 # Registry, formatters, Indic & science loaders
-│   ├── training/             # SFT & DPO training loops, custom callbacks
-│   ├── evaluation/           # Benchmark harnesses, translation & empathy metrics
-│   └── utils/                # Config validation, logging, hardware planning
-├── scripts/                  # CLI entry points (train, evaluate, export, chat)
-├── notebooks/                # Google Colab & Jupyter notebooks
-├── tests/                    # Test suite
-├── docs/                     # Detailed architectural guides and documentation
-└── results/                  # Experiment outputs & checkpoints (gitignored)
-```
-
----
-
-## Development & Verification
-
-```bash
-# Run test suite
 uv run pytest
+```
 
-# Linting
-uv run ruff check .
+Never commit tokens, private adapters, checkpoints, private Kaggle outputs, or credentials.
 
-# Code formatting
-uv run ruff format .
+---
 
-# Type checking
-uv run mypy src/
+## Project map
+
+```text
+paul-open/
+├── AGENTS.md                  # Agent/IDE operating context and source-of-truth rules
+├── public/                    # Machine-readable public status for website consumers
+├── configs/                   # Model, training, data, and evaluation configuration
+├── data/                      # Public research datasets and schemas
+├── docs/                      # Research protocols, experiment history, and methodology
+├── notebooks/                 # Reproducibility notebooks
+├── scripts/                   # Training, evaluation, export, and verification entry points
+├── src/paul_open_model/       # Core Python research library
+├── tests/                     # Test suite
+└── artifacts/                 # Versioned manifests and public research artifacts
 ```
 
 ---
 
-## License Boundary
+## Contributing
 
-The repository's source-code layer is distributed under the **Apache License 2.0** (see [LICENSE](LICENSE)), subject to the separate licenses and terms applicable to third-party components, datasets, and model materials.
+PAUL Open welcomes technically rigorous contributions. Research-facing changes have stricter requirements than ordinary application code: provenance, contamination boundaries, experimental claims, and reproducibility must remain explicit.
 
-Please refer to [NOTICE.md](NOTICE.md) for detailed attribution and third-party provenance. Third-party models (including the google/gemma-4-E4B-it base model) and datasets retain their respective licenses and attribution requirements.
+Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request. The repository also provides issue and pull-request templates, a code of conduct, and a security policy.
+
+---
+
+## Research identity and provenance
+
+PAUL Open is an independent research initiative of **Paul Foundry Technologies Private Limited**.
+
+The current model research is derived from Google's Gemma 4 model family. PAUL Open is not an official Google model and is not affiliated with, endorsed by, or developed in collaboration with Google or Google DeepMind.
+
+Website: https://open.paulfoundry.com/  
+Repository: https://github.com/foundrypaul-cloud/paul-open
+
+---
+
+## License boundary
+
+The repository source-code layer is distributed under the **Apache License 2.0**; see [`LICENSE`](LICENSE).
+
+Gemma 4 is released by Google under Apache 2.0. Third-party datasets, libraries, benchmarks, and other materials retain their own licenses and attribution requirements. Public release suitability is evaluated separately from whether a dataset can be downloaded or used experimentally.
+
+See [`NOTICE.md`](NOTICE.md), [`DATASET_REGISTRY.md`](DATASET_REGISTRY.md), and the applicable upstream terms before redistributing derived artifacts.
+
+---
+
+## Citation
+
+See [`CITATION.cff`](CITATION.cff). A simple project citation is:
+
+```text
+Paul Foundry Technologies Private Limited.
+"PAUL Open."
+Paul Foundry Research Wing, 2026.
+https://github.com/foundrypaul-cloud/paul-open
+```
