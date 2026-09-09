@@ -26,8 +26,16 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--left", required=True, help="Left source .json or .jsonl file")
     parser.add_argument("--right", required=True, help="Right source .json or .jsonl file")
-    parser.add_argument("--left-label", required=True, help="Private identity label for left source")
-    parser.add_argument("--right-label", required=True, help="Private identity label for right source")
+    parser.add_argument(
+        "--left-label",
+        required=True,
+        help="Private identity label for left source",
+    )
+    parser.add_argument(
+        "--right-label",
+        required=True,
+        help="Private identity label for right source",
+    )
     parser.add_argument(
         "--seed",
         required=True,
