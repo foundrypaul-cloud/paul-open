@@ -24,6 +24,12 @@ At the same time, broad romanization of ordinary target-language prose remains a
 
 The full policy and proposed scoring revision are defined in [TRANSLATION_EVALUATION_POLICY.md](TRANSLATION_EVALUATION_POLICY.md).
 
+## Human comparison
+
+Human comparison is intentionally separated into **development human evaluation** and **sealed human assurance evaluation** so that feedback used to improve a model cannot later be presented as untouched final evidence. Reviewer-facing forms remain blind to model identity and software/training terminology, while A/B placement is counterbalanced and the research mapping remains private until analysis is locked.
+
+The complete Google Forms/Sheets-oriented protocol is defined in [HUMAN_EVALUATION_WORKFLOW.md](HUMAN_EVALUATION_WORKFLOW.md), with machine-readable defaults in `configs/evaluation/human_eval_v1.yaml`.
+
 ## Current research limitations
 
 - The existing heuristic rubric is a regression signal, not a semantic correctness judge.
@@ -41,12 +47,15 @@ Before another preference-training round, PAUL Open should:
 4. separate task-specific metrics rather than collapsing them into one headline score;
 5. add protected-span-aware translation scoring;
 6. run deterministic regression tests plus multi-seed stochastic evaluation where appropriate;
-7. use blinded bilingual/subject-matter human review for release decisions.
+7. implement and dry-run the blinded human-evaluation workflow before using it on research cases;
+8. use sealed bilingual/subject-matter human assurance only after a candidate is frozen.
 
 ## Canonical evaluation references
 
 - [BASELINE_EVALUATION.md](BASELINE_EVALUATION.md)
 - [TRANSLATION_EVALUATION_POLICY.md](TRANSLATION_EVALUATION_POLICY.md)
+- [HUMAN_EVALUATION_WORKFLOW.md](HUMAN_EVALUATION_WORKFLOW.md)
+- [RESEARCH_FREEZE_STEP2.md](RESEARCH_FREEZE_STEP2.md)
 - [EXPERIMENT_JOURNEY_E4B.md](EXPERIMENT_JOURNEY_E4B.md)
 - [EVALUATION_SUITES_GUIDE.md](EVALUATION_SUITES_GUIDE.md)
 - [TRAINING_DATA_SPECIFICATION.md](TRAINING_DATA_SPECIFICATION.md)
