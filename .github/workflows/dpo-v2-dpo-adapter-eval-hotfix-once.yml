@@ -1,4 +1,4 @@
-name: Apply DPO V2 DPO Adapter Eval Hotfix Once
+name: Dispatch Corrected DPO V2 Workflow Once
 
 on:
   push:
@@ -8,59 +8,13 @@ on:
       - '.github/workflows/dpo-v2-dpo-adapter-eval-hotfix-once.yml'
 
 permissions:
-  contents: write
   actions: write
+  contents: read
 
 jobs:
-  patch-and-dispatch:
+  dispatch:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Apply exact DPO adapter evaluation-path patch
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-
-          workflow = Path('.github/workflows/kaggle-dpo-v2-preflight.yml')
-          text = workflow.read_text(encoding='utf-8')
-
-          old_gate = '''          final_adapter = train_output / 'final-dpo-adapter'\n          manifest = train_output / 'training_manifest.json'\n          if not final_adapter.is_dir() or not manifest.is_file():\n              raise SystemExit('production run completed without final-dpo-adapter and training_manifest.json')\n'''
-          new_gate = '''          final_adapter = train_output / 'final-dpo-adapter'\n          dpo_adapter = final_adapter / 'dpo'\n          manifest = train_output / 'training_manifest.json'\n          if not final_adapter.is_dir() or not manifest.is_file():\n              raise SystemExit('production run completed without final-dpo-adapter and training_manifest.json')\n          required_dpo_files = ('adapter_config.json', 'adapter_model.safetensors')\n          if not dpo_adapter.is_dir() or not all((dpo_adapter / name).is_file() for name in required_dpo_files):\n              raise SystemExit(f'production run completed without saved DPO adapter payload: {dpo_adapter}')\n'''
-          if text.count(old_gate) != 1:
-              raise SystemExit(f'expected one final-adapter gate block, found {text.count(old_gate)}')
-          text = text.replace(old_gate, new_gate, 1)
-
-          old_eval = "              '--mode', 'dpo', '--adapter-path', str(final_adapter), *common_eval,\n"
-          new_eval = "              '--mode', 'dpo', '--adapter-path', str(dpo_adapter), *common_eval,\n"
-          if text.count(old_eval) != 1:
-              raise SystemExit(f'expected one DPO evaluation adapter-path call, found {text.count(old_eval)}')
-          text = text.replace(old_eval, new_eval, 1)
-
-          workflow.write_text(text, encoding='utf-8')
-          PY
-
-          git diff --check
-          grep -F "dpo_adapter = final_adapter / 'dpo'" .github/workflows/kaggle-dpo-v2-preflight.yml
-          grep -F "'--mode', 'dpo', '--adapter-path', str(dpo_adapter)" .github/workflows/kaggle-dpo-v2-preflight.yml
-
-      - name: Commit tested workflow fix to main
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'PAUL Foundry.'
-          git config user.email 'foundrypaul@gmail.com'
-          git add .github/workflows/kaggle-dpo-v2-preflight.yml
-          git diff --cached --quiet && { echo 'No patch to commit'; exit 1; }
-          git commit -m 'fix: evaluate saved DPO adapter subdirectory'
-          git push origin HEAD:main
-
       - name: Dispatch corrected Kaggle DPO V2 workflow
         env:
           GH_TOKEN: ${{ github.token }}
