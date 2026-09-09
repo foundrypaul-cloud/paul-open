@@ -229,9 +229,6 @@ def test_integrated_policy_loss_matches_baseline_and_lora_gradients(monkeypatch)
             self.lm_head = torch.nn.Linear(7, 17, bias=False)
             self.config = SimpleNamespace(final_logit_softcapping=8.0)
 
-        def get_output_embeddings(self):
-            return self.lm_head
-
     class Policy(torch.nn.Module):
         def __init__(self):
             super().__init__()

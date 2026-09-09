@@ -407,7 +407,7 @@ def memory_efficient_policy_loss(
 
     causal_model = model.base_model.model
     backbone = getattr(causal_model, "model", None)
-    lm_head = causal_model.get_output_embeddings()
+    lm_head = getattr(causal_model, "lm_head", None)
     has_softcap_contract = hasattr(causal_model.config, "final_logit_softcapping")
     if backbone is None or lm_head is None or not has_softcap_contract:
         raise RuntimeError("Pinned Gemma policy projection contract changed")
@@ -864,6 +864,23 @@ def main() -> None:
         initial_value_digests = trainable_value_digests(trainable)
 
         if args.preflight_only:
+            # Exercise the exact production reference + policy loss path without
+            # backward/optimizer updates so API-contract failures are caught before
+            # a production kernel is launched.
+            install_runtime_memory_instrumentation(
+                trainer, policy, reference, torch, telemetry_state
+            )
+            try:
+                probe_batch = next(iter(trainer.get_train_dataloader()))
+            except StopIteration as error:
+                raise RuntimeError("Cannot run production-loss preflight on an empty dataloader") from error
+            prepared_probe = trainer._prepare_inputs(probe_batch)
+            with torch.no_grad(), trainer.compute_loss_context_manager():
+                probe_loss = trainer.compute_loss(policy, prepared_probe)
+            if not torch.isfinite(probe_loss.detach()).all().item():
+                raise RuntimeError("Non-finite production policy loss during preflight")
+            if trainable_digest(trainable) != pre_train_digest:
+                raise RuntimeError("Preflight changed trainable parameters")
             print("DPO V2 PRODUCTION PREFLIGHT: PASS")
             return
 
