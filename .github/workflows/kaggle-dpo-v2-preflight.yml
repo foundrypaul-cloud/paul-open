@@ -219,9 +219,13 @@ jobs:
           ], cwd=repo_dir, check=True)
 
           final_adapter = train_output / 'final-dpo-adapter'
+          dpo_adapter = final_adapter / 'dpo'
           manifest = train_output / 'training_manifest.json'
           if not final_adapter.is_dir() or not manifest.is_file():
               raise SystemExit('production run completed without final-dpo-adapter and training_manifest.json')
+          required_dpo_files = ('adapter_config.json', 'adapter_model.safetensors')
+          if not dpo_adapter.is_dir() or not all((dpo_adapter / name).is_file() for name in required_dpo_files):
+              raise SystemExit(f'production run completed without saved DPO adapter payload: {dpo_adapter}')
 
           common_eval = [
               '--model', str(repo_dir / 'configs' / 'models' / 'gemma4_e4b_it.yaml'),
@@ -234,7 +238,7 @@ jobs:
           ], cwd=repo_dir, check=True)
           subprocess.run([
               'uv', 'run', 'python', str(repo_dir / 'scripts' / 'evaluate.py'),
-              '--mode', 'dpo', '--adapter-path', str(final_adapter), *common_eval,
+              '--mode', 'dpo', '--adapter-path', str(dpo_adapter), *common_eval,
           ], cwd=repo_dir, check=True)
           PY
 
