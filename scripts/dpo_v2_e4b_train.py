@@ -408,9 +408,19 @@ def memory_efficient_policy_loss(
     causal_model = model.base_model.model
     backbone = getattr(causal_model, "model", None)
     lm_head = getattr(causal_model, "lm_head", None)
-    has_softcap_contract = hasattr(causal_model.config, "final_logit_softcapping")
+    model_config = getattr(causal_model, "config", None)
+    get_text_config = getattr(model_config, "get_text_config", None)
+    text_config = get_text_config() if callable(get_text_config) else model_config
+    has_softcap_contract = hasattr(text_config, "final_logit_softcapping")
     if backbone is None or lm_head is None or not has_softcap_contract:
-        raise RuntimeError("Pinned Gemma policy projection contract changed")
+        raise RuntimeError(
+            "Pinned Gemma policy projection contract changed: "
+            f"model={type(causal_model).__name__}, "
+            f"backbone={type(backbone).__name__ if backbone is not None else None}, "
+            f"lm_head={type(lm_head).__name__ if lm_head is not None else None}, "
+            f"config={type(model_config).__name__ if model_config is not None else None}, "
+            f"text_config={type(text_config).__name__ if text_config is not None else None}"
+        )
     outputs = backbone(**model_kwargs)
     hidden_states = outputs.last_hidden_state[:, :-1]
     labels = inputs["input_ids"][:, 1:]
@@ -419,7 +429,7 @@ def memory_efficient_policy_loss(
         hidden_states,
         labels,
         lm_head,
-        causal_model.config.final_logit_softcapping,
+        text_config.final_logit_softcapping,
         torch,
         trainer._paul_selective_log_softmax,
     )

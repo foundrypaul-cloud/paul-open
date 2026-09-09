@@ -227,7 +227,8 @@ def test_integrated_policy_loss_matches_baseline_and_lora_gradients(monkeypatch)
             super().__init__()
             self.model = Backbone()
             self.lm_head = torch.nn.Linear(7, 17, bias=False)
-            self.config = SimpleNamespace(final_logit_softcapping=8.0)
+            text_config = SimpleNamespace(final_logit_softcapping=8.0)
+            self.config = SimpleNamespace(get_text_config=lambda: text_config)
 
     class Policy(torch.nn.Module):
         def __init__(self):
