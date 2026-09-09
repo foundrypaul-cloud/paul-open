@@ -1,61 +1,75 @@
-PAUL Open Model
-===============
+PAUL Open
+=========
 
-PAUL Open is an open research initiative of
-Paul Foundry Technologies Private Limited.
+PAUL Open is an open research initiative of Paul Foundry Technologies Private Limited.
 
-PAUL Open Model represents original research and engineering work
-developed by Paul Foundry as part of this initiative.
+Project identity
+----------------
 
-Research Identity
------------------
+PAUL Open explores reproducible AI post-training and evaluation for multilingual knowledge work, science education, tutoring, teacher assistance, human-centered interaction, and scientific research.
 
-PAUL Open is intended to explore and develop AI systems that can
-contribute to research, knowledge, education, and the quality of
-human life.
+The public research repository is:
 
-It is the first open initiation of Paul Foundry's broader research
-vision: building an open, AI-first environment in which researchers,
-developers and educators can experiment, collaborate and build across
-diverse fields of knowledge.
+https://github.com/foundrypaul-cloud/paul-open
 
-PAUL Open is an independent Paul Foundry initiative.
+The public website is:
 
-Base Model Provenance
----------------------
+https://open.paulfoundry.com/
 
-The reference PAUL Open Model training workflow uses:
+The repository is the authoritative source for versioned research evidence. The website is a presentation and participation layer and does not replace repository provenance.
+
+Current model provenance
+------------------------
+
+The current E4B research line uses:
 
 google/gemma-4-E4B-it
 
-PAUL Open Model is an independently developed Paul Foundry research
-model derived/fine-tuned from the stated base model.
+PAUL Open model research is independently developed by Paul Foundry using the stated upstream model. PAUL Open is not an official Google model and is not affiliated with, endorsed by, or developed in collaboration with Google or Google DeepMind.
 
-PAUL Open is not an official Google model and is not affiliated with,
-endorsed by, or developed in collaboration with Google or Google
-DeepMind.
+The current research record includes an SFT reference checkpoint and a technically valid DPO V2 Corrective checkpoint. DPO V2 has not been established as superior to SFT; see the versioned experiment documentation for the evidence boundary.
 
-Third-Party Components
-----------------------
+Immutable Step 2 research freeze
+--------------------------------
 
-Third-party models, datasets, libraries and other components retain
-their respective licenses and attribution requirements.
+Branch:
+research-freeze/step2-dpo-v2-20260909
 
-This NOTICE does not replace or modify those licenses.
+SHA:
+ac899e879f930f25b2081550bd8c5dd5c983df35
 
-Reference Training Run
-----------------------
+This frozen revision is retained as immutable evidence of the Step 2 DPO V2 research state. Later documentation, evaluation infrastructure, and website-integration work may continue on main without changing the frozen experiment.
 
-paul_gemma4_e4b_25d8e53a
+Licensing and third-party components
+------------------------------------
 
-Recommended Attribution
+The PAUL Open source-code layer is distributed under the Apache License 2.0 unless a file or component states otherwise.
+
+Gemma 4 is released by Google under Apache 2.0. Third-party datasets, libraries, benchmarks, models, and other materials retain their respective licenses, notices, attribution requirements, and usage restrictions.
+
+A dataset or model being publicly accessible does not by itself establish that it may be used for every training, redistribution, or release purpose. See DATASET_REGISTRY.md and the applicable upstream terms.
+
+This NOTICE does not replace or modify any third-party license.
+
+Research claims
+---------------
+
+Technical training validity, automated evaluation results, behavioral quality, and overall model superiority are treated as separate evidence layers.
+
+The current 50-case SFT-vs-DPO V2 comparison is diagnostic and contaminated for DPO V2. It must not be presented as clean held-out proof that DPO V2 is better than SFT.
+
+See:
+
+- docs/PROJECT_STATUS.md
+- docs/EXPERIMENT_JOURNEY_E4B.md
+- docs/E4B_DPO_V2_CORRECTIVE.md
+- docs/HUMAN_EVALUATION_PROTOCOL.md
+
+Recommended attribution
 -----------------------
 
-For research publications, downstream projects and derivative work,
-Paul Foundry recommends acknowledging the provenance of PAUL Open
-Model using language such as:
+For research publications, downstream projects, and derivative work, Paul Foundry recommends acknowledging PAUL Open with language such as:
 
-"Based on PAUL Open Model by Paul Foundry Technologies Private Limited."
+"Based on PAUL Open by Paul Foundry Technologies Private Limited."
 
-This is recommended attribution unless a specific applicable license
-requires otherwise.
+This is recommended attribution unless an applicable license requires different or additional attribution.
