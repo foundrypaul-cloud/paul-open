@@ -18,4 +18,4 @@ jobs:
       - name: Dispatch locked Kaggle DPO V2 workflow
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run kaggle-dpo-v2-preflight.yml --ref main
+        run: gh workflow run kaggle-dpo-v2-preflight.yml --repo foundrypaul-cloud/paul-open --ref main
