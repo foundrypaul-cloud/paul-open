@@ -121,7 +121,8 @@ def load_human_eval_records(path: str | Path) -> dict[str, HumanEvalRecord]:
 
     if source.suffix.lower() == ".jsonl":
         raw_records: list[Any] = []
-        for line_number, line in enumerate(source.read_text(encoding="utf-8").splitlines(), start=1):
+        lines = source.read_text(encoding="utf-8").splitlines()
+        for line_number, line in enumerate(lines, start=1):
             if not line.strip():
                 continue
             try:
@@ -135,10 +136,7 @@ def load_human_eval_records(path: str | Path) -> dict[str, HumanEvalRecord]:
             payload = json.loads(source.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
             raise HumanEvalBuildError(f"{source}: invalid JSON: {exc.msg}") from exc
-        if isinstance(payload, dict):
-            raw_records = payload.get("records")
-        else:
-            raw_records = payload
+        raw_records = payload.get("records") if isinstance(payload, dict) else payload
         if not isinstance(raw_records, list):
             raise HumanEvalBuildError(
                 f"{source}: JSON input must be an array or an object containing a records array"
