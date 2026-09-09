@@ -101,7 +101,40 @@ def test_packet_settings_are_low_friction_and_anonymous() -> None:
         "shuffle_questions": False,
         "accepting_responses": True,
     }
+    assert packet["reviewer_context"]["enabled"] is True
     assert packet["optional_comment"]["required"] is False
+
+
+def test_general_reviewer_context_is_optional_and_compact() -> None:
+    packet = build_google_form_packets(_variant([_comparison(1)])).packets[0]
+    context = packet["reviewer_context"]
+
+    assert context["required"] is False
+    assert context["title"].startswith("Optional:")
+    assert "Prefer not to say" in context["choices"]
+    assert len(context["choices"]) == 6
+
+
+def test_bilingual_context_measures_language_ability_not_job_title() -> None:
+    packet = build_google_form_packets(
+        _variant([_comparison(1, cohort="bilingual", language="pa")])
+    ).packets[0]
+    context = packet["reviewer_context"]
+
+    assert context["required"] is True
+    assert "reading and writing this language" in context["title"]
+    assert "I cannot confidently judge this language" in context["choices"]
+    assert "Teacher / educator" not in context["choices"]
+
+
+def test_expert_context_supports_cannot_judge() -> None:
+    for cohort in ("stem_capable", "domain_expert"):
+        packet = build_google_form_packets(
+            _variant([_comparison(1, cohort=cohort)])
+        ).packets[0]
+        context = packet["reviewer_context"]
+        assert context["required"] is True
+        assert "I cannot confidently judge these topics" in context["choices"]
 
 
 def test_same_public_variant_produces_identical_bundle_and_fingerprint() -> None:
@@ -173,7 +206,7 @@ def test_reviewer_facing_fields_do_not_display_internal_comparison_ids() -> None
         assert internal_id not in visible
 
 
-def test_apps_script_runtime_keeps_frozen_privacy_and_lifecycle_settings() -> None:
+def test_apps_script_runtime_keeps_privacy_and_adds_recovery_layers() -> None:
     source = Path("tools/google_forms/Code.gs").read_text(encoding="utf-8")
 
     required_fragments = [
@@ -185,7 +218,12 @@ def test_apps_script_runtime_keeps_frozen_privacy_and_lifecycle_settings() -> No
         ".setShowLinkToRespondAgain(false)",
         ".setShuffleQuestions(false)",
         "ScriptApp.newTrigger('onPaulHumanEvalSubmit')",
-        "normalizedResponseExists_",
+        "LockService.getScriptLock()",
+        "PAUL_BACKUP_SHEET",
+        "backup_spreadsheet_id",
+        "sha256Hex_",
+        "recoverPaulHumanEvalResponses",
+        ".everyHours(1).create()",
         "response.getId()",
         "form.setPublished(true).setAcceptingResponses(true)",
     ]
@@ -193,6 +231,15 @@ def test_apps_script_runtime_keeps_frozen_privacy_and_lifecycle_settings() -> No
         assert fragment in source
     assert "setCollectEmail(true)" not in source
     assert "getRespondentEmail" not in source
+
+
+def test_reviewer_panel_is_separate_from_evaluation_identity() -> None:
+    source = Path("tools/google_forms/Code.gs").read_text(encoding="utf-8")
+
+    assert "createPaulReviewerPanelRegistrationForm" in source
+    assert "Join the PAUL Open reviewer panel" in source
+    assert "kept separate from your evaluation judgments" in source
+    assert "PAUL_REVIEWER_PANEL_FORM_ID" in source
 
 
 def test_apps_script_manifest_requests_only_required_workspace_scopes() -> None:
