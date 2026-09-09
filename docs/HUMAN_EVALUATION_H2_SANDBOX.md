@@ -48,31 +48,20 @@ The repository verifies the H2 implementation without Google credentials or exte
 - sandbox-only submission-count closing;
 - separate reviewer-panel registration function.
 
-## Build the disposable sandbox payload
+## Lowest-friction Google setup
 
-From the repository root:
-
-```bash
-PYTHONPATH=src python scripts/build_google_forms_sandbox.py \
-  --variant tests/fixtures/human_eval_sandbox_variant.json \
-  --output-dir outputs/human_eval/google_forms_sandbox \
-  --auto-close-after-submissions 3
-```
-
-This creates a gitignored sandbox package including `Payload.gs`. The fixture is synthetic and must never be replaced with a sealed assurance prompt.
-
-## One-time Google Apps Script deployment
+No local Python or payload generation is required for H2. The repository now contains a prebuilt disposable synthetic payload at `tools/google_forms/SandboxPayload.gs`.
 
 Use a standalone Google Apps Script project owned by the research account.
 
-1. Add `tools/google_forms/Code.gs` as `Code.gs`.
-2. Add the generated `Payload.gs` as a second script file.
-3. Use the OAuth scopes in `tools/google_forms/appsscript.json`.
-4. Run `createPaulHumanEvalSandboxForms()` and approve the requested Google Forms, Sheets, and trigger permissions.
-5. Optionally run `createPaulReviewerPanelRegistrationForm()` once to create the separate opt-in contact registry.
-6. Record returned respondent URLs, form IDs and Sheet URLs in a private sandbox log. Do not commit account-specific IDs, URLs, emails, or reviewer responses.
+1. Replace the default script with `tools/google_forms/Code.gs`.
+2. Add one second script file and paste `tools/google_forms/SandboxPayload.gs` into it.
+3. Run `createPaulHumanEvalSandboxForms()` once and approve the Google Forms, Sheets, and trigger permissions when Google asks.
+4. Optionally run `createPaulReviewerPanelRegistrationForm()` once to create the physically separate opt-in reviewer registry.
 
-The runtime creates each evaluation Form unpublished, finishes all questions/settings, creates the primary response spreadsheet and independent backup ledger, links the response destination, installs the submit trigger, installs one hourly recovery trigger, and only then publishes/opens the Form.
+The runtime then creates the evaluation Form, linked primary response spreadsheet, independent backup ledger, form-submit trigger, hourly recovery trigger, and publishes the Form automatically. No manual Form design is required.
+
+The Python packet builder remains the authoritative route for future H3/DHE/SHAE generated batches, but it is intentionally not required for this H2 account-authorization step.
 
 ## Sandbox reviewer experience
 
