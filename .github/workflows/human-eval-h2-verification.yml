@@ -8,6 +8,7 @@ on:
       - 'scripts/build_human_eval_batch.py'
       - 'scripts/build_google_forms_sandbox.py'
       - 'tools/google_forms/**'
+      - 'tests/fixtures/human_eval_sandbox_variant.json'
       - 'tests/test_human_eval_batch_builder.py'
       - 'tests/test_human_eval_google_forms.py'
       - '.github/workflows/human-eval-h2-verification.yml'
@@ -44,6 +45,19 @@ jobs:
             src/paul_open_model/evaluation/human_eval_forms.py \
             scripts/build_google_forms_sandbox.py \
             tests/test_human_eval_google_forms.py
+
+      - name: Build disposable synthetic Google Forms packet
+        run: |
+          python scripts/build_google_forms_sandbox.py \
+            --variant tests/fixtures/human_eval_sandbox_variant.json \
+            --output-dir /tmp/paul-h2-sandbox \
+            --auto-close-after-submissions 3
+          test -s /tmp/paul-h2-sandbox/manifest.json
+          test -s /tmp/paul-h2-sandbox/Payload.gs
+          python -m json.tool /tmp/paul-h2-sandbox/manifest.json >/dev/null
+          grep -q 'HEF1-' /tmp/paul-h2-sandbox/Payload.gs
+          ! grep -Eq 'SFT|DPO|response_a_source|response_b_source|case_id' \
+            /tmp/paul-h2-sandbox/Payload.gs
 
       - name: Validate Apps Script manifest JSON
         run: python -m json.tool tools/google_forms/appsscript.json >/dev/null
