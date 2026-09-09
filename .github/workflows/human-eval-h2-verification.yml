@@ -1,0 +1,68 @@
+name: Human Evaluation H2 Verification
+
+on:
+  pull_request:
+    paths:
+      - 'src/paul_open_model/evaluation/human_eval.py'
+      - 'src/paul_open_model/evaluation/human_eval_forms.py'
+      - 'scripts/build_human_eval_batch.py'
+      - 'scripts/build_google_forms_sandbox.py'
+      - 'tools/google_forms/**'
+      - 'tests/fixtures/human_eval_sandbox_variant.json'
+      - 'tests/test_human_eval_batch_builder.py'
+      - 'tests/test_human_eval_google_forms.py'
+      - '.github/workflows/human-eval-h2-verification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install lightweight verification dependencies
+        run: python -m pip install --upgrade pytest ruff
+
+      - name: Run H1 and H2 unit tests
+        run: |
+          pytest -q \
+            tests/test_human_eval_batch_builder.py \
+            tests/test_human_eval_google_forms.py
+
+      - name: Run H2 lint checks
+        run: |
+          ruff check \
+            src/paul_open_model/evaluation/human_eval_forms.py \
+            scripts/build_google_forms_sandbox.py \
+            tests/test_human_eval_google_forms.py
+
+      - name: Build disposable synthetic Google Forms packet
+        run: |
+          PYTHONPATH=src python scripts/build_google_forms_sandbox.py \
+            --variant tests/fixtures/human_eval_sandbox_variant.json \
+            --output-dir /tmp/paul-h2-sandbox \
+            --auto-close-after-submissions 3
+          test -s /tmp/paul-h2-sandbox/manifest.json
+          test -s /tmp/paul-h2-sandbox/Payload.gs
+          python -m json.tool /tmp/paul-h2-sandbox/manifest.json >/dev/null
+          grep -q 'HEF1-' /tmp/paul-h2-sandbox/Payload.gs
+          ! grep -Eq 'SFT|DPO|response_a_source|response_b_source|case_id' \
+            /tmp/paul-h2-sandbox/Payload.gs
+
+      - name: Validate Apps Script manifest JSON
+        run: python -m json.tool tools/google_forms/appsscript.json >/dev/null
+
+      - name: Validate Apps Script JavaScript syntax
+        run: |
+          cp tools/google_forms/Code.gs /tmp/paul_human_eval_forms.js
+          node --check /tmp/paul_human_eval_forms.js
