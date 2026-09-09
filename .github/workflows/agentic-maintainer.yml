@@ -1,12 +1,7 @@
 name: PAUL Open Agentic Maintainer
 
 on:
-  workflow_run:
-    workflows:
-      - DPO V2 Verification
-      - Kaggle DPO V2 Preflight
-    types:
-      - completed
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,7 +10,6 @@ permissions:
 
 jobs:
   continue-pr4:
-    if: ${{ github.event.workflow_run.head_branch == 'codex/authorize-kaggle-dpo-v2-training-run' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
