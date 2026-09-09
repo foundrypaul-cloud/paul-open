@@ -5,9 +5,8 @@ authors:
   - name: "Paul Foundry Technologies Private Limited"
 version: 0.1.0
 date-released: 2026-08-18
-url: "https://github.com/foundrypaul-cloud/paul-open"
+url: "https://open.paulfoundry.com/"
 repository-code: "https://github.com/foundrypaul-cloud/paul-open"
-website: "https://open.paulfoundry.com/"
 license: Apache-2.0
 keywords:
   - artificial intelligence
