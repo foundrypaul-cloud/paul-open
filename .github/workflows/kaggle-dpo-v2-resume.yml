@@ -1,0 +1,80 @@
+name: Kaggle DPO V2 Production Resume
+
+# Operational-only watcher for an already-launched production kernel.
+# It never pushes/relaunches training and therefore cannot duplicate the locked experiment.
+on:
+  push:
+    branches:
+      - codex/authorize-kaggle-dpo-v2-training-run
+    paths:
+      - '.github/workflows/kaggle-dpo-v2-resume.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resume-existing-production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: paulfoundry
+      KAGGLE_PRODUCTION_SLUG: paul-open-dpo-v2-pr4-production
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+
+      - name: Verify Kaggle authentication
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KAGGLE_API_TOKEN"
+          kaggle kernels status "$KAGGLE_USERNAME/$KAGGLE_PRODUCTION_SLUG"
+
+      - name: Resume waiting for existing production training and evaluation
+        id: production_wait
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 900); do
+            STATUS=$(kaggle kernels status "$KAGGLE_USERNAME/$KAGGLE_PRODUCTION_SLUG" || true)
+            echo "$STATUS"
+            if echo "$STATUS" | grep -qi 'complete'; then
+              exit 0
+            fi
+            if echo "$STATUS" | grep -Eqi 'error|failed|cancel'; then
+              exit 1
+            fi
+            sleep 20
+          done
+          echo "Timed out waiting for existing production training/evaluation; no relaunch was attempted."
+          exit 1
+
+      - name: Download existing production and evaluation outputs
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p kaggle-production-output
+          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_PRODUCTION_SLUG" -p kaggle-production-output || true
+          find kaggle-production-output -maxdepth 6 -type f -print || true
+
+      - name: Upload existing production and evaluation outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-dpo-v2-production-evaluation-output
+          path: kaggle-production-output
+          if-no-files-found: warn
+
+      - name: Fail if existing production training or evaluation failed
+        if: steps.production_wait.outcome != 'success'
+        run: exit 1
