@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "status_as_of": "2026-09-10",
+  "state": "preparing",
+  "public_participation_enabled": false,
+  "provider": "google_forms",
+  "respondent_url": null,
+  "protocol_version": "1.0",
+  "study_type": "blinded_pairwise_response_preference",
+  "estimated_minutes": "2-4",
+  "anonymous_evaluation": true,
+  "collect_email": false,
+  "optional_reviewer_context": true,
+  "optional_comment": true,
+  "review_dimensions": [
+    "accuracy",
+    "clarity",
+    "usefulness",
+    "naturalness"
+  ],
+  "public_message": "PAUL Open human evaluation is being prepared. No public evaluation round is currently accepting responses.",
+  "safety": {
+    "respondent_url_must_be_viewform": true,
+    "editor_urls_publicly_allowed": false,
+    "response_sheets_publicly_allowed": false,
+    "model_identity_visible_to_reviewer": false,
+    "hidden_ab_mapping_visible_to_reviewer": false,
+    "sandbox_form_publicly_allowed": false
+  },
+  "source": {
+    "protocol": "docs/HUMAN_EVALUATION_PROTOCOL.md",
+    "website_contract": "docs/WEBSITE_INTEGRATION.md",
+    "current_status": "docs/PROJECT_STATUS.md"
+  }
+}
