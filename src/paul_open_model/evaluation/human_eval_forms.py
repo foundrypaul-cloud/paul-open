@@ -153,8 +153,9 @@ def build_google_form_packets(
     _reject_private_keys(public_variant)
 
     if environment not in _ALLOWED_ENVIRONMENTS:
+        expected = sorted(_ALLOWED_ENVIRONMENTS)
         raise HumanEvalFormBuildError(
-            f"unsupported environment {environment!r}; expected one of {sorted(_ALLOWED_ENVIRONMENTS)}"
+            f"unsupported environment {environment!r}; expected one of {expected}"
         )
     if not isinstance(max_comparisons, int) or not 1 <= max_comparisons <= 4:
         raise HumanEvalFormBuildError("max_comparisons must be an integer from 1 to 4")
@@ -165,7 +166,8 @@ def build_google_form_packets(
             )
         if environment != "sandbox":
             raise HumanEvalFormBuildError(
-                "automatic submission-count closing is sandbox-only; research closing is analysis-driven"
+                "automatic submission-count closing is sandbox-only; "
+                "research closing is analysis-driven"
             )
 
     protocol_version = _require_text(
