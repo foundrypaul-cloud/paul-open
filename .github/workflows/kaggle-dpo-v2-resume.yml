@@ -3,11 +3,6 @@ name: Kaggle DPO V2 Production Resume
 # Operational-only watcher for an already-launched production kernel.
 # It never pushes/relaunches training and therefore cannot duplicate the locked experiment.
 on:
-  push:
-    branches:
-      - codex/authorize-kaggle-dpo-v2-training-run
-    paths:
-      - '.github/workflows/kaggle-dpo-v2-resume.yml'
   workflow_dispatch:
 
 permissions:
