@@ -1,6 +1,6 @@
 """Google Forms packet construction for PAUL Open human evaluation.
 
-This module is deliberately provider-bound only at the *specification* layer.
+This module is deliberately provider-bound only at the specification layer.
 It converts a blinded H1 public variant into small, cohort-consistent form
 packets suitable for Google Forms. It never consumes the H1 private A/B map and
 therefore cannot reveal checkpoint identities.
@@ -13,7 +13,7 @@ import json
 from dataclasses import dataclass
 from typing import Any
 
-FORM_PACKET_VERSION = "1.0"
+FORM_PACKET_VERSION = "1.1"
 DEFAULT_MAX_COMPARISONS = 3
 DEFAULT_CHOICES = (
     "Response A is better",
@@ -130,6 +130,67 @@ def _intro_text(*, reviewer_cohort: str) -> str:
     return base
 
 
+def _reviewer_context_question(reviewer_cohort: str) -> dict[str, Any]:
+    """Return one low-friction reviewer-context question for the cohort."""
+
+    if reviewer_cohort == "general_user":
+        return {
+            "enabled": True,
+            "title": "Optional: Which best describes you?",
+            "choices": [
+                "Student",
+                "Teacher / educator",
+                "Researcher / scientist / engineer",
+                "Other working professional",
+                "General user",
+                "Prefer not to say",
+            ],
+            "required": False,
+        }
+    if reviewer_cohort == "educator":
+        return {
+            "enabled": True,
+            "title": "Optional: Which best describes your teaching experience?",
+            "choices": [
+                "I currently teach",
+                "I have taught before",
+                "I work in education but not as a classroom teacher",
+                "I am training to teach",
+                "Other",
+                "Prefer not to say",
+            ],
+            "required": False,
+        }
+    if reviewer_cohort == "bilingual":
+        return {
+            "enabled": True,
+            "title": "How comfortable are you reading and writing this language?",
+            "choices": [
+                "Native / near-native",
+                "Fluent",
+                "Conversational",
+                "Limited",
+                "I cannot confidently judge this language",
+                "Prefer not to say",
+            ],
+            "required": True,
+        }
+    if reviewer_cohort in {"stem_capable", "domain_expert"}:
+        return {
+            "enabled": True,
+            "title": "How comfortable are you judging the topics in this form?",
+            "choices": [
+                "Strong background",
+                "Some background",
+                "General familiarity",
+                "I cannot confidently judge these topics",
+                "Prefer not to say",
+            ],
+            "required": True,
+        }
+    raise HumanEvalFormBuildError(f"unsupported reviewer cohort {reviewer_cohort!r}")
+
+
 def _chunked(values: list[dict[str, str]], size: int) -> list[list[dict[str, str]]]:
     return [values[start : start + size] for start in range(0, len(values), size)]
 
@@ -237,6 +298,7 @@ def build_google_form_packets(
                         "accepting_responses": True,
                     },
                     "comparisons": packet_comparisons,
+                    "reviewer_context": _reviewer_context_question(reviewer_cohort),
                     "optional_comment": {
                         "enabled": True,
                         "title": "Optional: Anything else you want to tell us?",
@@ -258,6 +320,7 @@ def build_google_form_packets(
         "packet_count": len(packets),
         "max_comparisons_per_packet": max_comparisons,
         "grouping": "reviewer_cohort_then_language",
+        "reviewer_context_policy": "one_post_comparison_question_max",
         "model_identity_exposed": False,
         "private_mapping_consumed": False,
     }
