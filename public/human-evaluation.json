@@ -2,6 +2,8 @@
   "schema_version": "1.0",
   "status_as_of": "2026-09-10",
   "state": "preparing",
+  "internal_stage": "H3",
+  "h2_formal_acceptance": "pass",
   "public_participation_enabled": false,
   "provider": "google_forms",
   "respondent_url": null,
@@ -18,7 +20,7 @@
     "usefulness",
     "naturalness"
   ],
-  "public_message": "PAUL Open human evaluation is being prepared. No public evaluation round is currently accepting responses.",
+  "public_message": "PAUL Open has completed its H2 human-evaluation infrastructure acceptance and is preparing an internal H3 disposable UX pilot. No public evaluation round is currently accepting responses.",
   "safety": {
     "respondent_url_must_be_viewform": true,
     "editor_urls_publicly_allowed": false,
