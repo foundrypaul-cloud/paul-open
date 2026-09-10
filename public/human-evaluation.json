@@ -1,9 +1,10 @@
 {
   "schema_version": "1.0",
   "status_as_of": "2026-09-10",
-  "state": "preparing",
+  "state": "internal_pilot_active",
   "internal_stage": "H3",
   "h2_formal_acceptance": "pass",
+  "h3_acceptance": "pending",
   "public_participation_enabled": false,
   "provider": "google_forms",
   "respondent_url": null,
@@ -20,17 +21,19 @@
     "usefulness",
     "naturalness"
   ],
-  "public_message": "PAUL Open has completed its H2 human-evaluation infrastructure acceptance and is preparing an internal H3 disposable UX pilot. No public evaluation round is currently accepting responses.",
+  "public_message": "PAUL Open has completed H2 infrastructure acceptance and is running an internal H3 disposable UX pilot with trusted reviewers. No public evaluation round is currently accepting responses.",
   "safety": {
     "respondent_url_must_be_viewform": true,
     "editor_urls_publicly_allowed": false,
     "response_sheets_publicly_allowed": false,
     "model_identity_visible_to_reviewer": false,
     "hidden_ab_mapping_visible_to_reviewer": false,
-    "sandbox_form_publicly_allowed": false
+    "sandbox_form_publicly_allowed": false,
+    "h3_trusted_reviewer_links_publicly_allowed": false
   },
   "source": {
     "protocol": "docs/HUMAN_EVALUATION_PROTOCOL.md",
+    "h3_runbook": "docs/HUMAN_EVALUATION_H3_PILOT.md",
     "website_contract": "docs/WEBSITE_INTEGRATION.md",
     "current_status": "docs/PROJECT_STATUS.md"
   }
