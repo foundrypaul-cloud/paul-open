@@ -14,7 +14,7 @@ The correct research conclusion remains:
 
 > **The SFT adapter remains the safer reference checkpoint. DPO V2 is technically valid and behaviorally informative, but superiority over SFT has not been established.**
 
-The human-evaluation infrastructure milestone H2 is formally complete. The next human-evaluation stage is H3, a disposable non-research UX pilot. H2 completion does not change the model-comparison conclusion above.
+H2 human-evaluation infrastructure is formally complete. H3 is now active as an internal/trusted-reviewer disposable UX and operating-path pilot. H3 does not compare PAUL model checkpoints and does not change the model-comparison conclusion above.
 
 ## Step 2 — DPO V2 Corrective
 
@@ -56,53 +56,44 @@ See [`EXPERIMENT_JOURNEY_E4B.md`](EXPERIMENT_JOURNEY_E4B.md).
 
 ## Human evaluation — H2 complete
 
-H2 was formally accepted on **2026-09-10** after the repository implementation, live Google-account runtime, respondent path, durability mechanisms, recovery behavior, and closure behavior were checked.
+H2 was formally accepted on **2026-09-10** after repository implementation, live Google-account runtime, genuine respondent submissions, normalized and backup retention, controlled recovery, verifier rerun, closure, and desktop/mobile opening all passed.
 
-Acceptance evidence includes:
-
-- genuine respondent submissions through Google Forms;
-- 6 native Form responses retained;
-- 18 normalized comparison rows retained, representing 6 unique submissions;
-- 6 independent backup-ledger rows retained;
-- snapshot JSON and SHA-256 fields populated;
-- anonymous evaluation path with email collection off;
-- optional reviewer context and optional comments;
-- blinded synthetic A/B comparisons;
-- controlled recovery drill passed after an intentionally removed normalized representation was restored from the native Form response;
-- verifier rerun passed on the patched live runtime;
-- sandbox closure passed;
-- respondent-facing Form opening on both desktop and mobile explicitly confirmed.
-
-During H2, Google Forms accepted `setAcceptingResponses(false)` but could throw `Exception: Invalid data updating form` when the script subsequently attempted to set a custom closed-form message. Repository fix PR #12, merged as `49e7bc0a893b988519f8b65d793230b5246fd89b`, made the cosmetic closed-message update best-effort while preserving mandatory form closure. CI passed and the patched runtime subsequently passed recovery and closure acceptance.
-
-H2 is infrastructure evidence only. It is **not** human preference evidence for SFT versus DPO V2.
+H2 remains infrastructure evidence only. It is **not** human preference evidence for SFT versus DPO V2.
 
 See [`HUMAN_EVALUATION_H2_SANDBOX.md`](HUMAN_EVALUATION_H2_SANDBOX.md).
 
-## Human evaluation — H3 ready
+## Human evaluation — H3 active
 
-The H3 entry gate is now open.
+H3 started on **2026-09-10**.
 
-H3 is a dry-run human pilot using **5–10 disposable non-research comparisons** with a small internal/trusted reviewer group. It is intended to measure:
+Two live Google Forms have been created for a small internal/trusted reviewer group:
 
-- median completion time;
-- desktop/mobile readability;
-- reviewer confusion;
-- duplicate-response handling;
-- Sheets normalization correctness;
-- A/B mapping integrity.
+- Form A1: three disposable comparisons;
+- Form B1: the same three disposable comparisons with A/B presentation counterbalanced.
 
-Target: median completion time at or below 4 minutes with no systematic UX confusion.
+Together they exercise six displayed comparison instances across three underlying disposable non-research cases. Email collection is off. The live respondent links are intentionally not committed to the public repository.
 
-H3 must not use DHE or SHAE cases. Real DHE begins only after H3 passes. SHAE remains sealed final assurance and must not be exposed during this stage.
+Each live UX form also records:
+
+- device class;
+- self-reported completion-time bucket;
+- readability/navigation friction;
+- A/B-format confusion;
+- one optional UX comment.
+
+Repository-native H3 durability material is available at [`../tools/google_forms/H3DurabilityPayload.gs`](../tools/google_forms/H3DurabilityPayload.gs) so the previously accepted Apps Script normalization, backup-ledger, checksum and recovery path can be exercised on the same disposable design without introducing model data.
+
+H3 acceptance requires at least 5 trusted-reviewer completions in total with both A1/B1 represented, desktop and mobile coverage, median completion time at or below 4 minutes, no systematic UX confusion/readability issue, correct counterbalancing, and a successful durability-path exercise. Full criteria are in [`HUMAN_EVALUATION_H3_PILOT.md`](HUMAN_EVALUATION_H3_PILOT.md).
+
+H3 is **active but not yet accepted**. DHE and SHAE remain closed.
 
 ## Immediate next research steps
 
-1. Run and accept H3 using disposable non-research material and trusted reviewers.
-2. Freeze the proven human-evaluation operating path after H3 acceptance.
-3. Repair and preserve the clean evaluation boundary and contamination checks before further model training.
-4. Build clean DHE material and reserve SHAE as sealed final assurance.
-5. Compare checkpoints using task-specific metrics plus blinded human preference rather than one aggregate score.
+1. Collect the H3 trusted-reviewer responses across both counterbalanced live forms.
+2. Analyze completion time, device coverage, readability and confusion.
+3. Exercise `tools/google_forms/H3DurabilityPayload.gs` through the already-proven Apps Script runtime and verify normalized rows, backup checksums and recovery/idempotency.
+4. If all H3 criteria pass, freeze the operating path and open H4 DHE preparation.
+5. Preserve SHAE as sealed final assurance only after a future candidate is frozen.
 
 ## Public website state
 
@@ -115,7 +106,7 @@ Website implementations should consume:
 
 and follow [`WEBSITE_INTEGRATION.md`](WEBSITE_INTEGRATION.md).
 
-No public human-evaluation round is currently accepting responses. H3 is an internal/trusted-reviewer pilot. The public website must not expose H2 sandbox links, response sheets, private A/B maps, or any future sealed assurance material.
+No public human-evaluation round is currently accepting responses. H3 is an internal/trusted-reviewer pilot. The public website must not expose H3 reviewer links, H2 sandbox links, response sheets, private A/B maps, or any future sealed-assurance material.
 
 ## Claim boundary
 
@@ -127,16 +118,16 @@ No public human-evaluation round is currently accepting responses. H3 is an inte
 - the existing 50-case DPO V2 comparison is contaminated and diagnostic;
 - SFT remains the reference checkpoint;
 - H2 human-evaluation infrastructure is formally accepted;
-- H3 disposable UX-pilot work may begin.
+- H3 internal disposable pilot is active.
 
 ### Not supported
 
 - DPO V2 is superior to SFT;
 - the current benchmark delta proves progress or regression overall;
-- the H2 sandbox constitutes a model comparison result;
-- H3 is complete before its trusted-reviewer pilot acceptance criteria pass;
-- DHE or SHAE evidence exists merely because the collection infrastructure works;
-- a future checkpoint will be better merely because it trains successfully.
+- H3 is complete before its acceptance criteria pass;
+- DHE may begin before H3 acceptance;
+- SHAE may begin during H3;
+- H3 responses constitute model-comparison evidence.
 
 ## Canonical detail documents
 
@@ -144,5 +135,6 @@ No public human-evaluation round is currently accepting responses. H3 is an inte
 - [`E4B_DPO_V2_CORRECTIVE.md`](E4B_DPO_V2_CORRECTIVE.md)
 - [`HUMAN_EVALUATION_PROTOCOL.md`](HUMAN_EVALUATION_PROTOCOL.md)
 - [`HUMAN_EVALUATION_H2_SANDBOX.md`](HUMAN_EVALUATION_H2_SANDBOX.md)
+- [`HUMAN_EVALUATION_H3_PILOT.md`](HUMAN_EVALUATION_H3_PILOT.md)
 - [`HUMAN_EVALUATION_WORKFLOW.md`](HUMAN_EVALUATION_WORKFLOW.md)
 - [`REVIEWER_IDENTITY_AND_RESPONSE_DURABILITY.md`](REVIEWER_IDENTITY_AND_RESPONSE_DURABILITY.md)
