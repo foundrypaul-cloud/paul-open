@@ -10,9 +10,11 @@ This document is the concise public status layer for the repository. Detailed hi
 
 PAUL Open is currently in the evaluation-hardening stage after a technically successful DPO V2 Corrective run on `google/gemma-4-E4B-it`.
 
-The correct research conclusion is:
+The correct research conclusion remains:
 
 > **The SFT adapter remains the safer reference checkpoint. DPO V2 is technically valid and behaviorally informative, but superiority over SFT has not been established.**
+
+The human-evaluation infrastructure milestone H2 is formally complete. The next human-evaluation stage is H3, a disposable non-research UX pilot. H2 completion does not change the model-comparison conclusion above.
 
 ## Step 2 — DPO V2 Corrective
 
@@ -52,46 +54,53 @@ More importantly, DPO V2 source material overlaps the canonical 50-case suite at
 
 See [`EXPERIMENT_JOURNEY_E4B.md`](EXPERIMENT_JOURNEY_E4B.md).
 
-## Human evaluation — H2 status
+## Human evaluation — H2 complete
 
-The human-evaluation architecture is being validated before any model-superiority claim or broader reviewer recruitment.
+H2 was formally accepted on **2026-09-10** after the repository implementation, live Google-account runtime, respondent path, durability mechanisms, recovery behavior, and closure behavior were checked.
 
-What has been demonstrated in the sandbox:
+Acceptance evidence includes:
 
 - genuine respondent submissions through Google Forms;
 - 6 native Form responses retained;
-- 18 normalized comparison rows retained;
+- 18 normalized comparison rows retained, representing 6 unique submissions;
 - 6 independent backup-ledger rows retained;
 - snapshot JSON and SHA-256 fields populated;
 - anonymous evaluation path with email collection off;
 - optional reviewer context and optional comments;
 - blinded synthetic A/B comparisons;
-- verifier execution passed against the live sandbox state.
+- controlled recovery drill passed after an intentionally removed normalized representation was restored from the native Form response;
+- verifier rerun passed on the patched live runtime;
+- sandbox closure passed;
+- respondent-facing Form opening on both desktop and mobile explicitly confirmed.
 
-A live Apps Script issue was isolated during the remaining acceptance checks: Google Forms accepted `setAcceptingResponses(false)` but threw `Exception: Invalid data updating form` when the script subsequently attempted to set a custom closed-form message. The same cosmetic-message failure caused both the close helper and recovery helper to report failure after the safety-critical closure/persistence work.
+During H2, Google Forms accepted `setAcceptingResponses(false)` but could throw `Exception: Invalid data updating form` when the script subsequently attempted to set a custom closed-form message. Repository fix PR #12, merged as `49e7bc0a893b988519f8b65d793230b5246fd89b`, made the cosmetic closed-message update best-effort while preserving mandatory form closure. CI passed and the patched runtime subsequently passed recovery and closure acceptance.
 
-Repository fix PR #12 was merged into `main` as commit:
+H2 is infrastructure evidence only. It is **not** human preference evidence for SFT versus DPO V2.
 
-`49e7bc0a893b988519f8b65d793230b5246fd89b`
+See [`HUMAN_EVALUATION_H2_SANDBOX.md`](HUMAN_EVALUATION_H2_SANDBOX.md).
 
-The fix makes the custom closed message best-effort while keeping form closure mandatory.
+## Human evaluation — H3 ready
 
-### H2 is not yet declared complete
+The H3 entry gate is now open.
 
-The live standalone Apps Script project still needs to be synchronized with the repository patch and the remaining recovery/closure acceptance checks must be rerun successfully. A previous controlled recovery drill was abandoned and manually restored; it does not count as proof of hourly self-healing.
+H3 is a dry-run human pilot using **5–10 disposable non-research comparisons** with a small internal/trusted reviewer group. It is intended to measure:
 
-Until those checks are complete:
+- median completion time;
+- desktop/mobile readability;
+- reviewer confusion;
+- duplicate-response handling;
+- Sheets normalization correctness;
+- A/B mapping integrity.
 
-- do not mark H2 fully accepted;
-- do not start SHAE;
-- do not claim human preference evidence for SFT vs DPO V2;
-- do not expose the sandbox Form as a public research instrument.
+Target: median completion time at or below 4 minutes with no systematic UX confusion.
+
+H3 must not use DHE or SHAE cases. Real DHE begins only after H3 passes. SHAE remains sealed final assurance and must not be exposed during this stage.
 
 ## Immediate next research steps
 
-1. Finish H2 runtime synchronization and controlled recovery/closure acceptance.
-2. Freeze a clean human-evaluation path.
-3. Repair the evaluation boundary and contamination checks before further model training.
+1. Run and accept H3 using disposable non-research material and trusted reviewers.
+2. Freeze the proven human-evaluation operating path after H3 acceptance.
+3. Repair and preserve the clean evaluation boundary and contamination checks before further model training.
 4. Build clean DHE material and reserve SHAE as sealed final assurance.
 5. Compare checkpoints using task-specific metrics plus blinded human preference rather than one aggregate score.
 
@@ -106,7 +115,7 @@ Website implementations should consume:
 
 and follow [`WEBSITE_INTEGRATION.md`](WEBSITE_INTEGRATION.md).
 
-When there is no approved live human-evaluation packet, the website should display an evaluation-preparing/closed state rather than a sandbox respondent link.
+No public human-evaluation round is currently accepting responses. H3 is an internal/trusted-reviewer pilot. The public website must not expose H2 sandbox links, response sheets, private A/B maps, or any future sealed assurance material.
 
 ## Claim boundary
 
@@ -117,14 +126,16 @@ When there is no approved live human-evaluation packet, the website should displ
 - mixed behavioral changes were observed;
 - the existing 50-case DPO V2 comparison is contaminated and diagnostic;
 - SFT remains the reference checkpoint;
-- human-evaluation infrastructure is actively being validated.
+- H2 human-evaluation infrastructure is formally accepted;
+- H3 disposable UX-pilot work may begin.
 
 ### Not supported
 
 - DPO V2 is superior to SFT;
 - the current benchmark delta proves progress or regression overall;
-- the present human-evaluation sandbox constitutes a model comparison result;
-- H2 is fully accepted before the remaining runtime checks pass;
+- the H2 sandbox constitutes a model comparison result;
+- H3 is complete before its trusted-reviewer pilot acceptance criteria pass;
+- DHE or SHAE evidence exists merely because the collection infrastructure works;
 - a future checkpoint will be better merely because it trains successfully.
 
 ## Canonical detail documents
@@ -133,4 +144,5 @@ When there is no approved live human-evaluation packet, the website should displ
 - [`E4B_DPO_V2_CORRECTIVE.md`](E4B_DPO_V2_CORRECTIVE.md)
 - [`HUMAN_EVALUATION_PROTOCOL.md`](HUMAN_EVALUATION_PROTOCOL.md)
 - [`HUMAN_EVALUATION_H2_SANDBOX.md`](HUMAN_EVALUATION_H2_SANDBOX.md)
+- [`HUMAN_EVALUATION_WORKFLOW.md`](HUMAN_EVALUATION_WORKFLOW.md)
 - [`REVIEWER_IDENTITY_AND_RESPONSE_DURABILITY.md`](REVIEWER_IDENTITY_AND_RESPONSE_DURABILITY.md)
