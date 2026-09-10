@@ -41,23 +41,25 @@
   },
   "human_evaluation": {
     "stage": "H3",
-    "formal_acceptance": "H2_passed_H3_ready",
+    "formal_acceptance": "H3_active_acceptance_pending",
     "h2_accepted_on": "2026-09-10",
-    "sandbox_native_responses": 6,
-    "sandbox_normalized_rows": 18,
-    "sandbox_backup_rows": 6,
-    "verifier": "pass",
-    "recovery_drill": "pass",
-    "closure": "pass",
-    "desktop_mobile_opening": "confirmed",
-    "remaining_blocker": null,
-    "next_gate": "Run H3 dry-run human pilot using 5-10 disposable non-research comparisons with a small trusted reviewer group; do not use DHE or SHAE material yet."
+    "h3_started_on": "2026-09-10",
+    "h3_live_ux_forms": 2,
+    "h3_underlying_disposable_cases": 3,
+    "h3_displayed_counterbalanced_instances": 6,
+    "h3_public_participation": false,
+    "h3_reviewer_scope": "small_internal_or_trusted_group",
+    "h3_durability_payload": "tools/google_forms/H3DurabilityPayload.gs",
+    "h3_runbook": "docs/HUMAN_EVALUATION_H3_PILOT.md",
+    "remaining_blocker": "Collect at least 5 trusted-reviewer completions with both counterbalanced forms represented, desktop and mobile coverage, acceptable completion/readability/confusion results, then exercise the H2 normalization/backup/recovery path on the repository-native H3 durability payload.",
+    "next_gate": "H3 acceptance; only then may H4 DHE preparation begin."
   },
   "canonical_docs": {
     "project_status": "docs/PROJECT_STATUS.md",
     "experiment_journey": "docs/EXPERIMENT_JOURNEY_E4B.md",
     "dpo_v2": "docs/E4B_DPO_V2_CORRECTIVE.md",
     "human_evaluation_protocol": "docs/HUMAN_EVALUATION_PROTOCOL.md",
+    "human_evaluation_h3": "docs/HUMAN_EVALUATION_H3_PILOT.md",
     "website_integration": "docs/WEBSITE_INTEGRATION.md",
     "agent_context": "AGENTS.md"
   },
@@ -66,6 +68,9 @@
     "may_say_dpo_v2_is_superior_to_sft": false,
     "may_describe_50_case_result_as_clean_held_out": false,
     "may_say_h2_is_formally_complete": true,
-    "may_say_h3_is_complete": false
+    "may_say_h3_is_active": true,
+    "may_say_h3_is_complete": false,
+    "may_start_dhe": false,
+    "may_start_shae": false
   }
 }
