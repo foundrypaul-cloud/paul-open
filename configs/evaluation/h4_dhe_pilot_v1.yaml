@@ -1,0 +1,68 @@
+h4_dhe_pilot:
+  version: "1.0"
+  status: "frozen_pre_generation"
+  partition: "development"
+  case_manifest: "data/h4_dhe_pilot_v1.jsonl"
+  contamination_audit: "docs/H4_DHE_PILOT_V1_CONTAMINATION_AUDIT.md"
+
+  base_model:
+    id: "google/gemma-4-E4B-it"
+    config: "configs/models/gemma4_e4b_it.yaml"
+
+  sources:
+    reference:
+      private_label: "sft_reference"
+      logical_adapter: "paulfoundry/paul-open-sft"
+    candidate:
+      private_label: "dpo_v2_corrective"
+      experiment_id: "paul_e4b_dpo_v2_corrective"
+      frozen_step2_revision: "ac899e879f930f25b2081550bd8c5dd5c983df35"
+
+  generation:
+    matched_between_sources: true
+    max_new_tokens: 256
+    temperature: 0.7
+    top_p: 0.9
+    random_seed: 42
+    chat_template: "tokenizer_apply_chat_template"
+    add_generation_prompt: true
+    notes: >-
+      These values follow the repository's existing evaluation entry-point defaults.
+      Both checkpoints must use identical prompt text, tokenizer/chat formatting,
+      generation settings, base-model revision, and runtime generation path.
+
+  required_outputs:
+    reference_jsonl: "outputs/h4_dhe/private/sft_reference.jsonl"
+    candidate_jsonl: "outputs/h4_dhe/private/dpo_v2_corrective.jsonl"
+    generation_manifest: "outputs/h4_dhe/private/generation_manifest.json"
+    leakage_report: "outputs/h4_dhe/private/leakage_report.json"
+    public_bundle_dir: "outputs/human_eval/public/h4_dhe_pilot_v1"
+    private_mapping: ".human-eval-private/h4_dhe_pilot_v1_mapping.json"
+
+  pre_form_gates:
+    - "generation_completed"
+    - "nonempty_output"
+    - "automated_safety_gate"
+    - "malformed_output_gate"
+    - "evaluation_partition_integrity"
+    - "contamination_gate"
+
+  human_batch:
+    builder: "scripts/build_human_eval_batch.py"
+    partition: "development"
+    variant_count: 2
+    deterministic_seed_required: true
+    default_comparisons_per_form: 3
+
+  review_allocation:
+    initial_valid_judgments_per_case: 3
+    disagreement_escalation_total: 5
+    exceptional_hard_cap: 7
+
+  prohibitions:
+    expose_private_source_labels_to_reviewers: false
+    publish_private_mapping: false
+    reuse_h3_cases: false
+    reuse_contaminated_50_case_suite: false
+    use_shae_material: false
+    treat_h4_as_final_superiority_evidence: false
