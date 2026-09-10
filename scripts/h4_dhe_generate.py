@@ -11,6 +11,7 @@ import hashlib
 import json
 import platform
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -56,7 +57,7 @@ def resolve_adapter(path: Path) -> Path:
             return candidate
     matches = [p.parent for p in path.rglob("adapter_config.json") if (p.parent / "adapter_model.safetensors").is_file()]
     if len(matches) != 1:
-        raise RuntimeError(f"expected exactly one adapter payload below {path}, found {matches}")
+        raise RuntimeError(f"expected exactly one adapter payload below supplied input, found {len(matches)}")
     return matches[0]
 
 
@@ -114,7 +115,7 @@ def generate_source(
 
         safety_clean, safety_violations = check_anti_anthropomorphism(response)
         if not safety_clean:
-            raise RuntimeError(f"{row['case_id']}: automated safety gate failed: {safety_violations}")
+            raise RuntimeError(f"{row['case_id']}: automated safety gate failed")
 
         script = detect_script(response)
         expected_script = expected_scripts.get(row["language"])
@@ -173,13 +174,12 @@ def main() -> None:
     revision = train_cfg["model_revision"]
     generation = cfg["generation"]
     out = Path(args.output_dir)
+    out.mkdir(parents=True, exist_ok=True)
     sft_path = out / "sft_reference.jsonl"
     dpo_path = out / "dpo_v2_corrective.jsonl"
 
     sft_adapter = resolve_adapter(Path(args.sft_adapter))
     dpo_adapter = resolve_adapter(Path(args.dpo_adapter))
-    print(f"SFT_ADAPTER={sft_adapter}")
-    print(f"DPO_ADAPTER={dpo_adapter}")
 
     sft = generate_source(rows, adapter=sft_adapter, model_id=model_id, revision=revision, generation=generation, output_path=sft_path)
     dpo = generate_source(rows, adapter=dpo_adapter, model_id=model_id, revision=revision, generation=generation, output_path=dpo_path)
@@ -221,5 +221,30 @@ def main() -> None:
     print(json.dumps({"status": "PASS", "case_count": len(rows), "output_dir": str(out)}, indent=2))
 
 
+def _failure_output_dir(argv: list[str]) -> Path | None:
+    try:
+        idx = argv.index("--output-dir")
+        return Path(argv[idx + 1])
+    except (ValueError, IndexError):
+        return None
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        out = _failure_output_dir(sys.argv)
+        if out is not None:
+            out.mkdir(parents=True, exist_ok=True)
+            message = str(exc)
+            for sensitive in ("sft_reference", "dpo_v2_corrective"):
+                message = message.replace(sensitive, "checkpoint")
+            failure = {
+                "status": "FAIL",
+                "exception_type": type(exc).__name__,
+                "message": message[:1000],
+            }
+            (out.parent / "failure_summary.json").write_text(
+                json.dumps(failure, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            )
+        raise
