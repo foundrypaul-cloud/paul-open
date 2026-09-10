@@ -40,10 +40,11 @@
     "details": "docs/EXPERIMENT_JOURNEY_E4B.md"
   },
   "human_evaluation": {
-    "stage": "H3",
-    "formal_acceptance": "H3_ux_pass_durability_pending",
+    "stage": "H4_preparation",
+    "formal_acceptance": "H3_pass",
     "h2_accepted_on": "2026-09-10",
     "h3_started_on": "2026-09-10",
+    "h3_accepted_on": "2026-09-11",
     "h3_live_ux_forms": 2,
     "h3_underlying_disposable_cases": 3,
     "h3_displayed_counterbalanced_instances": 6,
@@ -62,10 +63,12 @@
     "h3_readability_detail": "Five submissions reported easy with no issue; one reported mostly easy with minor scrolling or layout friction.",
     "h3_ab_confusion_result": "pass",
     "h3_ab_confusion_detail": "All six submissions reported no A/B-format confusion.",
+    "h3_durability_result": "pass",
+    "h3_durability_detail": "Repository-native H3 durability forms produced linked raw responses, three normalized comparison rows per genuine submission, an independent backup-ledger row with populated SHA-256, and a controlled recovery drill successfully reconstructed deleted normalized rows from the native Form response without duplication.",
     "h3_durability_payload": "tools/google_forms/H3DurabilityPayload.gs",
     "h3_runbook": "docs/HUMAN_EVALUATION_H3_PILOT.md",
-    "remaining_blocker": "Exercise the established H2 normalization, backup-ledger, checksum and idempotent recovery path on disposable H3 material. The direct Forms API UX instruments are not themselves attached to that Apps Script/Sheets durability runtime.",
-    "next_gate": "Complete H3 durability evidence; only then may H3 be formally accepted and H4 DHE preparation begin."
+    "remaining_blocker": null,
+    "next_gate": "Prepare H4 Development Human Evaluation using fresh non-assurance material. SHAE remains sealed."
   },
   "canonical_docs": {
     "project_status": "docs/PROJECT_STATUS.md",
@@ -81,9 +84,10 @@
     "may_say_dpo_v2_is_superior_to_sft": false,
     "may_describe_50_case_result_as_clean_held_out": false,
     "may_say_h2_is_formally_complete": true,
-    "may_say_h3_is_active": true,
+    "may_say_h3_is_active": false,
     "may_say_h3_ux_pilot_passed": true,
-    "may_say_h3_is_complete": false,
+    "may_say_h3_is_complete": true,
+    "may_prepare_dhe": true,
     "may_start_dhe": false,
     "may_start_shae": false
   }
