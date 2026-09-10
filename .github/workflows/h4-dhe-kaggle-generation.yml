@@ -70,11 +70,23 @@ jobs:
           set -euo pipefail
           KERNEL_DIR="$RUNNER_TEMP/h4-kaggle-kernel"; mkdir -p "$KERNEL_DIR"
           cat > "$KERNEL_DIR/run_h4.py" <<'PY'
-          import json, secrets, subprocess
+          import hashlib, json, secrets, subprocess
           from pathlib import Path
           repo_url='__REPO_URL__'; target_commit='__TARGET_COMMIT__'
           repo=Path('/tmp/paul-open'); out=Path('/kaggle/working/h4_dhe_pilot_v1'); out.mkdir(parents=True,exist_ok=True)
           stage='bootstrap'
+          def digest(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for c in iter(lambda:f.read(1024*1024),b''): h.update(c)
+              return h.hexdigest()
+          def adapter_by_hash(root, config_hash, weights_hash):
+              matches=[]
+              for cfg in root.rglob('adapter_config.json'):
+                  weights=cfg.parent/'adapter_model.safetensors'
+                  if weights.is_file() and digest(cfg)==config_hash and digest(weights)==weights_hash: matches.append(cfg.parent)
+              if len(matches)!=1: raise RuntimeError(f'frozen adapter resolution expected 1 match, found {len(matches)}')
+              return matches[0]
           try:
               subprocess.run(['git','clone',repo_url,str(repo)],check=True)
               subprocess.run(['git','-C',str(repo),'checkout',target_commit],check=True)
@@ -84,8 +96,9 @@ jobs:
               stage='leakage_audit'
               subprocess.run(['uv','run','python',str(repo/'scripts/check_leakage.py'),str(repo/'data/h4_dhe_pilot_v1.jsonl'),'--json-output',str(out/'leakage_report.json'),'--verbose'],cwd=repo,check=True)
               stage='adapter_mount_check'
-              sft=Path('/kaggle/input/paul-open-sft'); dpo=Path('/kaggle/input/h4-dpo-v2-adapter-20260911')
-              if not sft.exists() or not dpo.exists(): raise RuntimeError('required adapter dataset mount missing')
+              root=Path('/kaggle/input')
+              sft=adapter_by_hash(root,'cff65bd42928536886168b09d9b133b25ac444c01d901d2a56d98c7b8b03a0ce','73bab121009e2130f387b5deebfe1d15f4f7ac2afbd622164b11b3024000ec49')
+              dpo=adapter_by_hash(root,'82eeb60706d7ebc862c4f00bbb027782f7c1083ea02aa136c29a9904c0fa6ccb','8178be1ce50ce2aa66f43918ce5d90a62fe2ca1855c265202d4606ea3430a787')
               stage='paired_generation'
               subprocess.run(['uv','run','python',str(repo/'scripts/h4_dhe_generate.py'),'--manifest',str(repo/'data/h4_dhe_pilot_v1.jsonl'),'--config',str(repo/'configs/evaluation/h4_dhe_pilot_v1.yaml'),'--training-config',str(repo/'configs/training/dpo_v2_e4b_corrective.yaml'),'--sft-adapter',str(sft),'--dpo-adapter',str(dpo),'--output-dir',str(out/'private')],cwd=repo,check=True)
               stage='blinded_batch_build'
