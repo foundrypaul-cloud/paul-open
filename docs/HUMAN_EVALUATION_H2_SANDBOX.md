@@ -1,6 +1,6 @@
 # PAUL Open — Human Evaluation H2 Google Forms Sandbox
 
-**Status:** implementation verified in CI; Google-account sandbox deployment is the remaining H2 acceptance step.  
+**Status:** formally accepted on 2026-09-10; H3 entry gate is open.  
 **Research data:** synthetic/disposable only. No PAUL benchmark, DHE, SHAE, SFT/DPO identity map, or sealed prompt is used here.
 
 ## Purpose
@@ -50,7 +50,7 @@ The repository verifies the H2 implementation without Google credentials or exte
 
 ## Lowest-friction Google setup
 
-No local Python or payload generation is required for H2. The repository now contains a prebuilt disposable synthetic payload at `tools/google_forms/SandboxPayload.gs`.
+No local Python or payload generation is required for H2. The repository contains a prebuilt disposable synthetic payload at `tools/google_forms/SandboxPayload.gs`.
 
 Use a standalone Google Apps Script project owned by the research account.
 
@@ -146,12 +146,25 @@ H2 is complete only after all of the following pass on a disposable Google Form:
 9. The same three response IDs exist in the independent backup ledger with valid SHA-256 checksums.
 10. Replaying/duplicating a trigger does not duplicate normalized or backup rows.
 11. Temporarily deleting one normalized or backup representation and running `recoverPaulHumanEvalResponses()` repairs it from the Form response.
-12. After the configured third submission, the sandbox form stops accepting responses.
+12. After the configured submission target, the sandbox form stops accepting responses.
 13. `verifyPaulHumanEvalSandboxForms()` reports zero missing normalized responses, zero missing backup responses, zero checksum failures, and an installed recovery trigger.
 14. `closePaulHumanEvalSandboxForms()` safely closes any remaining sandbox forms.
 15. If the reviewer-panel Form is created, its spreadsheet is separate and contains no evaluation comparison IDs.
 
-If any item fails, fix H2 only. Do not expose DHE/SHAE material and do not train a model.
+## H2 acceptance record — 2026-09-10
+
+Formal H2 acceptance is recorded with the following evidence:
+
+- 6 genuine respondent-facing Google Form submissions retained;
+- 18 normalized comparison rows representing 6 unique submissions;
+- 6 independent backup-ledger rows with snapshot JSON and SHA-256 populated;
+- controlled recovery drill passed after intentionally removing one retained response's normalized representation and recovering it from the native Form response;
+- verifier rerun passed on the patched runtime;
+- close helper completed and the sandbox remained closed;
+- repository fix for the Google Forms custom closed-message failure was merged and CI passed;
+- respondent-facing Form opening on both desktop and mobile was explicitly confirmed on 2026-09-10.
+
+This closes H2. The evidence demonstrates the sandbox measurement infrastructure only; it does **not** constitute SFT-vs-DPO preference evidence.
 
 ## Important testing note
 
@@ -159,6 +172,6 @@ The acceptance submissions must be genuine submissions through the respondent-fa
 
 ## H3 entry gate
 
-Only after H2 passes may PAUL Open begin H3 with 5–10 disposable non-research comparisons and trusted reviewers to measure completion time, mobile readability, confusion, and mapping integrity.
+**OPEN as of 2026-09-10.** PAUL Open may now begin H3 with 5–10 disposable non-research comparisons and a small trusted reviewer group to measure completion time, mobile readability, confusion, duplicate-response handling, normalization correctness, and A/B mapping integrity.
 
-H3 must still use disposable content. Real DHE begins only after the UX, identity separation, normalization, backup and recovery pipeline are demonstrated to work.
+H3 must still use disposable content. Real DHE begins only after the H3 UX pilot passes. SHAE remains sealed final-assurance work and must not be exposed during H3.
