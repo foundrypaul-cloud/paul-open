@@ -68,12 +68,26 @@ jobs:
           cat > "$DATASET_DIR/dataset-metadata.json" <<JSON
           {"title":"PAUL Open H4 Frozen DPO V2 Adapter 20260911","id":"$DPO_DATASET","licenses":[{"name":"Apache 2.0"}]}
           JSON
-          if kaggle datasets files "$DPO_DATASET" >/dev/null 2>&1; then
-            kaggle datasets version -p "$DATASET_DIR" -m "Refresh from frozen DPO V2 production artifact for H4 DHE" --dir-mode zip
-          else
-            kaggle datasets create -p "$DATASET_DIR" --dir-mode zip
+
+          # Newly-created private datasets can return a transient 403 from the file-list
+          # endpoint while Kaggle propagates permissions. Reuse the frozen dataset if it
+          # becomes readable; otherwise create it once, then wait for propagation.
+          READY=false
+          for _ in $(seq 1 6); do
+            if kaggle datasets files "$DPO_DATASET" >/dev/null 2>&1; then READY=true; break; fi
+            sleep 10
+          done
+          if [ "$READY" != true ]; then
+            kaggle datasets create -p "$DATASET_DIR" --dir-mode zip || true
           fi
-          kaggle datasets files "$DPO_DATASET" >/dev/null
+          for _ in $(seq 1 18); do
+            if kaggle datasets files "$DPO_DATASET" >/dev/null 2>&1; then READY=true; break; fi
+            sleep 10
+          done
+          if [ "$READY" != true ]; then
+            echo "Private DPO dataset did not become readable after propagation window" >&2
+            exit 1
+          fi
 
       - name: Build disposable H4 inference kernel
         shell: bash
@@ -82,7 +96,6 @@ jobs:
           KERNEL_DIR="$RUNNER_TEMP/h4-kaggle-kernel"
           mkdir -p "$KERNEL_DIR"
           cat > "$KERNEL_DIR/run_h4.py" <<'PY'
-          import os
           import secrets
           import subprocess
           from pathlib import Path
@@ -192,8 +205,6 @@ jobs:
           LEAK=$(find "$RUNNER_TEMP/h4-private-download" -type f -name leakage_report.json -print -quit)
           if [ -n "$LEAK" ]; then cp "$LEAK" h4-reviewer-safe/leakage_report.json; fi
           find h4-reviewer-safe -maxdepth 5 -type f -print
-          # Deliberately do not copy source-labelled generations, generation manifest,
-          # private mapping, or private seed into the public-repository Actions artifact.
 
       - name: Upload reviewer-safe H4 artifact
         if: always()
@@ -209,7 +220,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh issue comment 15 --repo foundrypaul-cloud/paul-open --body "H4 DHE paired generation completed successfully from commit \`${GITHUB_SHA}\`. Six frozen development prompts were leakage-screened and generated through the historical SFT reference and frozen DPO V2 adapter under matched settings; structural/safety/script gates passed and complementary blinded variants were built. Reviewer-safe blinded material is in Actions artifact \`h4-dhe-reviewer-safe-bundle\`. Source-labelled generations and the A/B unblinding map remain only in the private Kaggle kernel output and were not copied to the public-repository artifact. No H4 responses were collected and no SHAE material was accessed."
+          gh issue comment 15 --repo foundrypaul-cloud/paul-open --body "H4 DHE paired generation completed successfully from commit \`${GITHUB_SHA}\`. Six frozen development prompts were leakage-screened and generated through the historical SFT reference and frozen DPO V2 adapter under matched settings; structural/safety/script gates passed and complementary blinded variants were built. Reviewer-safe blinded material is in Actions artifact \`h4-dhe-reviewer-safe-bundle\`. Source-labelled generations and the A/B unblinding map remain only in the private Kaggle kernel output. No H4 responses were collected and no SHAE material was accessed."
 
       - name: Fail if H4 generation failed
         if: steps.kaggle_wait.outcome != 'success'
