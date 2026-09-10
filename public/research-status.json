@@ -40,13 +40,18 @@
     "details": "docs/EXPERIMENT_JOURNEY_E4B.md"
   },
   "human_evaluation": {
-    "stage": "H2",
-    "formal_acceptance": "pending",
+    "stage": "H3",
+    "formal_acceptance": "H2_passed_H3_ready",
+    "h2_accepted_on": "2026-09-10",
     "sandbox_native_responses": 6,
     "sandbox_normalized_rows": 18,
     "sandbox_backup_rows": 6,
     "verifier": "pass",
-    "remaining_blocker": "Sync the live standalone Apps Script runtime with the merged closed-message best-effort patch and complete controlled recovery/closure acceptance."
+    "recovery_drill": "pass",
+    "closure": "pass",
+    "desktop_mobile_opening": "confirmed",
+    "remaining_blocker": null,
+    "next_gate": "Run H3 dry-run human pilot using 5-10 disposable non-research comparisons with a small trusted reviewer group; do not use DHE or SHAE material yet."
   },
   "canonical_docs": {
     "project_status": "docs/PROJECT_STATUS.md",
@@ -60,6 +65,7 @@
     "may_say_dpo_v2_is_technically_valid": true,
     "may_say_dpo_v2_is_superior_to_sft": false,
     "may_describe_50_case_result_as_clean_held_out": false,
-    "may_say_h2_is_formally_complete": false
+    "may_say_h2_is_formally_complete": true,
+    "may_say_h3_is_complete": false
   }
 }
