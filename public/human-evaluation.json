@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "status_as_of": "2026-09-10",
+  "status_as_of": "2026-09-11",
   "state": "internal_pilot_active",
   "internal_stage": "H3",
   "h2_formal_acceptance": "pass",
-  "h3_acceptance": "pending",
+  "h3_acceptance": "ux_pass_durability_pending",
   "public_participation_enabled": false,
   "provider": "google_forms",
   "respondent_url": null,
@@ -21,7 +21,17 @@
     "usefulness",
     "naturalness"
   ],
-  "public_message": "PAUL Open has completed H2 infrastructure acceptance and is running an internal H3 disposable UX pilot with trusted reviewers. No public evaluation round is currently accepting responses.",
+  "h3_ux_summary": {
+    "submissions_total": 6,
+    "form_a1": 3,
+    "form_b1": 3,
+    "mobile_covered": true,
+    "desktop_or_laptop_covered": true,
+    "completion_time_target_passed": true,
+    "readability_target_passed": true,
+    "ab_confusion_target_passed": true
+  },
+  "public_message": "PAUL Open has completed H2 infrastructure acceptance and the H3 trusted-reviewer UX pilot has met its response-count, device-coverage, completion-time, readability and A/B-comprehension criteria. H3 remains open only for the planned durability-path verification; no public evaluation round is currently accepting responses.",
   "safety": {
     "respondent_url_must_be_viewform": true,
     "editor_urls_publicly_allowed": false,
