@@ -1,0 +1,241 @@
+name: H4 DHE Kaggle Paired Generation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/h4-dhe-kaggle-generation.yml'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  h4-paired-generation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: paulfoundry
+      PRODUCTION_KERNEL: paulfoundry/paul-open-dpo-v2-pr4-production
+      SFT_DATASET: paulfoundry/paul-open-sft
+      DPO_DATASET: paulfoundry/h4-dpo-v2-adapter-20260911
+      H4_KERNEL_SLUG: paul-open-h4-dhe-paired-generation
+      MACHINE_SHAPE: NvidiaTeslaT4
+      REPO_URL: https://github.com/foundrypaul-cloud/paul-open.git
+      TARGET_COMMIT: ${{ github.sha }}
+
+    steps:
+      - name: Checkout exact H4 revision
+        uses: actions/checkout@v4
+
+      - name: Set up Python and Kaggle CLI
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+
+      - name: Verify Kaggle access and frozen SFT adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KAGGLE_API_TOKEN"
+          kaggle datasets files "$SFT_DATASET" >/dev/null
+          kaggle kernels status "$PRODUCTION_KERNEL"
+
+      - name: Download completed DPO V2 production artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/dpo-production"
+          kaggle kernels output "$PRODUCTION_KERNEL" -p "$RUNNER_TEMP/dpo-production"
+          DPO_CONFIG=$(find "$RUNNER_TEMP/dpo-production" -path '*/final-dpo-adapter/dpo/adapter_config.json' -print -quit)
+          if [ -z "$DPO_CONFIG" ]; then
+            echo 'Could not locate final-dpo-adapter/dpo/adapter_config.json in completed production output' >&2
+            find "$RUNNER_TEMP/dpo-production" -maxdepth 6 -type f -print >&2
+            exit 1
+          fi
+          DPO_DIR=$(dirname "$DPO_CONFIG")
+          test -f "$DPO_DIR/adapter_model.safetensors"
+          echo "DPO_DIR=$DPO_DIR" >> "$GITHUB_ENV"
+          sha256sum "$DPO_DIR/adapter_config.json" "$DPO_DIR/adapter_model.safetensors"
+
+      - name: Publish frozen DPO adapter as private Kaggle input
+        shell: bash
+        run: |
+          set -euo pipefail
+          DATASET_DIR="$RUNNER_TEMP/h4-dpo-dataset"
+          mkdir -p "$DATASET_DIR"
+          cp "$DPO_DIR/adapter_config.json" "$DATASET_DIR/adapter_config.json"
+          cp "$DPO_DIR/adapter_model.safetensors" "$DATASET_DIR/adapter_model.safetensors"
+          cat > "$DATASET_DIR/dataset-metadata.json" <<JSON
+          {
+            "title": "PAUL Open H4 Frozen DPO V2 Adapter 20260911",
+            "id": "$DPO_DATASET",
+            "licenses": [{"name": "Apache 2.0"}]
+          }
+          JSON
+          if kaggle datasets files "$DPO_DATASET" >/dev/null 2>&1; then
+            kaggle datasets version -p "$DATASET_DIR" -m "Refresh from completed frozen DPO V2 production artifact for H4 DHE" --dir-mode zip
+          else
+            kaggle datasets create -p "$DATASET_DIR" --dir-mode zip
+          fi
+          kaggle datasets files "$DPO_DATASET"
+
+      - name: Build disposable H4 inference kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          KERNEL_DIR="$RUNNER_TEMP/h4-kaggle-kernel"
+          mkdir -p "$KERNEL_DIR"
+          cat > "$KERNEL_DIR/run_h4.py" <<'PY'
+          import os
+          import secrets
+          import subprocess
+          from pathlib import Path
+
+          repo_url = os.environ['PAUL_REPO_URL']
+          target_commit = os.environ['PAUL_TARGET_COMMIT']
+          repo = Path('/tmp/paul-open')
+          out = Path('/kaggle/working/h4_dhe_pilot_v1')
+          out.mkdir(parents=True, exist_ok=True)
+
+          subprocess.run(['git', 'clone', repo_url, str(repo)], check=True)
+          subprocess.run(['git', '-C', str(repo), 'checkout', target_commit], check=True)
+          actual = subprocess.check_output(['git', '-C', str(repo), 'rev-parse', 'HEAD'], text=True).strip()
+          if actual != target_commit:
+              raise SystemExit(f'commit mismatch: expected {target_commit}, got {actual}')
+
+          subprocess.run(['python', '-m', 'pip', 'install', '--upgrade', 'uv'], check=True)
+          subprocess.run(['uv', 'sync', '--frozen', '--extra', 'eval'], cwd=repo, check=True)
+
+          # Re-run the canonical benchmark leakage checker on the frozen H4 manifest.
+          subprocess.run([
+              'uv', 'run', 'python', str(repo / 'scripts' / 'check_leakage.py'),
+              str(repo / 'data' / 'h4_dhe_pilot_v1.jsonl'),
+              '--json-output', str(out / 'leakage_report.json'), '--verbose'
+          ], cwd=repo, check=True)
+
+          input_root = Path('/kaggle/input')
+          sft_root = input_root / 'paul-open-sft'
+          dpo_root = input_root / 'h4-dpo-v2-adapter-20260911'
+          if not sft_root.exists():
+              raise SystemExit(f'missing SFT dataset mount: {sft_root}; available={list(input_root.iterdir())}')
+          if not dpo_root.exists():
+              raise SystemExit(f'missing DPO dataset mount: {dpo_root}; available={list(input_root.iterdir())}')
+
+          subprocess.run([
+              'uv', 'run', 'python', str(repo / 'scripts' / 'h4_dhe_generate.py'),
+              '--manifest', str(repo / 'data' / 'h4_dhe_pilot_v1.jsonl'),
+              '--config', str(repo / 'configs' / 'evaluation' / 'h4_dhe_pilot_v1.yaml'),
+              '--training-config', str(repo / 'configs' / 'training' / 'dpo_v2_e4b_corrective.yaml'),
+              '--sft-adapter', str(sft_root),
+              '--dpo-adapter', str(dpo_root),
+              '--output-dir', str(out / 'private'),
+          ], cwd=repo, check=True)
+
+          # Build blinded complementary variants with a private random seed.
+          public_dir = out / 'reviewer_bundle'
+          private_dir = out / 'private_mapping'
+          private_dir.mkdir(parents=True, exist_ok=True)
+          seed = secrets.token_hex(32)
+          subprocess.run([
+              'uv', 'run', 'python', str(repo / 'scripts' / 'build_human_eval_batch.py'),
+              '--left', str(out / 'private' / 'sft_reference.jsonl'),
+              '--right', str(out / 'private' / 'dpo_v2_corrective.jsonl'),
+              '--left-label', 'sft_reference',
+              '--right-label', 'dpo_v2_corrective',
+              '--seed', seed,
+              '--variant-count', '2',
+              '--partition', 'development',
+              '--public-output-dir', str(public_dir),
+              '--private-mapping', str(private_dir / 'mapping.json'),
+          ], cwd=repo, check=True)
+
+          # Do not persist the seed itself. The private mapping contains the required unblinding record.
+          print('H4 DHE paired generation and blinded batch build: PASS')
+          PY
+
+          cat > "$KERNEL_DIR/kernel-metadata.json" <<JSON
+          {
+            "id": "${KAGGLE_USERNAME}/${H4_KERNEL_SLUG}",
+            "title": "PAUL Open H4 DHE Paired Generation",
+            "code_file": "run_h4.py",
+            "language": "python",
+            "kernel_type": "script",
+            "is_private": "true",
+            "enable_gpu": "true",
+            "enable_internet": "true",
+            "machine_shape": "${MACHINE_SHAPE}",
+            "dataset_sources": ["${SFT_DATASET}", "${DPO_DATASET}"],
+            "competition_sources": [],
+            "kernel_sources": [],
+            "model_sources": []
+          }
+          JSON
+          echo "KERNEL_DIR=$KERNEL_DIR" >> "$GITHUB_ENV"
+
+      - name: Launch H4 Kaggle inference
+        shell: bash
+        env:
+          PAUL_REPO_URL: ${{ env.REPO_URL }}
+          PAUL_TARGET_COMMIT: ${{ env.TARGET_COMMIT }}
+        run: |
+          set -euo pipefail
+          # Substitute only public repository provenance into the disposable kernel.
+          python - "$KERNEL_DIR/run_h4.py" <<'PY'
+          import os, pathlib, sys
+          p = pathlib.Path(sys.argv[1])
+          text = p.read_text()
+          prefix = "import os\n"
+          text = text.replace(prefix, prefix + f"os.environ['PAUL_REPO_URL']={os.environ['PAUL_REPO_URL']!r}\nos.environ['PAUL_TARGET_COMMIT']={os.environ['PAUL_TARGET_COMMIT']!r}\n", 1)
+          p.write_text(text)
+          PY
+          kaggle kernels push -p "$KERNEL_DIR"
+
+      - name: Wait for H4 inference to finish
+        id: kaggle_wait
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 300); do
+            STATUS=$(kaggle kernels status "$KAGGLE_USERNAME/$H4_KERNEL_SLUG" || true)
+            echo "$STATUS"
+            if echo "$STATUS" | grep -qi 'complete'; then exit 0; fi
+            if echo "$STATUS" | grep -Eqi 'error|failed|cancel'; then exit 1; fi
+            sleep 20
+          done
+          exit 1
+
+      - name: Download H4 outputs
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p h4-kaggle-output
+          kaggle kernels output "$KAGGLE_USERNAME/$H4_KERNEL_SLUG" -p h4-kaggle-output || true
+          find h4-kaggle-output -maxdepth 6 -type f -print
+
+      - name: Upload H4 evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: h4-dhe-paired-generation-evidence
+          path: h4-kaggle-output
+          if-no-files-found: warn
+
+      - name: Record Issue 15 handoff
+        if: steps.kaggle_wait.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh issue comment 15 --repo foundrypaul-cloud/paul-open --body "H4 DHE paired-generation Kaggle job completed successfully from commit \`${GITHUB_SHA}\`. The workflow downloaded the frozen DPO V2 production adapter, mounted it with the historical SFT adapter, reran leakage screening, generated all frozen H4 prompts with matched settings, applied structural/safety/script gates, and built deterministic blinded development variants. Evidence is attached to this workflow run as artifact \`h4-dhe-paired-generation-evidence\`. No reviewer collection was started and no SHAE material was accessed."
+
+      - name: Fail if H4 inference failed
+        if: steps.kaggle_wait.outcome != 'success'
+        run: exit 1
