@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "status_as_of": "2026-09-11",
-  "state": "h4_preparation",
+  "state": "h4_collection_ready",
   "internal_stage": "H4",
   "h2_formal_acceptance": "pass",
   "h3_acceptance": "pass",
@@ -33,7 +33,20 @@
     "durability_path_passed": true,
     "recovery_drill_passed": true
   },
-  "public_message": "PAUL Open has formally completed H3 human-evaluation UX and durability validation. The project is now preparing H4 Development Human Evaluation with fresh non-assurance material. No public evaluation round is currently accepting responses.",
+  "h4": {
+    "batch_id": "HEB1-E928B35C90D7",
+    "generation_result": "pass",
+    "source_cases": 6,
+    "eligible_cases": 5,
+    "excluded_identical_pairs": 1,
+    "forms_generated": 10,
+    "initial_judgments_per_case": 3,
+    "allocation": "predeclared complementary variants with 2:1 or 1:2 A/B exposure",
+    "reviewer_scope": "curated invited reviewers routed by cohort/language",
+    "collection_ready": true,
+    "collection_started": false
+  },
+  "public_message": "PAUL Open has completed H3 and prepared a fresh H4 Development Human Evaluation batch. The H4 instruments are collection-ready for curated invited reviewers; public participation remains disabled, and no SHAE material is exposed.",
   "safety": {
     "respondent_url_must_be_viewform": true,
     "editor_urls_publicly_allowed": false,
@@ -42,6 +55,7 @@
     "hidden_ab_mapping_visible_to_reviewer": false,
     "sandbox_form_publicly_allowed": false,
     "h3_trusted_reviewer_links_publicly_allowed": false,
+    "h4_reviewer_links_publicly_allowed": false,
     "shae_material_publicly_allowed": false
   },
   "source": {
