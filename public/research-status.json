@@ -40,7 +40,7 @@
     "details": "docs/EXPERIMENT_JOURNEY_E4B.md"
   },
   "human_evaluation": {
-    "stage": "H4_preparation",
+    "stage": "H4_collection_ready",
     "formal_acceptance": "H3_pass",
     "h2_accepted_on": "2026-09-10",
     "h3_started_on": "2026-09-10",
@@ -65,10 +65,18 @@
     "h3_ab_confusion_detail": "All six submissions reported no A/B-format confusion.",
     "h3_durability_result": "pass",
     "h3_durability_detail": "Repository-native H3 durability forms produced linked raw responses, three normalized comparison rows per genuine submission, an independent backup-ledger row with populated SHA-256, and a controlled recovery drill successfully reconstructed deleted normalized rows from the native Form response without duplication.",
-    "h3_durability_payload": "tools/google_forms/H3DurabilityPayload.gs",
-    "h3_runbook": "docs/HUMAN_EVALUATION_H3_PILOT.md",
+    "h4_batch_id": "HEB1-E928B35C90D7",
+    "h4_generation_result": "pass",
+    "h4_source_cases": 6,
+    "h4_eligible_cases": 5,
+    "h4_excluded_identical_pairs": 1,
+    "h4_forms_generated": 10,
+    "h4_initial_judgments_per_case": 3,
+    "h4_counterbalancing": "predeclared_2_to_1_or_1_to_2_across_complementary_variants",
+    "h4_public_participation": false,
+    "h4_collection_scope": "curated_invited_reviewers_by_cohort",
     "remaining_blocker": null,
-    "next_gate": "Prepare H4 Development Human Evaluation using fresh non-assurance material. SHAE remains sealed."
+    "next_gate": "Collect the initial three valid DHE judgments per eligible H4 case, then escalate only disagreement or uncertainty cases to five and exceptional unresolved cases to seven. SHAE remains sealed."
   },
   "canonical_docs": {
     "project_status": "docs/PROJECT_STATUS.md",
@@ -88,7 +96,7 @@
     "may_say_h3_ux_pilot_passed": true,
     "may_say_h3_is_complete": true,
     "may_prepare_dhe": true,
-    "may_start_dhe": false,
+    "may_start_dhe": true,
     "may_start_shae": false
   }
 }
