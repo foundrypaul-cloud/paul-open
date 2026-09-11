@@ -40,7 +40,7 @@
     "details": "docs/EXPERIMENT_JOURNEY_E4B.md"
   },
   "human_evaluation": {
-    "stage": "H4_collection_ready",
+    "stage": "H4_collecting",
     "formal_acceptance": "H3_pass",
     "h2_accepted_on": "2026-09-10",
     "h3_started_on": "2026-09-10",
@@ -75,8 +75,8 @@
     "h4_counterbalancing": "predeclared_2_to_1_or_1_to_2_across_complementary_variants",
     "h4_public_participation": false,
     "h4_collection_scope": "curated_invited_reviewers_by_cohort",
-    "remaining_blocker": null,
-    "next_gate": "Collect the initial three valid DHE judgments per eligible H4 case, then escalate only disagreement or uncertainty cases to five and exceptional unresolved cases to seven. SHAE remains sealed."
+    "remaining_blocker": "Initial H4 reviewer judgments are being collected.",
+    "next_gate": "When each eligible H4 case has three valid judgments, close clear cases and escalate only disagreement or uncertainty cases to five; exceptional unresolved cases may escalate to seven. SHAE remains sealed."
   },
   "canonical_docs": {
     "project_status": "docs/PROJECT_STATUS.md",
