@@ -1,0 +1,91 @@
+name: DPO V3 Data Verification
+
+on:
+  pull_request:
+    paths:
+      - 'data/train/dpo_v3/**'
+      - '.github/workflows/dpo-v3-data-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install repository environment
+        run: |
+          python -m pip install --upgrade uv
+          uv sync --frozen --extra eval
+
+      - name: Assemble and validate P2 records
+        run: |
+          uv run python - <<'PY'
+          import json, re
+          from pathlib import Path
+
+          shards = [
+              Path('data/train/dpo_v3/bengali_causal_direction.jsonl'),
+              Path('data/train/dpo_v3/grounded_socratic_tutoring.jsonl'),
+              Path('data/train/dpo_v3/evidence_before_hypothesis.jsonl'),
+              Path('data/train/dpo_v3/stem_causal_clarity.jsonl'),
+              Path('data/train/dpo_v3/hindi_science_calibration.jsonl'),
+          ]
+          records=[]
+          for path in shards:
+              for line in path.read_text(encoding='utf-8').splitlines():
+                  if line.strip(): records.append(json.loads(line))
+          assert len(records)==30, len(records)
+          required={'id','track','domain','language','rejection_reason','prompt','chosen','rejected','metadata'}
+          for r in records:
+              assert required <= set(r), r.get('id')
+              assert r['id'].startswith('paul_dpo_v3_')
+              assert r['prompt'].strip() and r['chosen'].strip() and r['rejected'].strip()
+              assert r['chosen'] != r['rejected']
+              m=r['metadata']
+              assert m.get('source')=='post_h4_p2_authored'
+              assert m.get('human_verified') is False
+              assert m.get('benchmark_leakage_checked') is False
+          for key in ('id','prompt','chosen','rejected'):
+              vals=[r[key] for r in records]
+              assert len(vals)==len(set(vals)), f'duplicate {key}'
+
+          h4=[json.loads(x) for x in Path('data/h4_dhe_pilot_v1.jsonl').read_text(encoding='utf-8').splitlines() if x.strip()]
+          prior=[]
+          for p in ('data/train/dpo_train.jsonl','data/train/dpo_v2_corrective.jsonl'):
+              prior += [json.loads(x) for x in Path(p).read_text(encoding='utf-8').splitlines() if x.strip()]
+          candidate_prompts={r['prompt'] for r in records}
+          assert not candidate_prompts.intersection({r['prompt'] for r in h4}), 'exact H4 prompt reuse'
+          assert not candidate_prompts.intersection({r['prompt'] for r in prior}), 'exact prior-DPO prompt reuse'
+
+          def toks(s): return set(re.findall(r'\w+', s.lower(), flags=re.UNICODE))
+          max_h4=(0.0,None,None)
+          for c in records:
+              a=toks(c['prompt'])
+              for h in h4:
+                  b=toks(h['prompt']); u=a|b
+                  score=len(a&b)/len(u) if u else 0.0
+                  if score>max_h4[0]: max_h4=(score,c['id'],h['case_id'])
+          assert max_h4[0] < 0.35, f'H4 overlap too high: {max_h4}'
+
+          out=Path('/tmp/dpo_v3_corrective.jsonl')
+          out.write_text(''.join(json.dumps(r,ensure_ascii=False,sort_keys=True)+'\n' for r in records), encoding='utf-8')
+          print(json.dumps({'records':len(records),'max_h4_token_jaccard':max_h4[0],'max_pair':[max_h4[1],max_h4[2]]},sort_keys=True))
+          PY
+
+      - name: Run canonical benchmark leakage checker
+        run: |
+          uv run python scripts/check_leakage.py /tmp/dpo_v3_corrective.jsonl --json-output /tmp/dpo_v3_leakage_report.json --verbose
+
+      - name: Record dataset digest
+        run: |
+          sha256sum /tmp/dpo_v3_corrective.jsonl
