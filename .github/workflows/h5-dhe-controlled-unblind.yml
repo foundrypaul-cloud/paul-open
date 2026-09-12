@@ -1,0 +1,147 @@
+name: H5 DHE Controlled Unblind
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/h5-dhe-controlled-unblind.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unblind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: paulfoundry
+      H5_KERNEL: paulfoundry/paul-open-h5-dhe-v3-paired-generation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+      - name: Verify blinded analysis lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          lock=json.loads(Path('data/h5_dhe_v3_pilot_v1_blinded_analysis_lock.json').read_text())
+          assert lock['state']=='BLINDED_ANALYSIS_LOCKED'
+          assert lock['batch_id']=='HEB1-64CDCC9521D3'
+          assert lock['collection']['collected']==18
+          assert lock['collection']['adaptive_escalation_required'] is False
+          assert lock['durability']['status']=='PASS'
+          assert lock['durability']['raw_response_count']==18
+          assert lock['durability']['normalized_row_count']==18
+          assert lock['durability']['backup_row_count']==18
+          assert lock['blinding']['private_mapping_opened'] is False
+          print('H5 blinded analysis lock verified')
+          PY
+      - name: Download private H5 kernel output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KAGGLE_API_TOKEN"
+          mkdir -p "$RUNNER_TEMP/h5-private"
+          kaggle kernels output "$H5_KERNEL" -p "$RUNNER_TEMP/h5-private"
+          MAPPING=$(find "$RUNNER_TEMP/h5-private" -type f -path '*/private_mapping/mapping.json' -print -quit)
+          test -n "$MAPPING"
+          echo "MAPPING=$MAPPING" >> "$GITHUB_ENV"
+      - name: Create reviewer-safe unblinded aggregate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p h5-unblinded-safe
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          lock=json.loads(Path('data/h5_dhe_v3_pilot_v1_blinded_analysis_lock.json').read_text())
+          plan=json.loads(Path('data/h5_dhe_v3_pilot_v1_collection_plan.json').read_text())
+          mp=Path(os.environ['MAPPING'])
+          mapping=json.loads(mp.read_text())
+          if mapping.get('batch_id') != lock['batch_id']:
+              raise SystemExit('private mapping batch mismatch')
+          labels={mapping['sources']['left']['label'], mapping['sources']['right']['label']}
+          expected={'sft_reference','dpo_v3_corrective'}
+          if labels != expected:
+              raise SystemExit(f'unexpected source labels: {sorted(labels)}')
+
+          entries={e['comparison_id']:e for e in mapping['entries']}
+          v01_packets={p['packet_id']:p for p in plan['allocation']['packets'] if p['variant_id']=='V01'}
+          lock_cases={row['case']:row for row in lock['blinded_case_results']}
+          case_packet={
+              'STEM':'HEF1-H5-STEM-A-20260912',
+              'EDUCATOR':'HEF1-H5-EDUCATOR-A-20260912',
+              'RESEARCH':'HEF1-H5-RESEARCH-A-20260912',
+              'HINDI':'HEF1-H5-HI-A-20260912',
+              'BENGALI':'HEF1-H5-BN-A-20260912',
+              'GENERAL':'HEF1-H5-GENERAL-A-20260912',
+          }
+          source_metric={'dpo_v3_corrective':'candidate_preferred','sft_reference':'reference_preferred'}
+          totals={'candidate_preferred':0,'reference_preferred':0,'about_equal':0,'neither_good':0,'not_sure':0}
+          by_case={}
+          for case, packet_id in case_packet.items():
+              row=lock_cases[case]
+              comparison_id=v01_packets[packet_id]['comparison_id']
+              entry=entries.get(comparison_id)
+              if entry is None:
+                  raise SystemExit(f'mapping missing V01 comparison for {case}')
+              side=row['canonical_v01_side']
+              if side not in ('A','B'):
+                  raise SystemExit(f'invalid locked side for {case}')
+              source=entry['response_a_source'] if side=='A' else entry['response_b_source']
+              metric=source_metric[source]
+              out={k:0 for k in totals}
+              out[metric]=row['judgments']
+              by_case[case.lower()]=out
+              totals[metric]+=row['judgments']
+
+          if sum(totals.values()) != 18:
+              raise SystemExit('aggregate judgment total mismatch')
+          mapping_hash=hashlib.sha256(mp.read_bytes()).hexdigest()
+          result={
+              'schema_version':'1.0',
+              'experiment':'H5_DHE_V3_PILOT_V1',
+              'partition':'development',
+              'batch_id':lock['batch_id'],
+              'state':'UNBLINDED_AGGREGATE_READY',
+              'analysis_lock_state':lock['state'],
+              'analysis_lock_judgments':18,
+              'candidate':'dpo_v3_corrective',
+              'reference':'sft_reference',
+              'mapping_sha256':mapping_hash,
+              'totals':totals,
+              'by_case':by_case,
+              'unanimous_cases':6,
+              'mapping_content_exposed':False,
+              'private_case_ids_exposed':False,
+              'private_seed_exposed':False,
+              'note':'Safe aggregate only. The private A/B mapping, seed, fingerprints, and private case IDs are intentionally omitted.'
+          }
+          Path('h5-unblinded-safe/h5_unblinded_aggregate.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps({'status':'PASS','judgments':18,'safe_output':'h5_unblinded_aggregate.json'}))
+          PY
+      - name: Assert private material is absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find h5-unblinded-safe -type f | wc -l)" -eq 1
+          ! grep -R '"seed"' h5-unblinded-safe
+          ! grep -R '"case_id"' h5-unblinded-safe
+          ! grep -R 'response_a_source' h5-unblinded-safe
+          ! grep -R 'response_b_source' h5-unblinded-safe
+      - name: Upload safe H5 unblinding aggregate
+        uses: actions/upload-artifact@v4
+        with:
+          name: h5-dhe-unblinded-safe-aggregate
+          path: h5-unblinded-safe/h5_unblinded_aggregate.json
+          if-no-files-found: error
+          retention-days: 30
