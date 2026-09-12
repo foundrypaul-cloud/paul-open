@@ -1,72 +1,47 @@
 # PAUL Open Human Evaluation — H4 DHE Pilot
 
-**Status:** ANALYSIS_LOCKED  
+**Status:** DECISION_RECORDED  
 **Stage:** H4 — Development Human Evaluation (DHE)  
 **Protocol:** `docs/HUMAN_EVALUATION_WORKFLOW.md` + `configs/evaluation/human_eval_v1.yaml`  
 **Precondition:** H3 formally accepted on 2026-09-11
 
-## Purpose
+## Purpose and research boundary
 
-H4 is the first real PAUL Open development human-evaluation pilot after the H2 infrastructure validation and H3 UX/durability pilot passed. H4 is **development evidence**, not sealed final-assurance evidence. Its results may inform future training or data work, so H4 cases are development-exposed and must never later be represented as untouched SHAE evidence.
+H4 is PAUL Open's first real development human-evaluation pilot after the H2 infrastructure validation and H3 UX/durability pilot. H4 is **development evidence**, not sealed final-assurance evidence. Its cases are development-exposed and cannot later be represented as untouched SHAE evidence.
 
-## Research question
+The H4 research question was whether blinded reviewers preferred responses from the frozen SFT reference checkpoint or DPO V2 Corrective checkpoint on a small set of fresh development cases.
 
-For fresh, non-assurance prompts that have not been used in PAUL Open training or the contaminated 50-case comparison, how do blinded reviewers compare the frozen SFT reference checkpoint and DPO V2 Corrective checkpoint on response usefulness and quality?
+H4 is not authorized to establish overall model superiority by itself.
 
-H4 is not authorized to establish final model superiority by itself.
+## Frozen checkpoints
 
-## Checkpoints
-
-- reference checkpoint: historical SFT adapter
-- experimental checkpoint: DPO V2 Corrective
+- reference: SFT
+- candidate: DPO V2 Corrective
 - base model: `google/gemma-4-E4B-it`
-- Step 2 immutable experiment freeze: `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`
+- Step 2 immutable freeze: `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`
 
-Do not retrain, modify, or silently repair either checkpoint for this pilot.
+No retraining or checkpoint repair was performed for this pilot.
 
-## Case eligibility
+## Blinding and allocation
 
-Every H4 case must be fresh development-evaluation material and pass the frozen pre-form gates: generation complete, non-empty output, automated safety gate, malformed-output gate, evaluation-partition integrity, and contamination gate.
+The existing deterministic human-evaluation builder was used with complementary A/B variants and a private A/B source mapping. Model identity remained hidden from reviewers.
 
-Exclude H3 disposable cases, SFT/DPO training material, the contaminated canonical 50-case suite and close derivatives, the DPO V2 corrective prompts and close derivatives, the permanent DPO holdout, SHAE material, and material without sufficient provenance.
-
-## Reviewer-facing judgment
-
-Each comparison uses the fixed five-choice vocabulary:
-
-- Response A is better
-- Response B is better
-- They are about equally good
-- Neither response is good
-- I'm not sure / I can't judge this
-
-Model/checkpoint identity and automated scores remain hidden from reviewers.
-
-## Blinding and counterbalancing
-
-Use `scripts/build_human_eval_batch.py` with partition=`development`, deterministic secret/research seed, complementary A/B variants, and a private model-identity mapping stored only in the gitignored/private mapping path. The private mapping must not appear in Google Forms, website bundles, reviewer instructions, or the blinded analysis lock.
-
-## Review allocation
-
-The frozen allocation policy is unchanged:
+Frozen reviewer allocation:
 
 - initial valid judgments per case: 3
 - disagreement/uncertainty escalation: 5 total judgments
 - exceptional hard cap: 7 judgments
-- control-injection form rate: 0.20
-- control items excluded from model win-rate calculations
+- no extra judgments solely to increase sample size
 
-Do not collect more judgments merely to increase sample size when the protocol does not require them.
+Allowed reviewer cohorts remained `general_user`, `educator`, `bilingual`, `stem_capable`, and `domain_expert`.
 
-## Reviewer cohorts
+## Collection result
 
-Allowed cohorts remain `general_user`, `educator`, `bilingual`, `stem_capable`, and `domain_expert`. Reviewer contact identity remains separate from judgments.
+Batch `HEB1-E928B35C90D7` contained five eligible cases after one identical response pair was excluded. Ten complementary reviewer-facing variants were generated.
 
-## H4 collection result
+The initial round produced 15 judgments. STEM, Educator, and Bengali triggered the predeclared adaptive rule and each received two additional judgments.
 
-Batch `HEB1-E928B35C90D7` contained five eligible cases after one identical pair was excluded. Ten complementary reviewer-facing variants were generated.
-
-The initial round produced 15 judgments. STEM, Educator, and Bengali met the frozen escalation rule and each received two additional judgments. Final case totals are:
+Final case totals:
 
 - General: 3
 - STEM: 5
@@ -75,51 +50,80 @@ The initial round produced 15 judgments. STEM, Educator, and Bengali met the fro
 - Bengali: 5
 - **Total: 21 judgments**
 
-The exceptional seven-judgment cap was not invoked before analysis lock.
+The exceptional seven-judgment cap was not required.
 
-## Data integrity and durability audit
+## Data integrity
 
-The H2/H3 durability architecture was retained: native Google Form responses, linked raw response sheets, `PAUL Normalized`, independent `PAUL Backup Ledger`, canonical snapshot JSON + SHA-256, and idempotent recovery.
-
-Immediately before analysis lock on 2026-09-12, all ten variants were audited. Results:
+Before unblinding, the full H4 response path was audited across all ten variants:
 
 - raw response rows: 21
-- normalized response IDs: 21
-- backup response IDs: 21
-- normalized/backup response IDs: exact match
-- backup SHA-256: present for all 21 responses
-- backup-write timestamp: present for all 21 responses
-- durability audit: **PASS**
+- `PAUL Normalized` response IDs: 21
+- independent `PAUL Backup Ledger` response IDs: 21
+- normalized/backup IDs: exact match
+- backup SHA-256: present for all 21
+- backup-write timestamp: present for all 21
 
-No manual spreadsheet editing was used to repair or reinterpret the H4 judgment set.
+Durability result: **PASS**.
 
-## Analysis lock
-
-The blinded judgment set is frozen in:
+The blinded judgment set was then frozen in:
 
 - `data/h4_dhe_pilot_v1_blinded_analysis_lock.json`
 - `docs/H4_DHE_PILOT_V1_ANALYSIS_LOCK.md`
 
-The lock was created **before** reading the private A/B source mapping. All 21 accepted judgments are frozen. Post-unblind exclusion changes are prohibited except correction of a separately documented, demonstrable data-integrity error.
+The private A/B mapping was not read until after this lock.
 
-## Frozen analysis contract
+## Controlled unblinding
 
-Post-unblind reporting must include candidate preferred, reference preferred, about equal, neither good, not sure, and inter-rater agreement. Stratify by domain/language/reviewer cohort where the small sample permits and use bootstrap confidence intervals where appropriate under the frozen configuration. Bradley-Terry is for multi-model use only and is not the primary analysis for this two-model H4 comparison.
+Controlled unblinding used the private mapping retained in the private Kaggle generation output. The join used the exact comparison IDs recovered from the live form metadata. Only a safe aggregate was exported; the private seed, case IDs, fingerprints, and row-level A/B mapping remain uncommitted.
 
-Do not count declared controls in model win-rate calculations. Do not translate this small H4 DHE pilot into an overall model-superiority claim.
+Safe aggregate:
+
+- `data/h4_dhe_pilot_v1_unblinded_aggregate.json`
+
+Full analysis and decision:
+
+- `docs/H4_DHE_PILOT_V1_RESULTS.md`
+
+## H4 result
+
+Across all 21 judgments:
+
+- DPO V2 preferred: **7**
+- SFT preferred: **9**
+- about equal: **2**
+- neither good: **0**
+- not sure / unable to judge: **3**
+
+Among 16 decisive preference judgments, DPO V2 received **43.75%** and SFT **56.25%**.
+
+Case majorities:
+
+- General: SFT
+- STEM: DPO V2
+- Educator: SFT
+- Hindi: DPO V2
+- Bengali: SFT
+
+DPO V2 therefore wins 2 of 5 case majorities; SFT wins 3 of 5.
+
+Mean descriptive modal-choice agreement across the five cases is **80%**. A cluster bootstrap over the five cases produces very wide uncertainty intervals, consistent with H4 being a small development pilot rather than a superiority study.
+
+## Decision
+
+**Mixed result; no DPO V2 promotion.**
+
+SFT remains the safer reference checkpoint. DPO V2 Corrective remains a technically valid experimental checkpoint with meaningful positive signals in STEM and Hindi, but H4 does not demonstrate broad superiority. General, Educator, and Bengali remain development areas for diagnosis.
+
+Do not claim that H4 establishes DPO V2 superiority over SFT.
 
 ## Accessibility finding
 
-During H4 collection, a reviewer identified that the text-only Google Forms experience is not sufficiently self-evident for evaluators with poor or no vision. Future evaluator-interface work should preserve keyboard and screen-reader compatibility and evaluate multilingual text-to-speech assistance without making TTS the sole accessibility path.
+A reviewer identified that the text-only Google Forms experience is not sufficiently self-evident for evaluators with poor or no vision. Future evaluator-interface work should preserve keyboard and screen-reader compatibility and evaluate optional multilingual text-to-speech assistance without making TTS the sole accessibility path.
 
-This remains a future-interface DHE finding and does not alter the frozen H4 judgments.
-
-## Contamination consequence
-
-Once an H4 case or reviewer finding is used to change training data, prompts, model weights, preference data, generation strategy, or evaluation design, that material remains development-exposed and cannot be reclassified as sealed final assurance. SHAE remains outside this workflow.
+This remains a future-interface DHE finding and did not alter the H4 collection or analysis.
 
 ## Current boundary
 
-As of 2026-09-12, H4 is **ANALYSIS_LOCKED** with 21 frozen judgments and a passing durability audit. The next permitted transition is **UNBLINDED**: use the private gitignored mapping to convert the frozen reviewer-facing A/B judgments into SFT-reference versus DPO-V2-Corrective outcomes, calculate the predeclared H4 metrics, and record the development-evaluation decision.
+As of 2026-09-12, H4 is **DECISION_RECORDED**. Collection, durability verification, analysis lock, controlled unblinding, aggregate analysis, and the H4 development decision are complete.
 
-Public participation remains disabled. Reviewer links, response sheets, private A/B mappings, and SHAE material remain non-public.
+SHAE remains sealed and has **not** started. Any next model-development work based on H4 is DHE follow-up and must not retroactively convert H4 into final assurance.

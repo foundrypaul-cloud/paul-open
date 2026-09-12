@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "experiment": "H4_DHE_PILOT_V1",
+  "partition": "development",
+  "batch_id": "HEB1-E928B35C90D7",
+  "state": "UNBLINDED",
+  "analysis_lock_judgments": 21,
+  "candidate": "dpo_v2_corrective",
+  "reference": "sft_reference",
+  "mapping_sha256": "3cc28a94f51bed2ca08e110a75b10378b863eb4efec3465a40375a77e95fe8d7",
+  "mapping_content_exposed": false,
+  "private_case_ids_exposed": false,
+  "private_seed_exposed": false,
+  "totals": {
+    "candidate_preferred": 7,
+    "reference_preferred": 9,
+    "about_equal": 2,
+    "neither_good": 0,
+    "not_sure": 3,
+    "total": 21
+  },
+  "by_case": {
+    "general": {
+      "candidate_preferred": 0,
+      "reference_preferred": 3,
+      "about_equal": 0,
+      "neither_good": 0,
+      "not_sure": 0
+    },
+    "stem": {
+      "candidate_preferred": 4,
+      "reference_preferred": 0,
+      "about_equal": 0,
+      "neither_good": 0,
+      "not_sure": 1
+    },
+    "educator": {
+      "candidate_preferred": 0,
+      "reference_preferred": 3,
+      "about_equal": 1,
+      "neither_good": 0,
+      "not_sure": 1
+    },
+    "hindi": {
+      "candidate_preferred": 3,
+      "reference_preferred": 0,
+      "about_equal": 0,
+      "neither_good": 0,
+      "not_sure": 0
+    },
+    "bengali": {
+      "candidate_preferred": 0,
+      "reference_preferred": 3,
+      "about_equal": 1,
+      "neither_good": 0,
+      "not_sure": 1
+    }
+  },
+  "derived": {
+    "decisive_judgments": 16,
+    "candidate_share_of_decisive_judgments": 0.4375,
+    "reference_share_of_decisive_judgments": 0.5625,
+    "candidate_case_majorities": 2,
+    "reference_case_majorities": 3,
+    "candidate_case_majority_rate": 0.4,
+    "reference_case_majority_rate": 0.6,
+    "mean_modal_choice_agreement": 0.8,
+    "unanimous_cases": 2,
+    "case_count": 5
+  },
+  "bootstrap": {
+    "method": "cluster bootstrap over the five H4 cases with replacement",
+    "replicates": 200000,
+    "seed": 20260912,
+    "candidate_share_of_decisive_judgments_95pct_ci": [0.0, 0.8333333333],
+    "candidate_case_majority_rate_95pct_ci": [0.0, 0.8],
+    "note": "Intervals are intentionally wide because H4 contains only five independent development cases."
+  },
+  "interpretation": "Mixed DHE result. SFT/reference leads overall and wins 3 of 5 cases; DPO V2/candidate wins STEM and Hindi. H4 alone does not establish overall model superiority.",
+  "source_run": {
+    "workflow": "H4 DHE Controlled Unblind",
+    "run_id": 34683189304,
+    "safe_artifact_id": 10294237980
+  }
+}

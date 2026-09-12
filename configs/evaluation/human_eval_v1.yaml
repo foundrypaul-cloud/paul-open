@@ -1,6 +1,6 @@
 human_evaluation:
   protocol_version: "1.0"
-  status: "h4_analysis_locked"
+  status: "h4_decision_recorded"
   frozen_step2_revision: "ac899e879f930f25b2081550bd8c5dd5c983df35"
 
   partitions:
