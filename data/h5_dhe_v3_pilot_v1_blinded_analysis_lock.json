@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "experiment": "H5_DHE_V3_PILOT_V1",
+  "batch_id": "HEB1-64CDCC9521D3",
+  "state": "BLINDED_ANALYSIS_LOCKED",
+  "collection": {
+    "initial_target": 18,
+    "collected": 18,
+    "adaptive_escalation_required": false,
+    "all_forms_closed": true
+  },
+  "durability": {
+    "raw_response_count": 18,
+    "normalized_row_count": 18,
+    "backup_row_count": 18,
+    "normalized_backup_response_ids_match": true,
+    "backup_sha256_present_for_all_rows": true,
+    "sorted_response_id_set_sha256": "20d1f8fc33eb52d6782ab562d4468ea68b57e6fc4d0fdac79e13012f2850b7fb",
+    "status": "PASS"
+  },
+  "blinded_case_results": [
+    {"case":"STEM","judgments":3,"canonical_v01_side":"B","votes_for_canonical_side":3,"votes_against":0,"ties":0,"not_sure":0},
+    {"case":"EDUCATOR","judgments":3,"canonical_v01_side":"A","votes_for_canonical_side":3,"votes_against":0,"ties":0,"not_sure":0},
+    {"case":"RESEARCH","judgments":3,"canonical_v01_side":"B","votes_for_canonical_side":3,"votes_against":0,"ties":0,"not_sure":0},
+    {"case":"HINDI","judgments":3,"canonical_v01_side":"A","votes_for_canonical_side":3,"votes_against":0,"ties":0,"not_sure":0},
+    {"case":"BENGALI","judgments":3,"canonical_v01_side":"A","votes_for_canonical_side":3,"votes_against":0,"ties":0,"not_sure":0},
+    {"case":"GENERAL","judgments":3,"canonical_v01_side":"A","votes_for_canonical_side":3,"votes_against":0,"ties":0,"not_sure":0}
+  ],
+  "aggregate_blinded": {
+    "unanimous_cases": 6,
+    "total_cases": 6,
+    "mean_modal_agreement": 1.0,
+    "tie_judgments": 0,
+    "not_sure_judgments": 0
+  },
+  "blinding": {
+    "model_identity_used_in_analysis": false,
+    "private_mapping_opened": false,
+    "unblind_authorized_after_lock_merge": true,
+    "shae_sealed": true
+  }
+}
