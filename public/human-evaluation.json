@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "status_as_of": "2026-09-11",
+  "status_as_of": "2026-09-12",
   "state": "h4_collecting",
   "internal_stage": "H4",
   "h2_formal_acceptance": "pass",
@@ -44,9 +44,12 @@
     "allocation": "predeclared complementary variants with 2:1 or 1:2 A/B exposure",
     "reviewer_scope": "curated invited reviewers routed by cohort/language",
     "collection_ready": true,
-    "collection_started": true
+    "collection_started": true,
+    "initial_coverage_judgments": 15,
+    "initial_coverage_complete": true,
+    "adaptive_escalation_pending": true
   },
-  "public_message": "PAUL Open is collecting a small H4 Development Human Evaluation batch from curated invited reviewers. Public participation remains disabled, reviewer links are private, and no SHAE material is exposed.",
+  "public_message": "PAUL Open is collecting a small H4 Development Human Evaluation batch from curated invited reviewers. Initial three-judgment coverage is complete across the five eligible H4 cases; adaptive follow-up collection remains in progress where uncertainty or disagreement requires additional review. Public participation remains disabled, reviewer links are private, and no SHAE material is exposed.",
   "safety": {
     "respondent_url_must_be_viewform": true,
     "editor_urls_publicly_allowed": false,
