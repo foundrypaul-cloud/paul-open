@@ -31,7 +31,7 @@ jobs:
         run: |
           set -euo pipefail
           uv run python - <<'PY'
-          import hashlib, json, re
+          import hashlib, json, re, unicodedata
           from pathlib import Path
 
           shards = [
@@ -89,7 +89,18 @@ jobs:
           assert not {r['chosen'] for r in records}.intersection(prior_completions), 'exact prior completion reuse'
           assert not {r['rejected'] for r in records}.intersection(prior_completions), 'exact prior completion reuse'
 
-          def toks(s): return set(re.findall(r'\w+', s.lower(), flags=re.UNICODE))
+          def toks(s):
+              text=unicodedata.normalize('NFKC',s).casefold()
+              tokens=[]; current=[]
+              for ch in text:
+                  category=unicodedata.category(ch)
+                  if category[0] in {'L','N','M'} or ch=='_':
+                      current.append(ch)
+                  elif current:
+                      tokens.append(''.join(current)); current=[]
+              if current: tokens.append(''.join(current))
+              return set(tokens)
+
           max_pair=(0.0,None,None)
           for c in records:
               a=toks(c['prompt'])
@@ -107,6 +118,7 @@ jobs:
           assert digest==expected, (digest,expected)
           summary={
               'status':'PASS','records':len(records),'track_counts':counts,
+              'tokenizer':'unicode_letter_mark_word_v1',
               'max_prior_prompt_token_jaccard':max_pair[0],
               'max_prior_prompt_pair':[max_pair[1],max_pair[2]],
               'dataset_sha256':digest,
