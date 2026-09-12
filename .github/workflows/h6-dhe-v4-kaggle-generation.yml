@@ -83,7 +83,7 @@ jobs:
           set -euo pipefail
           KERNEL_DIR="$RUNNER_TEMP/h6-kaggle-kernel"; mkdir -p "$KERNEL_DIR"
           cat > "$KERNEL_DIR/run_h6.py" <<'PY'
-          import hashlib, json, re, secrets, subprocess
+          import hashlib, json, secrets, subprocess, unicodedata
           from pathlib import Path
           repo_url='__REPO_URL__'; target_commit='__TARGET_COMMIT__'
           repo=Path('/tmp/paul-open'); out=Path('/kaggle/working/h6_dhe_v4_pilot_v1'); out.mkdir(parents=True,exist_ok=True)
@@ -101,7 +101,14 @@ jobs:
               if len(matches)!=1: raise RuntimeError(f'frozen adapter resolution expected 1 match, found {len(matches)}')
               return matches[0]
           def token_set(text):
-              return set(re.findall(r'\w+', text.lower(), flags=re.UNICODE))
+              text=unicodedata.normalize('NFKC',text).casefold()
+              tokens=[]; current=[]
+              for ch in text:
+                  category=unicodedata.category(ch)
+                  if category[0] in {'L','N','M'} or ch=='_': current.append(ch)
+                  elif current: tokens.append(''.join(current)); current=[]
+              if current: tokens.append(''.join(current))
+              return set(tokens)
           def load_rows(path):
               return [json.loads(x) for x in path.read_text(encoding='utf-8').splitlines() if x.strip()]
           try:
@@ -128,7 +135,7 @@ jobs:
                   max_sim=max(max_sim,best[0])
                   report.append({'case_id':r['case_id'],'max_token_set_jaccard':best[0],'nearest_source':best[1]})
                   if best[0] >= 0.35: raise RuntimeError(f'H6 development separation failed for {r["case_id"]}: similarity {best[0]:.4f} vs {best[1]}')
-              (out/'development_separation_report.json').write_text(json.dumps({'status':'PASS','threshold_exclusive':0.35,'max_similarity':max_sim,'cases':report},indent=2)+'\n')
+              (out/'development_separation_report.json').write_text(json.dumps({'status':'PASS','tokenizer':'unicode_letter_mark_word_v1','threshold_exclusive':0.35,'max_similarity':max_sim,'cases':report},indent=2)+'\n')
               stage='adapter_mount_check'
               root=Path('/kaggle/input')
               sft=adapter_by_hash(root,'cff65bd42928536886168b09d9b133b25ac444c01d901d2a56d98c7b8b03a0ce','73bab121009e2130f387b5deebfe1d15f4f7ac2afbd622164b11b3024000ec49')
