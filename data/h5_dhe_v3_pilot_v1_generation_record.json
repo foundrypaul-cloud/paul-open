@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "experiment": "H5_DHE_V3_PILOT_V1",
+  "partition": "development",
+  "state": "GENERATED_READY_FOR_COLLECTION",
+  "generated_at_utc": "2026-09-12T12:07:41Z",
+  "source_revision": "36b525486dfe8e4cee5785f082186e77efe9d550",
+  "generation_workflow": {
+    "run_id": 34692176820,
+    "conclusion": "success"
+  },
+  "reviewer_safe_artifact": {
+    "artifact_id": 10297811566,
+    "name": "h5-dhe-v3-reviewer-safe-bundle",
+    "size_bytes": 14018,
+    "digest": "sha256:19ec31d93516f312fa339aa8e1a4e287ef1c4b1c9d36a8a50aff950905423f54",
+    "expires_at": "2026-10-12T12:07:40Z"
+  },
+  "human_eval_batch": {
+    "batch_id": "HEB1-64CDCC9521D3",
+    "variant_count": 2,
+    "eligible_case_count": 6,
+    "skipped_identical_pair_count": 0,
+    "counterbalancing": "complementary_even_variants",
+    "model_identity_exposed": false
+  },
+  "gates": {
+    "blinded_batch_build": "PASS",
+    "canonical_baseline_leakage": "PASS",
+    "canonical_baseline_clean_records": "6/6",
+    "development_separation": "PASS",
+    "max_development_token_jaccard": 0.3333333333333333,
+    "threshold_exclusive": 0.35
+  },
+  "private_mapping": {
+    "included_in_reviewer_safe_artifact": false,
+    "publication_authorized": false,
+    "unblinding_authorized": false
+  },
+  "claim_boundary": {
+    "development_evidence_only": true,
+    "promotion_decision": false,
+    "shae_started": false
+  }
+}
