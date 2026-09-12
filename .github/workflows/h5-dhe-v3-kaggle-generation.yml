@@ -23,6 +23,7 @@ jobs:
       V3_PRODUCTION_KERNEL: paulfoundry/paul-open-dpo-v3-production
       SFT_DATASET: paulfoundry/paul-open-sft
       DPO_DATASET: paulfoundry/h5-dpo-v3-adapter-20260912
+      DPO_DATASET_TITLE: PAUL H5 DPO V3 Adapter 20260912
       H5_KERNEL_SLUG: paul-open-h5-dhe-v3-paired-generation
       MACHINE_SHAPE: NvidiaTeslaT4
       REPO_URL: https://github.com/foundrypaul-cloud/paul-open.git
@@ -60,10 +61,20 @@ jobs:
           DATASET_DIR="$RUNNER_TEMP/h5-dpo-dataset"; mkdir -p "$DATASET_DIR"
           cp "$DPO_DIR/adapter_config.json" "$DATASET_DIR/adapter_config.json"
           cp "$DPO_DIR/adapter_model.safetensors" "$DATASET_DIR/adapter_model.safetensors"
-          printf '%s\n' '{"title":"PAUL Open H5 Frozen DPO V3 Development Adapter 20260912","id":"paulfoundry/h5-dpo-v3-adapter-20260912","licenses":[{"name":"Apache 2.0"}]}' > "$DATASET_DIR/dataset-metadata.json"
+          python - "$DATASET_DIR/dataset-metadata.json" <<'PY'
+          import json, os, pathlib, sys
+          title = os.environ['DPO_DATASET_TITLE']
+          if not 6 <= len(title) <= 50:
+              raise SystemExit(f'Kaggle dataset title length must be 6..50, got {len(title)}')
+          pathlib.Path(sys.argv[1]).write_text(json.dumps({
+              'title': title,
+              'id': os.environ['DPO_DATASET'],
+              'licenses': [{'name': 'Apache 2.0'}],
+          }) + '\n')
+          PY
           READY=false
           for _ in $(seq 1 6); do if kaggle datasets files "$DPO_DATASET" >/dev/null 2>&1; then READY=true; break; fi; sleep 10; done
-          if [ "$READY" != true ]; then kaggle datasets create -p "$DATASET_DIR" --dir-mode zip || true; fi
+          if [ "$READY" != true ]; then kaggle datasets create -p "$DATASET_DIR" --dir-mode zip; fi
           for _ in $(seq 1 18); do if kaggle datasets files "$DPO_DATASET" >/dev/null 2>&1; then READY=true; break; fi; sleep 10; done
           test "$READY" = true
       - name: Build disposable H5 inference kernel
