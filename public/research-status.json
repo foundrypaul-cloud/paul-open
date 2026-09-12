@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "status_as_of": "2026-09-11",
+  "status_as_of": "2026-09-12",
   "project": {
     "name": "PAUL Open",
     "organization": "Paul Foundry Technologies Private Limited",
@@ -13,7 +13,7 @@
     "reference_checkpoint": "SFT",
     "experimental_checkpoint": "DPO V2 Corrective",
     "superiority_established": false,
-    "current_conclusion": "SFT remains the safer reference checkpoint. DPO V2 is technically valid with mixed behavioral effects and is not established as superior."
+    "current_conclusion": "SFT remains the safer reference checkpoint. DPO V2 is technically valid with mixed behavioral effects and is not established as superior. H4 human-evaluation judgments are analysis-locked but not yet unblinded."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
@@ -40,7 +40,7 @@
     "details": "docs/EXPERIMENT_JOURNEY_E4B.md"
   },
   "human_evaluation": {
-    "stage": "H4_collecting",
+    "stage": "H4_analysis_locked",
     "formal_acceptance": "H3_pass",
     "h2_accepted_on": "2026-09-10",
     "h3_started_on": "2026-09-10",
@@ -58,25 +58,40 @@
       "desktop_or_laptop": true
     },
     "h3_completion_time_result": "pass",
-    "h3_completion_time_detail": "Five submissions reported under 2 minutes and one reported 2-3 minutes; categorical median is under 2 minutes.",
     "h3_readability_result": "pass",
-    "h3_readability_detail": "Five submissions reported easy with no issue; one reported mostly easy with minor scrolling or layout friction.",
     "h3_ab_confusion_result": "pass",
-    "h3_ab_confusion_detail": "All six submissions reported no A/B-format confusion.",
     "h3_durability_result": "pass",
-    "h3_durability_detail": "Repository-native H3 durability forms produced linked raw responses, three normalized comparison rows per genuine submission, an independent backup-ledger row with populated SHA-256, and a controlled recovery drill successfully reconstructed deleted normalized rows from the native Form response without duplication.",
     "h4_batch_id": "HEB1-E928B35C90D7",
     "h4_generation_result": "pass",
     "h4_source_cases": 6,
     "h4_eligible_cases": 5,
     "h4_excluded_identical_pairs": 1,
     "h4_forms_generated": 10,
-    "h4_initial_judgments_per_case": 3,
+    "h4_initial_judgments": 15,
+    "h4_adaptive_followup_judgments": 6,
+    "h4_judgments_total": 21,
+    "h4_case_judgment_totals": {
+      "general": 3,
+      "stem": 5,
+      "educator": 5,
+      "hindi": 3,
+      "bengali": 5
+    },
     "h4_counterbalancing": "predeclared_2_to_1_or_1_to_2_across_complementary_variants",
     "h4_public_participation": false,
     "h4_collection_scope": "curated_invited_reviewers_by_cohort",
-    "remaining_blocker": "Initial H4 reviewer judgments are being collected.",
-    "next_gate": "When each eligible H4 case has three valid judgments, close clear cases and escalate only disagreement or uncertainty cases to five; exceptional unresolved cases may escalate to seven. SHAE remains sealed."
+    "h4_target_reached": true,
+    "h4_collection_closed": true,
+    "h4_durability_audit": "pass",
+    "h4_raw_response_rows": 21,
+    "h4_normalized_response_ids": 21,
+    "h4_backup_response_ids": 21,
+    "h4_backup_sha256_complete": true,
+    "h4_analysis_locked": true,
+    "h4_unblinded": false,
+    "h4_analysis_lock": "docs/H4_DHE_PILOT_V1_ANALYSIS_LOCK.md",
+    "remaining_blocker": "Controlled unblinding of the frozen H4 judgment set and calculation of the predeclared H4 metrics.",
+    "next_gate": "Unblind only against the frozen 21-judgment analysis lock, calculate the predeclared H4 DHE metrics, record the decision, and keep SHAE sealed."
   },
   "canonical_docs": {
     "project_status": "docs/PROJECT_STATUS.md",
@@ -84,6 +99,8 @@
     "dpo_v2": "docs/E4B_DPO_V2_CORRECTIVE.md",
     "human_evaluation_protocol": "docs/HUMAN_EVALUATION_PROTOCOL.md",
     "human_evaluation_h3": "docs/HUMAN_EVALUATION_H3_PILOT.md",
+    "human_evaluation_h4": "docs/HUMAN_EVALUATION_H4_DHE_PILOT.md",
+    "h4_analysis_lock": "docs/H4_DHE_PILOT_V1_ANALYSIS_LOCK.md",
     "website_integration": "docs/WEBSITE_INTEGRATION.md",
     "agent_context": "AGENTS.md"
   },
@@ -97,6 +114,9 @@
     "may_say_h3_is_complete": true,
     "may_prepare_dhe": true,
     "may_start_dhe": true,
+    "may_say_h4_collection_complete": true,
+    "may_say_h4_analysis_locked": true,
+    "may_say_h4_model_outcome": false,
     "may_start_shae": false
   }
 }
