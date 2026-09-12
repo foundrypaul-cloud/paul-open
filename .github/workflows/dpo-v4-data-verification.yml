@@ -141,7 +141,7 @@ jobs:
           prompt='''You are an independent reviewer for a frozen development-only DPO preference dataset. Do not edit the data. Review every record conservatively. For each record check: (1) chosen is clearly preferable to rejected for the prompt and declared rejection_reason; (2) factual/scientific/research-methodological correctness where applicable; (3) natural and intelligible language for the declared language, including Hindi, Bengali, Spanish and French; (4) no chosen response appears incomplete relative to the prompt. Return ONLY valid JSON, no markdown, with this schema: {"overall_pass": boolean, "records": [{"id": string, "preference_direction_pass": boolean, "factual_pass": boolean, "language_pass": boolean, "completion_pass": boolean, "notes": string}], "summary": string}. overall_pass may be true only if all four booleans are true for all 30 records. Do not treat deliberately flawed rejected answers as defects in the chosen answer.\n\nDATASET:\n'''+data
           Path('/tmp/p10_gemini_prompt.txt').write_text(prompt,encoding='utf-8')
           PY
-          gemini -p "$(cat /tmp/p10_gemini_prompt.txt)" > /tmp/p10_gemini_raw.txt
+          gemini --skip-trust -p "$(cat /tmp/p10_gemini_prompt.txt)" > /tmp/p10_gemini_raw.txt
           python - <<'PY'
           import json,re
           from pathlib import Path
