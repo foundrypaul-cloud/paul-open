@@ -1,0 +1,90 @@
+h5_dhe_v3_pilot:
+  version: "1.0"
+  status: "frozen_pre_generation"
+  partition: "development"
+  case_manifest: "data/h5_dhe_v3_pilot_v1.jsonl"
+  p4_p5_evidence: "docs/DPO_V3_P4_P5_RESULTS.md"
+
+  base_model:
+    id: "google/gemma-4-E4B-it"
+    revision: "ee0ef6023621cff504d758262d4e04895a5af4a2"
+    config: "configs/models/gemma4_e4b_it.yaml"
+
+  sources:
+    reference:
+      private_label: "sft_reference"
+      logical_adapter: "paulfoundry/paul-open-sft"
+      adapter_config_sha256: "cff65bd42928536886168b09d9b133b25ac444c01d901d2a56d98c7b8b03a0ce"
+      adapter_weights_sha256: "73bab121009e2130f387b5deebfe1d15f4f7ac2afbd622164b11b3024000ec49"
+    candidate:
+      private_label: "dpo_v3_corrective"
+      experiment_id: "paul_e4b_dpo_v3_corrective"
+      source_revision: "dff8c34ca148c436bdb0bc06e0ce27ddfb9a821f"
+      production_run: 34685874589
+      production_artifact: 10296611503
+      adapter_config_sha256: "1ccc60a7f99368638a8ececb17aa6060c09a0648c42fdd678463108026ab22c9"
+      adapter_weights_sha256: "afcbc55e58aefb4ca72e5c7e3d5ac3362fe6b489477000a77cfa27b53ca76bd3"
+
+  generation:
+    matched_between_sources: true
+    max_new_tokens: 256
+    temperature: 0.7
+    top_p: 0.9
+    random_seed: 42
+    chat_template: "tokenizer_apply_chat_template"
+    add_generation_prompt: true
+    notes: >-
+      Match the established H4 DHE generation settings exactly. Both checkpoints
+      use identical prompt text, tokenizer/chat formatting, generation settings,
+      base-model revision, and runtime generation path.
+
+  required_outputs:
+    reference_jsonl: "outputs/h5_dhe/private/sft_reference.jsonl"
+    candidate_jsonl: "outputs/h5_dhe/private/dpo_v3_corrective.jsonl"
+    generation_manifest: "outputs/h5_dhe/private/generation_manifest.json"
+    baseline_leakage_report: "outputs/h5_dhe/private/baseline_leakage_report.json"
+    development_separation_report: "outputs/h5_dhe/private/development_separation_report.json"
+    public_bundle_dir: "outputs/human_eval/public/h5_dhe_v3_pilot_v1"
+    private_mapping: ".human-eval-private/h5_dhe_v3_pilot_v1_mapping.json"
+
+  pre_form_gates:
+    - "generation_completed"
+    - "nonempty_output"
+    - "automated_safety_gate"
+    - "malformed_output_gate"
+    - "evaluation_partition_integrity"
+    - "canonical_baseline_contamination_gate"
+    - "h4_and_v3_training_separation_gate"
+
+  human_batch:
+    builder: "scripts/build_human_eval_batch.py"
+    partition: "development"
+    variant_count: 2
+    deterministic_seed_required: true
+    default_comparisons_per_form: 3
+
+  review_allocation:
+    initial_valid_judgments_per_case: 3
+    disagreement_escalation_total: 5
+    exceptional_hard_cap: 7
+
+  interpretation:
+    regression_flags_carried_forward:
+      - "socratic_tutoring"
+      - "scientific_research_assistance"
+      - "bengali"
+      - "multilingual_behavior"
+    preservation_checks:
+      - "stem_causal_clarity"
+      - "hindi_scientific_calibration"
+      - "human_centered_groundedness"
+
+  prohibitions:
+    expose_private_source_labels_to_reviewers: false
+    publish_private_mapping: false
+    reuse_h3_cases: false
+    reuse_h4_cases: false
+    reuse_v3_training_prompts: false
+    reuse_contaminated_dpo_v2_source_material: false
+    use_shae_material: false
+    treat_h5_as_final_superiority_evidence: false
