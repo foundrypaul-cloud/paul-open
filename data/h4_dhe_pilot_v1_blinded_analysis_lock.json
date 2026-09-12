@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "experiment": "H4_DHE_PILOT_V1",
+  "partition": "development",
+  "batch_id": "HEB1-E928B35C90D7",
+  "locked_at_utc": "2026-09-12T08:14:00Z",
+  "state": "ANALYSIS_LOCKED",
+  "unblinded": false,
+  "private_ab_mapping_read_for_lock": false,
+  "collection": {
+    "eligible_cases": 5,
+    "forms": 10,
+    "initial_judgments": 15,
+    "adaptive_followup_judgments": 6,
+    "judgments_total": 21,
+    "raw_response_rows": 21,
+    "normalized_response_ids": 21,
+    "backup_response_ids": 21,
+    "raw_normalized_backup_counts_match": true,
+    "normalized_backup_response_ids_match": true,
+    "backup_sha256_present_for_all_rows": true,
+    "backup_written_at_present_for_all_rows": true,
+    "durability_audit": "pass"
+  },
+  "variants": {
+    "GENERAL-A": {"judgments": 2, "a_better": 2, "b_better": 0, "about_equal": 0, "neither_good": 0, "not_sure": 0},
+    "GENERAL-B": {"judgments": 1, "a_better": 0, "b_better": 1, "about_equal": 0, "neither_good": 0, "not_sure": 0},
+    "STEM-A": {"judgments": 2, "a_better": 0, "b_better": 1, "about_equal": 0, "neither_good": 0, "not_sure": 1},
+    "STEM-B": {"judgments": 3, "a_better": 3, "b_better": 0, "about_equal": 0, "neither_good": 0, "not_sure": 0},
+    "EDUCATOR-A": {"judgments": 3, "a_better": 2, "b_better": 0, "about_equal": 0, "neither_good": 0, "not_sure": 1},
+    "EDUCATOR-B": {"judgments": 2, "a_better": 0, "b_better": 1, "about_equal": 1, "neither_good": 0, "not_sure": 0},
+    "HI-A": {"judgments": 1, "a_better": 1, "b_better": 0, "about_equal": 0, "neither_good": 0, "not_sure": 0},
+    "HI-B": {"judgments": 2, "a_better": 0, "b_better": 2, "about_equal": 0, "neither_good": 0, "not_sure": 0},
+    "BN-A": {"judgments": 2, "a_better": 0, "b_better": 1, "about_equal": 1, "neither_good": 0, "not_sure": 0},
+    "BN-B": {"judgments": 3, "a_better": 2, "b_better": 0, "about_equal": 0, "neither_good": 0, "not_sure": 1}
+  },
+  "blinded_raw_choice_totals": {
+    "a_better": 10,
+    "b_better": 6,
+    "about_equal": 2,
+    "neither_good": 0,
+    "not_sure": 3,
+    "total": 21,
+    "warning": "Raw A/B labels are counterbalanced across complementary variants and must not be interpreted as candidate/reference outcomes before private-map unblinding."
+  },
+  "analysis_contract": {
+    "report_candidate_preferred": true,
+    "report_reference_preferred": true,
+    "report_about_equal": true,
+    "report_neither_good": true,
+    "report_not_sure": true,
+    "stratify_by_domain": true,
+    "stratify_by_language": true,
+    "stratify_by_reviewer_cohort_where_sample_size_permits": true,
+    "report_inter_rater_agreement": true,
+    "bootstrap_confidence_intervals": true,
+    "bradley_terry_for_multi_model_only": true,
+    "control_items_in_model_win_rate": false,
+    "post_unblind_exclusion_changes_allowed": false,
+    "overall_superiority_claim_allowed_from_h4_alone": false
+  },
+  "next_state": "UNBLINDED",
+  "notes": [
+    "All 21 accepted judgments are frozen for analysis before model identity is read.",
+    "Reviewer contact identity is not part of this snapshot.",
+    "The accessibility/TTS comment remains a future-interface DHE finding and does not change this collection round.",
+    "SHAE remains sealed and outside H4."
+  ]
+}
