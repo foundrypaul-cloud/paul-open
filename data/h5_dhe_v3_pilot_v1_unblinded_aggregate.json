@@ -1,0 +1,31 @@
+{
+  "analysis_lock_judgments": 18,
+  "analysis_lock_state": "BLINDED_ANALYSIS_LOCKED",
+  "batch_id": "HEB1-64CDCC9521D3",
+  "by_case": {
+    "bengali": {"about_equal": 0, "candidate_preferred": 3, "neither_good": 0, "not_sure": 0, "reference_preferred": 0},
+    "educator": {"about_equal": 0, "candidate_preferred": 0, "neither_good": 0, "not_sure": 0, "reference_preferred": 3},
+    "general": {"about_equal": 0, "candidate_preferred": 3, "neither_good": 0, "not_sure": 0, "reference_preferred": 0},
+    "hindi": {"about_equal": 0, "candidate_preferred": 0, "neither_good": 0, "not_sure": 0, "reference_preferred": 3},
+    "research": {"about_equal": 0, "candidate_preferred": 3, "neither_good": 0, "not_sure": 0, "reference_preferred": 0},
+    "stem": {"about_equal": 0, "candidate_preferred": 0, "neither_good": 0, "not_sure": 0, "reference_preferred": 3}
+  },
+  "candidate": "dpo_v3_corrective",
+  "experiment": "H5_DHE_V3_PILOT_V1",
+  "mapping_content_exposed": false,
+  "mapping_sha256": "e8841aaf0f37a48d45215412e934a1de0747429a6c387926beddc57fc87b3201",
+  "partition": "development",
+  "private_case_ids_exposed": false,
+  "private_seed_exposed": false,
+  "reference": "sft_reference",
+  "schema_version": "1.0",
+  "state": "UNBLINDED_AGGREGATE_READY",
+  "totals": {
+    "about_equal": 0,
+    "candidate_preferred": 9,
+    "neither_good": 0,
+    "not_sure": 0,
+    "reference_preferred": 9
+  },
+  "unanimous_cases": 6
+}
