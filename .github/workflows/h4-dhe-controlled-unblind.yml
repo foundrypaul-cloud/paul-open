@@ -1,0 +1,162 @@
+name: H4 DHE Controlled Unblind
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/h4-dhe-controlled-unblind.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unblind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: paulfoundry
+      H4_KERNEL: paulfoundry/paul-open-h4-dhe-paired-generation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+      - name: Verify analysis lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('data/h4_dhe_pilot_v1_blinded_analysis_lock.json')
+          x=json.loads(p.read_text())
+          assert x['state']=='ANALYSIS_LOCKED'
+          assert x['unblinded'] is False
+          assert x['collection']['judgments_total']==21
+          assert x['collection']['durability_audit']=='pass'
+          assert x['batch_id']=='HEB1-E928B35C90D7'
+          print('analysis lock verified')
+          PY
+      - name: Download private H4 kernel output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KAGGLE_API_TOKEN"
+          mkdir -p "$RUNNER_TEMP/h4-private"
+          kaggle kernels output "$H4_KERNEL" -p "$RUNNER_TEMP/h4-private"
+          MAPPING=$(find "$RUNNER_TEMP/h4-private" -type f -path '*/private_mapping/mapping.json' -print -quit)
+          test -n "$MAPPING"
+          echo "MAPPING=$MAPPING" >> "$GITHUB_ENV"
+      - name: Create reviewer-safe unblinded aggregate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p h4-unblinded-safe
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          lock=json.loads(Path('data/h4_dhe_pilot_v1_blinded_analysis_lock.json').read_text())
+          mp=Path(os.environ['MAPPING'])
+          mapping=json.loads(mp.read_text())
+          if mapping.get('batch_id') != lock['batch_id']:
+              raise SystemExit('private mapping batch mismatch')
+          labels={
+              mapping['sources']['left']['label'],
+              mapping['sources']['right']['label'],
+          }
+          expected={'sft_reference','dpo_v2_corrective'}
+          if labels != expected:
+              raise SystemExit(f'unexpected source labels: {sorted(labels)}')
+
+          # Exact live form comparison IDs were recovered from PAUL Metadata before lock.
+          form_comparisons={
+              'GENERAL-A':'HEV1-7236FC099003',
+              'GENERAL-B':'HEV1-CC08056BC640',
+              'STEM-A':'HEV1-EFB4C56DE3D1',
+              'STEM-B':'HEV1-42509F9376DE',
+              'EDUCATOR-A':'HEV1-0726CA3888B8',
+              'EDUCATOR-B':'HEV1-78B91A78A383',
+              'HI-A':'HEV1-E8D88EF169A5',
+              'HI-B':'HEV1-3CCB40451567',
+              'BN-A':'HEV1-8C641A02423B',
+              'BN-B':'HEV1-F82F18BF52A9',
+          }
+          cohort={
+              'GENERAL-A':'general','GENERAL-B':'general',
+              'STEM-A':'stem','STEM-B':'stem',
+              'EDUCATOR-A':'educator','EDUCATOR-B':'educator',
+              'HI-A':'hindi','HI-B':'hindi',
+              'BN-A':'bengali','BN-B':'bengali',
+          }
+          entries={e['comparison_id']:e for e in mapping['entries']}
+          missing=sorted(set(form_comparisons.values())-set(entries))
+          if missing:
+              raise SystemExit(f'mapping is missing live comparison IDs: {missing}')
+
+          totals={k:0 for k in ('candidate_preferred','reference_preferred','about_equal','neither_good','not_sure')}
+          by_case={c:{k:0 for k in totals} for c in ('general','stem','educator','hindi','bengali')}
+          by_variant={}
+          source_to_metric={'dpo_v2_corrective':'candidate_preferred','sft_reference':'reference_preferred'}
+
+          for variant, counts in lock['variants'].items():
+              e=entries[form_comparisons[variant]]
+              out={k:0 for k in totals}
+              out[source_to_metric[e['response_a_source']]] += counts['a_better']
+              out[source_to_metric[e['response_b_source']]] += counts['b_better']
+              out['about_equal'] += counts['about_equal']
+              out['neither_good'] += counts['neither_good']
+              out['not_sure'] += counts['not_sure']
+              if sum(out.values()) != counts['judgments']:
+                  raise SystemExit(f'judgment count mismatch for {variant}')
+              by_variant[variant]=out
+              c=cohort[variant]
+              for k,v in out.items():
+                  totals[k]+=v
+                  by_case[c][k]+=v
+
+          if sum(totals.values()) != 21:
+              raise SystemExit('aggregate judgment total mismatch')
+          mapping_hash=hashlib.sha256(mp.read_bytes()).hexdigest()
+          result={
+              'schema_version':'1.0',
+              'experiment':'H4_DHE_PILOT_V1',
+              'partition':'development',
+              'batch_id':lock['batch_id'],
+              'state':'UNBLINDED_AGGREGATE_READY',
+              'analysis_lock_state':lock['state'],
+              'analysis_lock_judgments':21,
+              'candidate':'dpo_v2_corrective',
+              'reference':'sft_reference',
+              'mapping_sha256':mapping_hash,
+              'totals':totals,
+              'by_case':by_case,
+              'by_variant':by_variant,
+              'mapping_content_exposed':False,
+              'private_case_ids_exposed':False,
+              'private_seed_exposed':False,
+              'note':'Safe aggregate only. The private A/B mapping, seed, fingerprints, and private case IDs are intentionally omitted.'
+          }
+          Path('h4-unblinded-safe/h4_unblinded_aggregate.json').write_text(json.dumps(result,indent=2,sort_keys=True)+'\n')
+          print(json.dumps({'status':'PASS','judgments':21,'safe_output':'h4_unblinded_aggregate.json'}))
+          PY
+      - name: Assert private material is absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find h4-unblinded-safe -type f | wc -l)" -eq 1
+          ! grep -R '"seed"' h4-unblinded-safe
+          ! grep -R '"case_id"' h4-unblinded-safe
+          ! grep -R 'response_a_source' h4-unblinded-safe
+          ! grep -R 'response_b_source' h4-unblinded-safe
+      - name: Upload safe H4 unblinding aggregate
+        uses: actions/upload-artifact@v4
+        with:
+          name: h4-dhe-unblinded-safe-aggregate
+          path: h4-unblinded-safe/h4_unblinded_aggregate.json
+          if-no-files-found: error
+          retention-days: 30
