@@ -29,7 +29,7 @@ jobs:
       - name: Verify frozen H6 contract and development separation
         run: |
           uv run python - <<'PY'
-          import json, re
+          import json, unicodedata
           from pathlib import Path
           import yaml
 
@@ -79,7 +79,20 @@ jobs:
           forbidden_exact={q for _,_,q in comparison}
           assert not set(prompts).intersection(forbidden_exact), 'exact H4/H5/prior-DPO/V4-training prompt reuse'
 
-          def toks(s): return set(re.findall(r'\w+',s.lower(),flags=re.UNICODE))
+          def toks(text):
+              # Group Unicode letters/numbers plus combining marks into words.
+              # Python re `\w+` fragments Indic grapheme clusters and inflates overlap.
+              text=unicodedata.normalize('NFKC',text).casefold()
+              tokens=[]; current=[]
+              for ch in text:
+                  category=unicodedata.category(ch)
+                  if category[0] in {'L','N','M'} or ch=='_':
+                      current.append(ch)
+                  elif current:
+                      tokens.append(''.join(current)); current=[]
+              if current: tokens.append(''.join(current))
+              return set(tokens)
+
           best=(0.0,None,None,None)
           for r in rows:
               a=toks(r['prompt'])
@@ -88,7 +101,7 @@ jobs:
                   score=len(a&b)/len(u) if u else 0.0
                   if score>best[0]: best=(score,r['case_id'],source,other_id)
           assert best[0] < 0.35, f'development overlap too high: {best}'
-          print(json.dumps({'cases':len(rows),'max_development_token_jaccard':best[0],'nearest_pair':best[1:]},sort_keys=True))
+          print(json.dumps({'cases':len(rows),'tokenizer':'unicode_letter_mark_word_v1','max_development_token_jaccard':best[0],'nearest_pair':best[1:]},sort_keys=True))
           PY
       - name: Run canonical benchmark leakage checker
         run: |
