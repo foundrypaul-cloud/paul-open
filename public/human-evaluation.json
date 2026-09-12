@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
   "status_as_of": "2026-09-12",
-  "state": "h4_collecting",
+  "state": "h4_target_reached",
   "internal_stage": "H4",
   "h2_formal_acceptance": "pass",
   "h3_acceptance": "pass",
@@ -47,9 +47,12 @@
     "collection_started": true,
     "initial_coverage_judgments": 15,
     "initial_coverage_complete": true,
-    "adaptive_escalation_pending": true
+    "adaptive_escalation_pending": false,
+    "adaptive_followup_judgments": 6,
+    "judgments_total": 21,
+    "target_reached": true
   },
-  "public_message": "PAUL Open is collecting a small H4 Development Human Evaluation batch from curated invited reviewers. Initial three-judgment coverage is complete across the five eligible H4 cases; adaptive follow-up collection remains in progress where uncertainty or disagreement requires additional review. Public participation remains disabled, reviewer links are private, and no SHAE material is exposed.",
+  "public_message": "PAUL Open has reached the predeclared H4 Development Human Evaluation collection target: 21 judgments across five eligible cases, including adaptive follow-up where uncertainty or disagreement required additional review. Collection is ready to close and analysis must be locked before unblinding. Public participation remains disabled, reviewer links are private, and no SHAE material is exposed.",
   "safety": {
     "respondent_url_must_be_viewform": true,
     "editor_urls_publicly_allowed": false,

@@ -1,6 +1,6 @@
 # PAUL Open Human Evaluation — H4 DHE Pilot
 
-**Status:** collecting  
+**Status:** target reached; closing and analysis-lock next  
 **Stage:** H4 — Development Human Evaluation (DHE)  
 **Protocol:** `docs/HUMAN_EVALUATION_WORKFLOW.md` + `configs/evaluation/human_eval_v1.yaml`  
 **Precondition:** H3 formally accepted on 2026-09-11
@@ -185,4 +185,4 @@ This is a DHE interface finding for future iterations; do not modify the active 
 
 ## Current boundary
 
-As of 2026-09-12, H4 is **COLLECTING**. The five eligible cases have each reached the initial three-judgment coverage target (15 judgments total). Under the frozen adaptive allocation policy, cases containing disagreement or a `not_sure` judgment escalate to five total judgments before closure. Public participation remains disabled, reviewer links remain private, and no SHAE material has been exposed.
+As of 2026-09-12, H4 has reached **TARGET_REACHED**. The five eligible cases produced 15 initial judgments. STEM, Educator, and Bengali then received the protocol-required two-judgment adaptive follow-up, bringing the total to **21 judgments**. No further collection should occur unless post-lock review identifies an exceptional unresolved case requiring the protocol's 7-judgment cap. The next required steps are to close collection, verify normalized/backup durability, freeze the analysis snapshot, and lock analysis before any A/B unblinding. Public participation remains disabled, reviewer links remain private, and no SHAE material has been exposed.
