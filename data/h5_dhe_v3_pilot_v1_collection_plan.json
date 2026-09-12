@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "experiment": "H5_DHE_V3_PILOT_V1",
+  "partition": "development",
+  "batch_id": "HEB1-64CDCC9521D3",
+  "state": "FROZEN_PRE_COLLECTION",
+  "reviewer_safe_artifact_id": 10297811566,
+  "forms_runtime": "tools/google_forms/Code.gs",
+  "forms_payload_sha256": "1e56484d2bb4da1a4a93aeaae2860ca91e04cf775e51f15c7c261fbfa49d37ab",
+  "forms_payload_committed": false,
+  "reason_payload_not_committed": "Contains blinded reviewer response text; retain outside public repository until collection is complete.",
+  "blinding": {
+    "model_identity_exposed_to_reviewers": false,
+    "private_mapping_used_for_payload": false,
+    "unblind_before_analysis_lock": false
+  },
+  "allocation": {
+    "initial_valid_judgments_per_case": 3,
+    "initial_total_judgments": 18,
+    "variant_totals": {
+      "V01": 9,
+      "V02": 9
+    },
+    "disagreement_escalation_total_per_case": 5,
+    "exceptional_hard_cap_per_case": 7,
+    "packets": [
+      {"packet_id":"HEF1-H5-STEM-A-20260912","variant_id":"V01","comparison_id":"HEV1-27EBEB2CECB1","initial_target":2},
+      {"packet_id":"HEF1-H5-STEM-B-20260912","variant_id":"V02","comparison_id":"HEV1-4748278B155D","initial_target":1},
+      {"packet_id":"HEF1-H5-EDUCATOR-A-20260912","variant_id":"V01","comparison_id":"HEV1-9B50C7E743E3","initial_target":1},
+      {"packet_id":"HEF1-H5-EDUCATOR-B-20260912","variant_id":"V02","comparison_id":"HEV1-C872A4CD1508","initial_target":2},
+      {"packet_id":"HEF1-H5-RESEARCH-A-20260912","variant_id":"V01","comparison_id":"HEV1-14AACB9FCC99","initial_target":2},
+      {"packet_id":"HEF1-H5-RESEARCH-B-20260912","variant_id":"V02","comparison_id":"HEV1-DBCDCD2E38FA","initial_target":1},
+      {"packet_id":"HEF1-H5-HI-A-20260912","variant_id":"V01","comparison_id":"HEV1-B82FF1A88196","initial_target":1},
+      {"packet_id":"HEF1-H5-HI-B-20260912","variant_id":"V02","comparison_id":"HEV1-27BDFFEE98E1","initial_target":2},
+      {"packet_id":"HEF1-H5-BN-A-20260912","variant_id":"V01","comparison_id":"HEV1-998FE19D4692","initial_target":2},
+      {"packet_id":"HEF1-H5-BN-B-20260912","variant_id":"V02","comparison_id":"HEV1-265C7AA3A592","initial_target":1},
+      {"packet_id":"HEF1-H5-GENERAL-A-20260912","variant_id":"V01","comparison_id":"HEV1-17CCA9FF1679","initial_target":1},
+      {"packet_id":"HEF1-H5-GENERAL-B-20260912","variant_id":"V02","comparison_id":"HEV1-DFE85FA27109","initial_target":2}
+    ]
+  },
+  "adaptive_rule": {
+    "trigger": "conflicting judgments, not-sure judgment, or critical case requiring additional review under frozen protocol",
+    "action": "collect two additional valid judgments on the lower-count complementary variant, producing 5 total judgments for that case",
+    "no_extra_votes_solely_for_sample_size": true
+  },
+  "pre_unblind_requirements": [
+    "initial/adaptive collection closed at frozen targets",
+    "raw response count reconciled",
+    "normalized response IDs reconciled",
+    "backup-ledger response IDs reconciled",
+    "backup SHA-256 present and valid",
+    "blinded analysis lock committed"
+  ],
+  "shae_sealed": true
+}
