@@ -1,5 +1,5 @@
 h6_dhe_v4_pilot:
-  version: "1.1"
+  version: "1.2"
   status: "frozen_pre_generation"
   partition: "development"
   case_manifest: "data/h6_dhe_v4_pilot_v1.jsonl"
@@ -29,18 +29,24 @@ h6_dhe_v4_pilot:
     matched_between_sources: true
     max_new_tokens: 768
     require_eos_before_limit: true
+    response_instruction: >-
+      For this evaluation, give a complete but concise answer that a reviewer can
+      read comfortably in about 1–2 minutes. Aim for no more than about 300 words,
+      or an equivalent reading length in the requested language. Prioritize the
+      most important reasoning rather than exhaustively listing every possibility.
     temperature: 0.7
     top_p: 0.9
     random_seed: 42
     chat_template: "tokenizer_apply_chat_template"
     add_generation_prompt: true
     notes: >-
-      Audit amendment 2026-09-13: the initial 256-token H6 generation produced
-      reviewer-visible mid-sentence truncation in multiple cases. Both checkpoints
-      therefore use the same enlarged 768-token ceiling and a fail-closed gate that
-      rejects any generation that reaches the ceiling without EOS. Model/adapters,
-      prompts, tokenizer/chat formatting, sampling settings, base-model revision,
-      and runtime generation path remain unchanged.
+      Audit amendment 2026-09-13 v1.2: the initial 256-token H6 generation produced
+      reviewer-visible truncation, and H6-DHE-003 still reached a 768-token ceiling
+      without EOS under v1.1. Both checkpoints now receive the same neutral concision
+      instruction, which is also included verbatim in the reviewer-visible prompt.
+      The 768-token ceiling remains only as a fail-closed backstop. Model/adapters,
+      six case prompts, tokenizer/chat formatting, sampling settings, base-model
+      revision, and runtime generation path remain otherwise unchanged.
 
   required_outputs:
     reference_jsonl: "outputs/h6_dhe/private/sft_reference.jsonl"
@@ -55,6 +61,7 @@ h6_dhe_v4_pilot:
     - "generation_completed"
     - "nonempty_output"
     - "no_generation_truncation_gate"
+    - "display_prompt_matches_generation_prompt"
     - "automated_safety_gate"
     - "malformed_output_gate"
     - "evaluation_partition_integrity"
