@@ -1,15 +1,13 @@
 # PAUL Open Human Evaluation — H4 DHE Pilot
 
-**Status:** target reached; closing and analysis-lock next  
+**Status:** ANALYSIS_LOCKED  
 **Stage:** H4 — Development Human Evaluation (DHE)  
 **Protocol:** `docs/HUMAN_EVALUATION_WORKFLOW.md` + `configs/evaluation/human_eval_v1.yaml`  
 **Precondition:** H3 formally accepted on 2026-09-11
 
 ## Purpose
 
-H4 is the first real PAUL Open development human-evaluation pilot after the H2 infrastructure validation and H3 UX/durability pilot passed.
-
-H4 is **development evidence**, not sealed final-assurance evidence. Its results may inform future training or data work, so H4 cases become development-exposed and must never later be represented as untouched SHAE evidence.
+H4 is the first real PAUL Open development human-evaluation pilot after the H2 infrastructure validation and H3 UX/durability pilot passed. H4 is **development evidence**, not sealed final-assurance evidence. Its results may inform future training or data work, so H4 cases are development-exposed and must never later be represented as untouched SHAE evidence.
 
 ## Research question
 
@@ -28,35 +26,9 @@ Do not retrain, modify, or silently repair either checkpoint for this pilot.
 
 ## Case eligibility
 
-Every H4 case must be fresh development-evaluation material and pass the pre-form gates already frozen in `configs/evaluation/human_eval_v1.yaml`:
+Every H4 case must be fresh development-evaluation material and pass the frozen pre-form gates: generation complete, non-empty output, automated safety gate, malformed-output gate, evaluation-partition integrity, and contamination gate.
 
-1. generation completed;
-2. output non-empty;
-3. automated safety gate passed;
-4. malformed-output gate passed;
-5. evaluation partition integrity passed;
-6. contamination gate passed.
-
-Exclude:
-
-- all H3 disposable cases;
-- any case used in SFT/DPO training;
-- the canonical 50-case baseline suite and close paraphrases/templates derived from it;
-- the DPO V2 corrective training prompts or close derivatives;
-- the permanent DPO holdout;
-- any material reserved for SHAE;
-- any prompt whose provenance cannot be established well enough to clear contamination review.
-
-## Pilot size
-
-The protocol specifies a **small DHE pilot** but does not freeze a numeric case count. Do not invent a fixed number merely for convenience. Select the smallest coherent fresh set that exercises the intended PAUL Open capability mix while remaining practical for blinded review.
-
-Form packaging remains protocol-controlled:
-
-- default: 3 comparisons per form;
-- maximum short-response comparisons: 4;
-- maximum long-response comparisons: 2;
-- target completion time: about 4 minutes.
+Exclude H3 disposable cases, SFT/DPO training material, the contaminated canonical 50-case suite and close derivatives, the DPO V2 corrective prompts and close derivatives, the permanent DPO holdout, SHAE material, and material without sufficient provenance.
 
 ## Reviewer-facing judgment
 
@@ -68,121 +40,86 @@ Each comparison uses the fixed five-choice vocabulary:
 - Neither response is good
 - I'm not sure / I can't judge this
 
-Model/checkpoint identity and automated scores must remain hidden from reviewers.
+Model/checkpoint identity and automated scores remain hidden from reviewers.
 
 ## Blinding and counterbalancing
 
-Use the existing deterministic batch builder:
-
-`scripts/build_human_eval_batch.py`
-
-Required behavior:
-
-- partition=`development`;
-- deterministic secret/research seed;
-- complementary A/B variants;
-- private model-identity mapping stored outside reviewer-facing artifacts;
-- no hidden mapping exposed in Google Forms, website bundles, or reviewer instructions.
+Use `scripts/build_human_eval_batch.py` with partition=`development`, deterministic secret/research seed, complementary A/B variants, and a private model-identity mapping stored only in the gitignored/private mapping path. The private mapping must not appear in Google Forms, website bundles, reviewer instructions, or the blinded analysis lock.
 
 ## Review allocation
 
-Use the frozen allocation policy from `configs/evaluation/human_eval_v1.yaml`:
+The frozen allocation policy is unchanged:
 
-- initial valid judgments per case: 3;
-- escalate disagreement to 5 total judgments;
-- exceptional hard cap: 7 judgments;
-- control-injection form rate: 0.20;
-- control items are excluded from model win-rate calculations.
+- initial valid judgments per case: 3
+- disagreement/uncertainty escalation: 5 total judgments
+- exceptional hard cap: 7 judgments
+- control-injection form rate: 0.20
+- control items excluded from model win-rate calculations
 
 Do not collect more judgments merely to increase sample size when the protocol does not require them.
 
 ## Reviewer cohorts
 
-Use only the cohort categories already declared in the protocol:
+Allowed cohorts remain `general_user`, `educator`, `bilingual`, `stem_capable`, and `domain_expert`. Reviewer contact identity remains separate from judgments.
 
-- general_user
-- educator
-- bilingual
-- stem_capable
-- domain_expert
+## H4 collection result
 
-Route cases to appropriate cohorts when domain/language competence is necessary. Reviewer contact identity must remain separate from judgments.
+Batch `HEB1-E928B35C90D7` contained five eligible cases after one identical pair was excluded. Ten complementary reviewer-facing variants were generated.
 
-## Generation and pairing workflow
+The initial round produced 15 judgments. STEM, Educator, and Bengali met the frozen escalation rule and each received two additional judgments. Final case totals are:
 
-1. Freeze the H4 case manifest before model generation.
-2. Generate SFT and DPO V2 outputs independently using matched inference settings.
-3. Preserve raw generated outputs and generation metadata outside reviewer-facing material.
-4. Run all hard pre-form gates.
-5. Build blinded A/B variants with `scripts/build_human_eval_batch.py --partition development`.
-6. Store the private A/B source mapping only in the gitignored/private mapping path.
-7. Convert reviewer-facing variants to the established Google Forms packet format.
-8. Use the proven Apps Script response-normalization/backup/recovery path.
-9. Distribute only `/viewform` respondent links to assigned reviewers.
-10. Close forms when the protocol target is reached.
-11. Lock analysis before unblinding.
-12. Unblind only after judgments and exclusions are frozen.
+- General: 3
+- STEM: 5
+- Educator: 5
+- Hindi: 3
+- Bengali: 5
+- **Total: 21 judgments**
 
-## Data integrity
+The exceptional seven-judgment cap was not invoked before analysis lock.
 
-Retain the H2/H3 durability architecture:
+## Data integrity and durability audit
 
-1. native Google Form response;
-2. linked raw response sheet;
-3. `PAUL Normalized` rows;
-4. independent `PAUL Backup Ledger`;
-5. canonical snapshot JSON + SHA-256;
-6. idempotent recovery from native Form responses.
+The H2/H3 durability architecture was retained: native Google Form responses, linked raw response sheets, `PAUL Normalized`, independent `PAUL Backup Ledger`, canonical snapshot JSON + SHA-256, and idempotent recovery.
 
-No manual spreadsheet editing should be part of the normal analysis path.
+Immediately before analysis lock on 2026-09-12, all ten variants were audited. Results:
 
-## Analysis
+- raw response rows: 21
+- normalized response IDs: 21
+- backup response IDs: 21
+- normalized/backup response IDs: exact match
+- backup SHA-256: present for all 21 responses
+- backup-write timestamp: present for all 21 responses
+- durability audit: **PASS**
 
-Report at minimum:
+No manual spreadsheet editing was used to repair or reinterpret the H4 judgment set.
 
-- candidate preferred;
-- reference preferred;
-- about equal;
-- neither good;
-- not sure;
-- inter-rater agreement;
-- domain/language/reviewer-cohort strata where sample size permits.
+## Analysis lock
 
-Use bootstrap confidence intervals where appropriate under the frozen analysis configuration.
+The blinded judgment set is frozen in:
 
-Do not count control items in model win-rate calculations.
+- `data/h4_dhe_pilot_v1_blinded_analysis_lock.json`
+- `docs/H4_DHE_PILOT_V1_ANALYSIS_LOCK.md`
 
-Do not translate a small H4 pilot result into an overall model-superiority claim.
+The lock was created **before** reading the private A/B source mapping. All 21 accepted judgments are frozen. Post-unblind exclusion changes are prohibited except correction of a separately documented, demonstrable data-integrity error.
 
-## Contamination consequence
+## Frozen analysis contract
 
-Once an H4 case or reviewer finding is used to change training data, prompts, model weights, preference data, generation strategy, or evaluation design, that material is development-exposed. It remains useful as DHE evidence but cannot be reclassified as sealed final assurance.
+Post-unblind reporting must include candidate preferred, reference preferred, about equal, neither good, not sure, and inter-rater agreement. Stratify by domain/language/reviewer cohort where the small sample permits and use bootstrap confidence intervals where appropriate under the frozen configuration. Bradley-Terry is for multi-model use only and is not the primary analysis for this two-model H4 comparison.
 
-SHAE stays outside this workflow.
-
-## H4 preparation acceptance gate
-
-Preparation is complete only when all of the following are true:
-
-- H3 formal acceptance is recorded;
-- fresh DHE case manifest exists;
-- contamination audit passes;
-- SFT and DPO V2 generation inputs/settings are frozen;
-- paired outputs are complete and non-empty;
-- safety/malformed gates pass;
-- deterministic blinded variants are built;
-- private A/B mapping is separated from reviewer-facing artifacts;
-- Google Forms packets are generated using the established pipeline;
-- no SHAE material has been exposed.
-
-Only then may H4 collection move to `COLLECTING`.
+Do not count declared controls in model win-rate calculations. Do not translate this small H4 DHE pilot into an overall model-superiority claim.
 
 ## Accessibility finding
 
-During H4 collection, a reviewer identified that the text-only Google Forms experience is not sufficiently self-evident for evaluators with poor or no vision. Future evaluator-interface work should explicitly preserve keyboard and screen-reader compatibility and evaluate multilingual text-to-speech assistance without making TTS the sole accessibility path.
+During H4 collection, a reviewer identified that the text-only Google Forms experience is not sufficiently self-evident for evaluators with poor or no vision. Future evaluator-interface work should preserve keyboard and screen-reader compatibility and evaluate multilingual text-to-speech assistance without making TTS the sole accessibility path.
 
-This is a DHE interface finding for future iterations; do not modify the active H4 forms in a way that changes this collection round after distribution.
+This remains a future-interface DHE finding and does not alter the frozen H4 judgments.
+
+## Contamination consequence
+
+Once an H4 case or reviewer finding is used to change training data, prompts, model weights, preference data, generation strategy, or evaluation design, that material remains development-exposed and cannot be reclassified as sealed final assurance. SHAE remains outside this workflow.
 
 ## Current boundary
 
-As of 2026-09-12, H4 has reached **TARGET_REACHED**. The five eligible cases produced 15 initial judgments. STEM, Educator, and Bengali then received the protocol-required two-judgment adaptive follow-up, bringing the total to **21 judgments**. No further collection should occur unless post-lock review identifies an exceptional unresolved case requiring the protocol's 7-judgment cap. The next required steps are to close collection, verify normalized/backup durability, freeze the analysis snapshot, and lock analysis before any A/B unblinding. Public participation remains disabled, reviewer links remain private, and no SHAE material has been exposed.
+As of 2026-09-12, H4 is **ANALYSIS_LOCKED** with 21 frozen judgments and a passing durability audit. The next permitted transition is **UNBLINDED**: use the private gitignored mapping to convert the frozen reviewer-facing A/B judgments into SFT-reference versus DPO-V2-Corrective outcomes, calculate the predeclared H4 metrics, and record the development-evaluation decision.
+
+Public participation remains disabled. Reviewer links, response sheets, private A/B mappings, and SHAE material remain non-public.
