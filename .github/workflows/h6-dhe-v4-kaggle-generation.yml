@@ -1,0 +1,188 @@
+name: H6 DHE V4 Kaggle Paired Generation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/h6-dhe-v4-kaggle-generation.yml'
+      - 'scripts/h6_dhe_generate.py'
+      - 'data/h6_dhe_v4_pilot_v1.jsonl'
+      - 'configs/evaluation/h6_dhe_v4_pilot_v1.yaml'
+
+permissions:
+  contents: read
+
+jobs:
+  h6-paired-generation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: paulfoundry
+      V4_PRODUCTION_KERNEL: paulfoundry/paul-open-dpo-v4-production
+      SFT_DATASET: paulfoundry/paul-open-sft
+      DPO_DATASET: paulfoundry/h6-dpo-v4-adapter-20260912
+      DPO_DATASET_TITLE: PAUL H6 DPO V4 Adapter 20260912
+      H6_KERNEL_SLUG: paul-open-h6-dhe-v4-paired-generation
+      MACHINE_SHAPE: NvidiaTeslaT4
+      REPO_URL: https://github.com/foundrypaul-cloud/paul-open.git
+      TARGET_COMMIT: ${{ github.sha }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+      - name: Verify Kaggle access
+        run: |
+          test -n "$KAGGLE_API_TOKEN"
+          kaggle datasets files "$SFT_DATASET" >/dev/null
+          kaggle kernels status "$V4_PRODUCTION_KERNEL"
+      - name: Recover frozen DPO V4 development adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/v4-production"
+          kaggle kernels output "$V4_PRODUCTION_KERNEL" -p "$RUNNER_TEMP/v4-production"
+          DPO_CONFIG=$(find "$RUNNER_TEMP/v4-production" -path '*/final-dpo-adapter/dpo/adapter_config.json' -print -quit)
+          test -n "$DPO_CONFIG"
+          DPO_DIR=$(dirname "$DPO_CONFIG")
+          test -f "$DPO_DIR/adapter_model.safetensors"
+          test "$(sha256sum "$DPO_DIR/adapter_config.json" | awk '{print $1}')" = "8e601627e6c9a256ed37acffb747c64e675f176ef92950470c6e85f7f09f146e"
+          test "$(sha256sum "$DPO_DIR/adapter_model.safetensors" | awk '{print $1}')" = "773116e424401dc7009421616c303a0688ce2f1bc7191f2d61b715a447f44b8b"
+          echo "DPO_DIR=$DPO_DIR" >> "$GITHUB_ENV"
+      - name: Ensure private H6 DPO V4 Kaggle input
+        shell: bash
+        run: |
+          set -euo pipefail
+          DATASET_DIR="$RUNNER_TEMP/h6-dpo-dataset"; mkdir -p "$DATASET_DIR"
+          cp "$DPO_DIR/adapter_config.json" "$DATASET_DIR/adapter_config.json"
+          cp "$DPO_DIR/adapter_model.safetensors" "$DATASET_DIR/adapter_model.safetensors"
+          python - "$DATASET_DIR/dataset-metadata.json" <<'PY'
+          import json, os, pathlib, sys
+          title = os.environ['DPO_DATASET_TITLE']
+          if not 6 <= len(title) <= 50:
+              raise SystemExit(f'Kaggle dataset title length must be 6..50, got {len(title)}')
+          pathlib.Path(sys.argv[1]).write_text(json.dumps({
+              'title': title,
+              'id': os.environ['DPO_DATASET'],
+              'licenses': [{'name': 'Apache 2.0'}],
+          }) + '\n')
+          PY
+          READY=false
+          for _ in $(seq 1 6); do if kaggle datasets files "$DPO_DATASET" >/dev/null 2>&1; then READY=true; break; fi; sleep 10; done
+          if [ "$READY" != true ]; then kaggle datasets create -p "$DATASET_DIR" --dir-mode zip; fi
+          for _ in $(seq 1 18); do if kaggle datasets files "$DPO_DATASET" >/dev/null 2>&1; then READY=true; break; fi; sleep 10; done
+          test "$READY" = true
+      - name: Build disposable H6 inference kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          KERNEL_DIR="$RUNNER_TEMP/h6-kaggle-kernel"; mkdir -p "$KERNEL_DIR"
+          cat > "$KERNEL_DIR/run_h6.py" <<'PY'
+          import hashlib, json, re, secrets, subprocess
+          from pathlib import Path
+          repo_url='__REPO_URL__'; target_commit='__TARGET_COMMIT__'
+          repo=Path('/tmp/paul-open'); out=Path('/kaggle/working/h6_dhe_v4_pilot_v1'); out.mkdir(parents=True,exist_ok=True)
+          stage='bootstrap'
+          def digest(p):
+              h=hashlib.sha256()
+              with p.open('rb') as f:
+                  for c in iter(lambda:f.read(1024*1024),b''): h.update(c)
+              return h.hexdigest()
+          def adapter_by_hash(root, config_hash, weights_hash):
+              matches=[]
+              for cfg in root.rglob('adapter_config.json'):
+                  weights=cfg.parent/'adapter_model.safetensors'
+                  if weights.is_file() and digest(cfg)==config_hash and digest(weights)==weights_hash: matches.append(cfg.parent)
+              if len(matches)!=1: raise RuntimeError(f'frozen adapter resolution expected 1 match, found {len(matches)}')
+              return matches[0]
+          def token_set(text):
+              return set(re.findall(r'\w+', text.lower(), flags=re.UNICODE))
+          def load_rows(path):
+              return [json.loads(x) for x in path.read_text(encoding='utf-8').splitlines() if x.strip()]
+          try:
+              subprocess.run(['git','clone',repo_url,str(repo)],check=True)
+              subprocess.run(['git','-C',str(repo),'checkout',target_commit],check=True)
+              if subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()!=target_commit: raise RuntimeError('source revision mismatch')
+              subprocess.run(['python','-m','pip','install','--upgrade','uv'],check=True)
+              subprocess.run(['uv','sync','--frozen','--extra','eval'],cwd=repo,check=True)
+              stage='canonical_baseline_leakage_audit'
+              subprocess.run(['uv','run','python',str(repo/'scripts/check_leakage.py'),str(repo/'data/h6_dhe_v4_pilot_v1.jsonl'),'--json-output',str(out/'baseline_leakage_report.json'),'--verbose'],cwd=repo,check=True)
+              stage='development_separation_audit'
+              h6=load_rows(repo/'data/h6_dhe_v4_pilot_v1.jsonl')
+              comparison=[]
+              for name,path in [('h4',repo/'data/h4_dhe_pilot_v1.jsonl'),('h5',repo/'data/h5_dhe_v3_pilot_v1.jsonl'),('dpo_v1',repo/'data/train/dpo_train.jsonl'),('dpo_v2',repo/'data/train/dpo_v2_corrective.jsonl')]:
+                  if path.is_file(): comparison += [(name,r['prompt']) for r in load_rows(path)]
+              for root_name,folder in [('dpo_v3',repo/'data/train/dpo_v3'),('dpo_v4',repo/'data/train/dpo_v4')]:
+                  for shard in sorted(folder.glob('*.jsonl')): comparison += [(root_name,r['prompt']) for r in load_rows(shard)]
+              report=[]; max_sim=0.0
+              for r in h6:
+                  p=r['prompt']; a=token_set(p); best=(0.0,None)
+                  for source,q in comparison:
+                      b=token_set(q); sim=len(a&b)/len(a|b) if a|b else 0.0
+                      if sim>best[0]: best=(sim,source)
+                  max_sim=max(max_sim,best[0])
+                  report.append({'case_id':r['case_id'],'max_token_set_jaccard':best[0],'nearest_source':best[1]})
+                  if best[0] >= 0.35: raise RuntimeError(f'H6 development separation failed for {r["case_id"]}: similarity {best[0]:.4f} vs {best[1]}')
+              (out/'development_separation_report.json').write_text(json.dumps({'status':'PASS','threshold_exclusive':0.35,'max_similarity':max_sim,'cases':report},indent=2)+'\n')
+              stage='adapter_mount_check'
+              root=Path('/kaggle/input')
+              sft=adapter_by_hash(root,'cff65bd42928536886168b09d9b133b25ac444c01d901d2a56d98c7b8b03a0ce','73bab121009e2130f387b5deebfe1d15f4f7ac2afbd622164b11b3024000ec49')
+              dpo=adapter_by_hash(root,'8e601627e6c9a256ed37acffb747c64e675f176ef92950470c6e85f7f09f146e','773116e424401dc7009421616c303a0688ce2f1bc7191f2d61b715a447f44b8b')
+              stage='paired_generation'
+              subprocess.run(['uv','run','python',str(repo/'scripts/h6_dhe_generate.py'),'--manifest',str(repo/'data/h6_dhe_v4_pilot_v1.jsonl'),'--config',str(repo/'configs/evaluation/h6_dhe_v4_pilot_v1.yaml'),'--training-config',str(repo/'configs/training/dpo_v4_e4b_corrective.yaml'),'--sft-adapter',str(sft),'--dpo-adapter',str(dpo),'--output-dir',str(out/'private')],cwd=repo,check=True)
+              stage='blinded_batch_build'
+              private=out/'private_mapping'; private.mkdir(parents=True,exist_ok=True)
+              subprocess.run(['uv','run','python',str(repo/'scripts/build_human_eval_batch.py'),'--left',str(out/'private/sft_reference.jsonl'),'--right',str(out/'private/dpo_v4_corrective.jsonl'),'--left-label','sft_reference','--right-label','dpo_v4_corrective','--seed',secrets.token_hex(32),'--variant-count','2','--partition','development','--public-output-dir',str(out/'reviewer_bundle'),'--private-mapping',str(private/'mapping.json')],cwd=repo,check=True)
+              (out/'public_success.json').write_text(json.dumps({'status':'PASS','stage':'blinded_batch_build','case_manifest':'H6_DHE_V4_PILOT_V1'})+'\n')
+          except Exception as exc:
+              msg=str(exc).replace('sft_reference','checkpoint').replace('dpo_v4_corrective','checkpoint')
+              (out/'failure_summary.json').write_text(json.dumps({'status':'FAIL','stage':stage,'exception_type':type(exc).__name__,'message':msg[:500]},indent=2)+'\n')
+              raise
+          PY
+          python - "$KERNEL_DIR/run_h6.py" <<'PY'
+          import os,pathlib,sys
+          p=pathlib.Path(sys.argv[1]); t=p.read_text().replace('__REPO_URL__',os.environ['REPO_URL']).replace('__TARGET_COMMIT__',os.environ['TARGET_COMMIT']); p.write_text(t)
+          PY
+          cat > "$KERNEL_DIR/kernel-metadata.json" <<JSON
+          {"id":"${KAGGLE_USERNAME}/${H6_KERNEL_SLUG}","title":"PAUL Open H6 DHE V4 Paired Generation","code_file":"run_h6.py","language":"python","kernel_type":"script","is_private":"true","enable_gpu":"true","enable_internet":"true","machine_shape":"${MACHINE_SHAPE}","dataset_sources":["${SFT_DATASET}","${DPO_DATASET}"],"competition_sources":[],"kernel_sources":[],"model_sources":[]}
+          JSON
+          echo "KERNEL_DIR=$KERNEL_DIR" >> "$GITHUB_ENV"
+      - name: Launch H6 generation
+        run: kaggle kernels push -p "$KERNEL_DIR"
+      - name: Wait for H6 generation
+        id: kaggle_wait
+        continue-on-error: true
+        shell: bash
+        run: |
+          for _ in $(seq 1 300); do
+            STATUS=$(kaggle kernels status "$KAGGLE_USERNAME/$H6_KERNEL_SLUG" || true); echo "$STATUS"
+            if echo "$STATUS" | grep -qi 'complete'; then exit 0; fi
+            if echo "$STATUS" | grep -Eqi 'error|failed|cancel'; then exit 1; fi
+            sleep 20
+          done
+          exit 1
+      - name: Stage only reviewer-safe evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/h6-private-download" h6-reviewer-safe
+          kaggle kernels output "$KAGGLE_USERNAME/$H6_KERNEL_SLUG" -p "$RUNNER_TEMP/h6-private-download" || true
+          ROOT=$(find "$RUNNER_TEMP/h6-private-download" -type d -name reviewer_bundle -print -quit); [ -z "$ROOT" ] || cp -R "$ROOT" h6-reviewer-safe/reviewer_bundle
+          for NAME in baseline_leakage_report.json development_separation_report.json failure_summary.json public_success.json; do F=$(find "$RUNNER_TEMP/h6-private-download" -type f -name "$NAME" -print -quit); [ -z "$F" ] || cp "$F" "h6-reviewer-safe/$NAME"; done
+          find h6-reviewer-safe -maxdepth 5 -type f -print
+      - name: Upload reviewer-safe H6 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: h6-dhe-v4-reviewer-safe-bundle
+          path: h6-reviewer-safe
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Fail if Kaggle generation failed
+        if: steps.kaggle_wait.outcome != 'success'
+        run: exit 1
