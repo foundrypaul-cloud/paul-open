@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "experiment": "H6_DHE_V4_PILOT_V1",
+  "partition": "development",
+  "batch_id": "HEB1-5AE2CE4166CD",
+  "state": "BLINDED_ANALYSIS_LOCKED",
+  "collection": {
+    "initial_valid_judgments_per_case": 3,
+    "case_count": 6,
+    "target": 18,
+    "collected": 18,
+    "variant_v01_collected": 9,
+    "variant_v02_collected": 9,
+    "adaptive_escalation_required": false,
+    "forms_closed": true
+  },
+  "durability": {
+    "status": "PASS",
+    "raw_response_count": 18,
+    "normalized_row_count": 18,
+    "backup_row_count": 18,
+    "packet_response_ids_match": true,
+    "all_backup_rows_have_sha256": true,
+    "normalized_response_id_set_sha256": "1f4cf378771881833c9d112cff6108fb7eba57c795a84813e1d4a12fcc2cfe14",
+    "normalized_response_id_hash_method": "sha256(newline-delimited lexicographically sorted IDs with trailing newline)"
+  },
+  "blinding": {
+    "private_mapping_opened": false,
+    "source_identity_used_in_lock": false,
+    "shae_accessed": false
+  },
+  "blinded_case_results": [
+    {
+      "case": "STEM",
+      "comparison_id": "HEV1-EC1DF5E1893F",
+      "canonical_v01_outcome": "A",
+      "judgments": 3,
+      "agreement": 3
+    },
+    {
+      "case": "EDUCATOR",
+      "comparison_id": "HEV1-01DC9D6E7D0B",
+      "canonical_v01_outcome": "NEITHER",
+      "judgments": 3,
+      "agreement": 3
+    },
+    {
+      "case": "RESEARCH",
+      "comparison_id": "HEV1-DF6A431CD806",
+      "canonical_v01_outcome": "A",
+      "judgments": 3,
+      "agreement": 3
+    },
+    {
+      "case": "HINDI",
+      "comparison_id": "HEV1-FBCA5F630DCB",
+      "canonical_v01_outcome": "B",
+      "judgments": 3,
+      "agreement": 3
+    },
+    {
+      "case": "BENGALI",
+      "comparison_id": "HEV1-0BF58399A27C",
+      "canonical_v01_outcome": "A",
+      "judgments": 3,
+      "agreement": 3
+    },
+    {
+      "case": "SPANISH",
+      "comparison_id": "HEV1-59493DF59826",
+      "canonical_v01_outcome": "B",
+      "judgments": 3,
+      "agreement": 3
+    }
+  ],
+  "summary": {
+    "unanimous_cases": 6,
+    "tie_judgments": 0,
+    "not_sure_judgments": 0,
+    "required_confidence_failures": 0,
+    "educator_neither_good_judgments": 3
+  },
+  "interpretation": "Development human evaluation only; not SHAE and not final superiority evidence."
+}
