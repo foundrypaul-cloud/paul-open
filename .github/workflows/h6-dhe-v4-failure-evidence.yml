@@ -1,0 +1,58 @@
+name: H6 DHE V4 Failure Evidence
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/h6-dhe-v4-failure-evidence.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  collect-failure-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: paulfoundry
+      H6_KERNEL_SLUG: paul-open-h6-dhe-v4-paired-generation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+      - name: Download existing H6 kernel evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/h6-kaggle-output" h6-failure-evidence
+          kaggle kernels output "$KAGGLE_USERNAME/$H6_KERNEL_SLUG" -p "$RUNNER_TEMP/h6-kaggle-output"
+          LOG=$(find "$RUNNER_TEMP/h6-kaggle-output" -maxdepth 2 -type f -name '*.log' -print -quit)
+          test -n "$LOG"
+          python - "$LOG" h6-failure-evidence/sanitized_failure_excerpt.txt <<'PY'
+          import pathlib, re, sys
+          src = pathlib.Path(sys.argv[1]).read_text(encoding='utf-8', errors='replace')
+          lines = []
+          keep = re.compile(r'(generation truncation gate failed|native-script gate failed|automated safety gate failed|malformed generation|RuntimeError|Traceback|H6-DHE-|max_new_tokens|EOS)', re.I)
+          for line in src.splitlines():
+              if keep.search(line):
+                  line = line.replace('sft_reference', 'checkpoint').replace('dpo_v4_corrective', 'checkpoint')
+                  line = re.sub(r'/kaggle/input/[^\s\]\)\'\"]+', '<private-input>', line)
+                  line = re.sub(r'/tmp/paul-open', '<repo>', line)
+                  lines.append(line[-2000:])
+          pathlib.Path(sys.argv[2]).write_text('\n'.join(lines[-200:]) + '\n', encoding='utf-8')
+          PY
+          F=$(find "$RUNNER_TEMP/h6-kaggle-output" -type f -name failure_summary.json -print -quit)
+          [ -z "$F" ] || cp "$F" h6-failure-evidence/failure_summary.json
+          test -s h6-failure-evidence/sanitized_failure_excerpt.txt
+      - name: Upload sanitized failure evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: h6-dhe-v4-sanitized-failure-evidence
+          path: h6-failure-evidence
+          if-no-files-found: error
+          retention-days: 30
