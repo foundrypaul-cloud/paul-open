@@ -7,6 +7,7 @@ on:
       - 'configs/evaluation/h6_dhe_v4_pilot_v1.yaml'
       - 'scripts/h6_dhe_generate.py'
       - 'docs/DPO_V4_P11_P12_RESULTS.md'
+      - 'docs/H6_DHE_V4_FORM_AUDIT.md'
       - '.github/workflows/h6-dhe-v4-verification.yml'
       - '.github/workflows/h6-dhe-v4-kaggle-generation.yml'
 
@@ -46,18 +47,26 @@ jobs:
           assert {r['language'] for r in rows}=={'en','hi','bn','es'}
 
           cfg=yaml.safe_load(Path('configs/evaluation/h6_dhe_v4_pilot_v1.yaml').read_text(encoding='utf-8'))['h6_dhe_v4_pilot']
+          assert cfg['version']=='1.1'
           assert cfg['status']=='frozen_pre_generation'
           assert cfg['partition']=='development'
-          assert cfg['generation']['max_new_tokens']==256
+          assert cfg['generation']['max_new_tokens']==768
+          assert cfg['generation']['require_eos_before_limit'] is True
           assert cfg['generation']['temperature']==0.7
           assert cfg['generation']['top_p']==0.9
           assert cfg['generation']['random_seed']==42
+          assert 'no_generation_truncation_gate' in cfg['pre_form_gates']
           assert cfg['sources']['candidate']['experiment_id']=='paul_e4b_dpo_v4_corrective'
           assert cfg['sources']['candidate']['source_revision']=='6bd98c516ed1c4c53251ba4a9bbb6507d4b9cb73'
           assert cfg['sources']['candidate']['production_run']==34704441705
           assert cfg['sources']['candidate']['production_artifact']==10301858693
           assert cfg['sources']['candidate']['adapter_config_sha256']=='8e601627e6c9a256ed37acffb747c64e675f176ef92950470c6e85f7f09f146e'
           assert cfg['sources']['candidate']['adapter_weights_sha256']=='773116e424401dc7009421616c303a0688ce2f1bc7191f2d61b715a447f44b8b'
+
+          source=Path('scripts/h6_dhe_generate.py').read_text(encoding='utf-8')
+          assert 'generation truncation gate failed' in source
+          assert 'generated_token_count' in source
+          assert 'ended_with_eos' in source
 
           comparison=[]
           def add_jsonl(source,path,id_key='case_id'):
@@ -80,8 +89,6 @@ jobs:
           assert not set(prompts).intersection(forbidden_exact), 'exact H4/H5/prior-DPO/V4-training prompt reuse'
 
           def toks(text):
-              # Group Unicode letters/numbers plus combining marks into words.
-              # Python re `\w+` fragments Indic grapheme clusters and inflates overlap.
               text=unicodedata.normalize('NFKC',text).casefold()
               tokens=[]; current=[]
               for ch in text:
@@ -96,10 +103,10 @@ jobs:
           best=(0.0,None,None,None)
           for r in rows:
               a=toks(r['prompt'])
-              for source,other_id,q in comparison:
+              for source_name,other_id,q in comparison:
                   b=toks(q); u=a|b
                   score=len(a&b)/len(u) if u else 0.0
-                  if score>best[0]: best=(score,r['case_id'],source,other_id)
+                  if score>best[0]: best=(score,r['case_id'],source_name,other_id)
           assert best[0] < 0.35, f'development overlap too high: {best}'
           print(json.dumps({'cases':len(rows),'tokenizer':'unicode_letter_mark_word_v1','max_development_token_jaccard':best[0],'nearest_pair':best[1:]},sort_keys=True))
           PY
