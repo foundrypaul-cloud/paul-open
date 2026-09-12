@@ -61,6 +61,13 @@ def resolve_adapter(path: Path) -> Path:
     return matches[0]
 
 
+def reviewer_visible_prompt(base_prompt: str, generation: dict[str, Any]) -> str:
+    instruction = str(generation.get("response_instruction", "")).strip()
+    if not instruction:
+        return base_prompt.strip()
+    return f"{base_prompt.strip()}\n\n{instruction}"
+
+
 def generate_source(
     rows: list[dict[str, Any]],
     *,
@@ -97,7 +104,8 @@ def generate_source(
         seed = int(generation["random_seed"]) + index
         torch.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
-        messages = [{"role": "user", "content": row["prompt"]}]
+        evaluation_prompt = reviewer_visible_prompt(row["prompt"], generation)
+        messages = [{"role": "user", "content": evaluation_prompt}]
         rendered = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = tokenizer(rendered, return_tensors="pt").to(model.device)
         input_length = inputs["input_ids"].shape[-1]
@@ -143,7 +151,7 @@ def generate_source(
 
         records.append({
             "case_id": row["case_id"],
-            "prompt": row["prompt"],
+            "prompt": evaluation_prompt,
             "response": response,
             "domain": row["domain"],
             "language": row["language"],
@@ -154,6 +162,7 @@ def generate_source(
             "nonempty": True,
             "malformed": False,
             "no_generation_truncation": "PASS",
+            "display_prompt_matches_generation_prompt": "PASS",
             "generated_token_count": generated_token_count,
             "max_new_tokens": max_new_tokens,
             "hit_token_limit": hit_token_limit,
@@ -203,6 +212,8 @@ def main() -> None:
     model_id = train_cfg["model_id"]
     revision = train_cfg["model_revision"]
     generation = cfg["generation"]
+    if not str(generation.get("response_instruction", "")).strip():
+        raise RuntimeError("H6 generation response_instruction must be nonempty")
     out = Path(args.output_dir)
     out.mkdir(parents=True, exist_ok=True)
     sft_path = out / "sft_reference.jsonl"
@@ -257,6 +268,7 @@ def main() -> None:
             "generation_completed": "PASS",
             "nonempty_output": "PASS",
             "no_generation_truncation_gate": "PASS",
+            "display_prompt_matches_generation_prompt": "PASS",
             "automated_safety_gate": "PASS",
             "malformed_output_gate": "PASS",
             "evaluation_partition_integrity": "PASS",
