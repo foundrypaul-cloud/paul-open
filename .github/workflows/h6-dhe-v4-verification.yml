@@ -47,15 +47,20 @@ jobs:
           assert {r['language'] for r in rows}=={'en','hi','bn','es'}
 
           cfg=yaml.safe_load(Path('configs/evaluation/h6_dhe_v4_pilot_v1.yaml').read_text(encoding='utf-8'))['h6_dhe_v4_pilot']
-          assert cfg['version']=='1.1'
+          assert cfg['version']=='1.2'
           assert cfg['status']=='frozen_pre_generation'
           assert cfg['partition']=='development'
           assert cfg['generation']['max_new_tokens']==768
           assert cfg['generation']['require_eos_before_limit'] is True
+          instruction=cfg['generation']['response_instruction'].strip()
+          assert instruction
+          assert '300 words' in instruction
+          assert '1–2 minutes' in instruction
           assert cfg['generation']['temperature']==0.7
           assert cfg['generation']['top_p']==0.9
           assert cfg['generation']['random_seed']==42
           assert 'no_generation_truncation_gate' in cfg['pre_form_gates']
+          assert 'display_prompt_matches_generation_prompt' in cfg['pre_form_gates']
           assert cfg['sources']['candidate']['experiment_id']=='paul_e4b_dpo_v4_corrective'
           assert cfg['sources']['candidate']['source_revision']=='6bd98c516ed1c4c53251ba4a9bbb6507d4b9cb73'
           assert cfg['sources']['candidate']['production_run']==34704441705
@@ -67,6 +72,10 @@ jobs:
           assert 'generation truncation gate failed' in source
           assert 'generated_token_count' in source
           assert 'ended_with_eos' in source
+          assert 'reviewer_visible_prompt' in source
+          assert 'evaluation_prompt = reviewer_visible_prompt' in source
+          assert '"prompt": evaluation_prompt' in source
+          assert 'display_prompt_matches_generation_prompt' in source
 
           comparison=[]
           def add_jsonl(source,path,id_key='case_id'):
