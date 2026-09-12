@@ -1,0 +1,184 @@
+name: Kaggle DPO V4 Preflight and Production
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/kaggle-dpo-v4-production.yml'
+      - 'scripts/dpo_v4_e4b_train.py'
+      - 'configs/training/dpo_v4_e4b_corrective.yaml'
+      - 'data/train/dpo_v4/**'
+
+permissions:
+  contents: read
+
+jobs:
+  launch-kaggle-v4:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      REPO_URL: https://github.com/foundrypaul-cloud/paul-open.git
+      TARGET_COMMIT: ${{ github.sha }}
+      ADAPTER_DATASET: paulfoundry/paul-open-sft
+      KAGGLE_USERNAME: paulfoundry
+      PREFLIGHT_SLUG: paul-open-dpo-v4-preflight
+      PRODUCTION_SLUG: paul-open-dpo-v4-production
+      MACHINE_SHAPE: NvidiaTeslaT4
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+      - name: Verify Kaggle authentication and frozen SFT adapter source
+        run: |
+          set -euo pipefail
+          test -n "$KAGGLE_API_TOKEN"
+          kaggle datasets files "$ADAPTER_DATASET" >/dev/null
+
+      - name: Build exact-head V4 preflight kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          KERNEL_DIR="$RUNNER_TEMP/paul-open-dpo-v4-preflight"
+          mkdir -p "$KERNEL_DIR"
+          cat > "$KERNEL_DIR/preflight.py" <<'PY'
+          import subprocess
+          from pathlib import Path
+          repo_url='__REPO_URL__'; target_commit='__TARGET_COMMIT__'; adapter_dataset='__ADAPTER_DATASET__'
+          repo=Path('/tmp/paul-open')
+          subprocess.run(['git','clone',repo_url,str(repo)],check=True)
+          subprocess.run(['git','-C',str(repo),'checkout',target_commit],check=True)
+          actual=subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()
+          if actual != target_commit: raise SystemExit(f'commit mismatch: {actual}')
+          subprocess.run(['python','-m','pip','install','--upgrade','uv'],check=True)
+          subprocess.run(['uv','sync','--frozen'],cwd=repo,check=True)
+          input_root=Path('/kaggle/input')
+          matches=sorted({p.parent for p in input_root.rglob('adapter_config.json') if (p.parent/'adapter_model.safetensors').is_file()})
+          if len(matches)!=1: raise SystemExit(f'expected one adapter from {adapter_dataset}, found {matches}')
+          subprocess.run([
+            'uv','run','python',str(repo/'scripts/dpo_v4_e4b_train.py'),
+            '--config',str(repo/'configs/training/dpo_v4_e4b_corrective.yaml'),
+            '--adapter',str(matches[0]),
+            '--output-dir','/kaggle/working/paul_e4b_dpo_v4_corrective',
+            '--preflight-only',
+          ],cwd=repo,check=True)
+          PY
+          python - "$KERNEL_DIR/preflight.py" <<'PY'
+          import os,pathlib,sys
+          p=pathlib.Path(sys.argv[1]); t=p.read_text()
+          t=t.replace('__REPO_URL__',os.environ['REPO_URL']).replace('__TARGET_COMMIT__',os.environ['TARGET_COMMIT']).replace('__ADAPTER_DATASET__',os.environ['ADAPTER_DATASET'])
+          p.write_text(t)
+          PY
+          cat > "$KERNEL_DIR/kernel-metadata.json" <<JSON
+          {"id":"${KAGGLE_USERNAME}/${PREFLIGHT_SLUG}","title":"PAUL Open DPO V4 Preflight","code_file":"preflight.py","language":"python","kernel_type":"script","is_private":"true","enable_gpu":"true","enable_internet":"true","machine_shape":"${MACHINE_SHAPE}","dataset_sources":["${ADAPTER_DATASET}"],"competition_sources":[],"kernel_sources":[],"model_sources":[]}
+          JSON
+          echo "KERNEL_DIR=$KERNEL_DIR" >> "$GITHUB_ENV"
+
+      - name: Launch preflight
+        run: kaggle kernels push -p "$KERNEL_DIR"
+      - name: Wait for preflight
+        id: preflight_wait
+        continue-on-error: true
+        run: |
+          for _ in $(seq 1 90); do
+            STATUS=$(kaggle kernels status "$KAGGLE_USERNAME/$PREFLIGHT_SLUG" || true); echo "$STATUS"
+            if echo "$STATUS" | grep -qi complete; then exit 0; fi
+            if echo "$STATUS" | grep -Eqi 'error|failed|cancel'; then exit 1; fi
+            sleep 20
+          done
+          exit 1
+      - name: Download failed preflight evidence
+        if: steps.preflight_wait.outcome != 'success'
+        run: |
+          mkdir -p kaggle-v4-preflight-output
+          kaggle kernels output "$KAGGLE_USERNAME/$PREFLIGHT_SLUG" -p kaggle-v4-preflight-output || true
+      - name: Upload failed preflight evidence
+        if: steps.preflight_wait.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-dpo-v4-preflight-output
+          path: kaggle-v4-preflight-output
+          if-no-files-found: warn
+      - name: Stop if preflight failed
+        if: steps.preflight_wait.outcome != 'success'
+        run: exit 1
+
+      - name: Build exact-head V4 production and diagnostic-evaluation kernel
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROD_DIR="$RUNNER_TEMP/paul-open-dpo-v4-production"
+          mkdir -p "$PROD_DIR"
+          cat > "$PROD_DIR/run.py" <<'PY'
+          import subprocess
+          from pathlib import Path
+          repo_url='__REPO_URL__'; target_commit='__TARGET_COMMIT__'; adapter_dataset='__ADAPTER_DATASET__'
+          repo=Path('/tmp/paul-open'); train=Path('/kaggle/working/paul_e4b_dpo_v4_corrective'); ev=Path('/kaggle/working/paul_e4b_dpo_v4_evaluation')
+          subprocess.run(['git','clone',repo_url,str(repo)],check=True)
+          subprocess.run(['git','-C',str(repo),'checkout',target_commit],check=True)
+          actual=subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()
+          if actual != target_commit: raise SystemExit(f'commit mismatch: {actual}')
+          subprocess.run(['python','-m','pip','install','--upgrade','uv'],check=True)
+          subprocess.run(['uv','sync','--frozen','--extra','eval'],cwd=repo,check=True)
+          input_root=Path('/kaggle/input')
+          matches=sorted({p.parent for p in input_root.rglob('adapter_config.json') if (p.parent/'adapter_model.safetensors').is_file()})
+          if len(matches)!=1: raise SystemExit(f'expected one adapter from {adapter_dataset}, found {matches}')
+          sft=matches[0]
+          subprocess.run([
+            'uv','run','python',str(repo/'scripts/dpo_v4_e4b_train.py'),
+            '--config',str(repo/'configs/training/dpo_v4_e4b_corrective.yaml'),
+            '--adapter',str(sft),'--output-dir',str(train)
+          ],cwd=repo,check=True)
+          dpo=train/'final-dpo-adapter'/'dpo'; manifest=train/'training_manifest.json'
+          if not manifest.is_file() or not (dpo/'adapter_config.json').is_file() or not (dpo/'adapter_model.safetensors').is_file():
+              raise SystemExit('V4 production output incomplete')
+          common=['--model',str(repo/'configs/models/gemma4_e4b_it.yaml'),'--eval',str(repo/'configs/evaluation/baseline_e4b.yaml'),'--output',str(ev)]
+          subprocess.run(['uv','run','python',str(repo/'scripts/evaluate.py'),'--mode','sft','--adapter-path',str(sft),*common],cwd=repo,check=True)
+          subprocess.run(['uv','run','python',str(repo/'scripts/evaluate.py'),'--mode','dpo','--adapter-path',str(dpo),*common],cwd=repo,check=True)
+          PY
+          python - "$PROD_DIR/run.py" <<'PY'
+          import os,pathlib,sys
+          p=pathlib.Path(sys.argv[1]); t=p.read_text()
+          t=t.replace('__REPO_URL__',os.environ['REPO_URL']).replace('__TARGET_COMMIT__',os.environ['TARGET_COMMIT']).replace('__ADAPTER_DATASET__',os.environ['ADAPTER_DATASET'])
+          p.write_text(t)
+          PY
+          cat > "$PROD_DIR/kernel-metadata.json" <<JSON
+          {"id":"${KAGGLE_USERNAME}/${PRODUCTION_SLUG}","title":"PAUL Open DPO V4 Production","code_file":"run.py","language":"python","kernel_type":"script","is_private":"true","enable_gpu":"true","enable_internet":"true","machine_shape":"${MACHINE_SHAPE}","dataset_sources":["${ADAPTER_DATASET}"],"competition_sources":[],"kernel_sources":[],"model_sources":[]}
+          JSON
+          echo "PROD_DIR=$PROD_DIR" >> "$GITHUB_ENV"
+
+      - name: Launch production training and diagnostic evaluation
+        run: kaggle kernels push -p "$PROD_DIR"
+      - name: Wait for production
+        id: production_wait
+        continue-on-error: true
+        run: |
+          for _ in $(seq 1 900); do
+            STATUS=$(kaggle kernels status "$KAGGLE_USERNAME/$PRODUCTION_SLUG" || true); echo "$STATUS"
+            if echo "$STATUS" | grep -qi complete; then exit 0; fi
+            if echo "$STATUS" | grep -Eqi 'error|failed|cancel'; then exit 1; fi
+            sleep 20
+          done
+          exit 1
+      - name: Download production outputs
+        if: always()
+        run: |
+          mkdir -p kaggle-v4-production-output
+          kaggle kernels output "$KAGGLE_USERNAME/$PRODUCTION_SLUG" -p kaggle-v4-production-output || true
+          find kaggle-v4-production-output -maxdepth 6 -type f -print || true
+      - name: Upload production outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-dpo-v4-production-evaluation-output
+          path: kaggle-v4-production-output
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Fail if production failed
+        if: steps.production_wait.outcome != 'success'
+        run: exit 1
