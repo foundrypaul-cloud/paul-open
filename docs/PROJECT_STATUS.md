@@ -1,6 +1,6 @@
 # PAUL Open — Current Research Status
 
-**Status date:** 2026-09-10  
+**Status date:** 2026-09-12  
 **Public research repository:** `foundrypaul-cloud/paul-open`  
 **Public website:** https://open.paulfoundry.com/
 
@@ -8,13 +8,13 @@ This document is the concise public status layer for the repository. Detailed hi
 
 ## Current position
 
-PAUL Open is currently in the evaluation-hardening stage after a technically successful DPO V2 Corrective run on `google/gemma-4-E4B-it`.
+PAUL Open has completed the H4 Development Human Evaluation (DHE) pilot for the frozen SFT reference checkpoint versus DPO V2 Corrective on `google/gemma-4-E4B-it`.
 
-The correct research conclusion remains:
+The current research conclusion is:
 
-> **The SFT adapter remains the safer reference checkpoint. DPO V2 is technically valid and behaviorally informative, but superiority over SFT has not been established.**
+> **SFT remains the safer reference checkpoint. DPO V2 Corrective is technically valid and shows meaningful positive signals in some H4 strata, but H4 is mixed and does not establish broad superiority. DPO V2 is not promoted over SFT on H4 evidence alone.**
 
-H2 human-evaluation infrastructure is formally complete. H3 is now active as an internal/trusted-reviewer disposable UX and operating-path pilot. H3 does not compare PAUL model checkpoints and does not change the model-comparison conclusion above.
+H2 infrastructure, H3 UX/durability, and H4 DHE are complete. SHAE remains sealed and has not started.
 
 ## Step 2 — DPO V2 Corrective
 
@@ -34,100 +34,127 @@ The final DPO V2 production run established technical validity, including:
 - final train loss `0.687744140625`;
 - runtime `238.58 s`.
 
-See [`E4B_DPO_V2_CORRECTIVE.md`](E4B_DPO_V2_CORRECTIVE.md) for the reproducibility record.
+See [`E4B_DPO_V2_CORRECTIVE.md`](E4B_DPO_V2_CORRECTIVE.md).
 
-## Behavioral evidence
+## Earlier behavioral evidence
 
-The existing 50-case comparison between SFT and DPO V2 is **diagnostic only**.
+The existing 50-case SFT-vs-DPO V2 comparison remains **diagnostic only** because DPO V2 source material overlaps the canonical suite at exact, content, template, and concept levels.
 
-Observed heuristic summary:
-
-| Metric | SFT | DPO V2 |
-|---|---:|---:|
-| Mean heuristic rubric | 90.26 | 89.79 |
-| Safety adherence | 100% | 100% |
-| Mean latency | 37.60 s | 41.04 s |
-
-The aggregate result is not the main conclusion. Paired review found both improvements and important regressions, including a Punjabi native-script failure and a scientific-mechanism regression.
-
-More importantly, DPO V2 source material overlaps the canonical 50-case suite at exact, content, template, and concept levels. Therefore this comparison is not clean held-out evidence for DPO V2.
+Its heuristic aggregate therefore is not clean held-out evidence and cannot establish superiority.
 
 See [`EXPERIMENT_JOURNEY_E4B.md`](EXPERIMENT_JOURNEY_E4B.md).
 
-## Human evaluation — H2 complete
+## Human evaluation milestones
 
-H2 was formally accepted on **2026-09-10** after repository implementation, live Google-account runtime, genuine respondent submissions, normalized and backup retention, controlled recovery, verifier rerun, closure, and desktop/mobile opening all passed.
+### H2 — complete
 
-H2 remains infrastructure evidence only. It is **not** human preference evidence for SFT versus DPO V2.
+H2 formally validated the live Google Forms infrastructure, linked raw responses, normalized rows, independent backup ledgers, checksums, idempotent recovery, and desktop/mobile opening. H2 is infrastructure evidence, not model-preference evidence.
 
-See [`HUMAN_EVALUATION_H2_SANDBOX.md`](HUMAN_EVALUATION_H2_SANDBOX.md).
+### H3 — complete
 
-## Human evaluation — H3 active
+H3 validated the trusted-reviewer UX and durability path using disposable non-research material. It passed the frozen acceptance criteria before H4 opened.
 
-H3 started on **2026-09-10**.
+### H4 — DHE complete; decision recorded
 
-Two live Google Forms have been created for a small internal/trusted reviewer group:
+Batch: `HEB1-E928B35C90D7`
 
-- Form A1: three disposable comparisons;
-- Form B1: the same three disposable comparisons with A/B presentation counterbalanced.
+- source cases: 6
+- eligible cases: 5
+- identical pair excluded: 1
+- complementary reviewer-facing forms: 10
+- initial judgments: 15
+- adaptive follow-up judgments: 6
+- final judgments: **21**
 
-Together they exercise six displayed comparison instances across three underlying disposable non-research cases. Email collection is off. The live respondent links are intentionally not committed to the public repository.
+Final case reviewer totals:
 
-Each live UX form also records:
+- General: 3
+- STEM: 5
+- Educator: 5
+- Hindi: 3
+- Bengali: 5
 
-- device class;
-- self-reported completion-time bucket;
-- readability/navigation friction;
-- A/B-format confusion;
-- one optional UX comment.
+The response-durability audit passed before unblinding: 21 raw responses, 21 normalized response IDs, and 21 matching independent backup-ledger IDs, with SHA-256 and backup-write timestamps present for every response.
 
-Repository-native H3 durability material is available at [`../tools/google_forms/H3DurabilityPayload.gs`](../tools/google_forms/H3DurabilityPayload.gs) so the previously accepted Apps Script normalization, backup-ledger, checksum and recovery path can be exercised on the same disposable design without introducing model data.
+The judgment set was analysis-locked before the private A/B mapping was read. Controlled unblinding used the private mapping retained in the private Kaggle generation output; the private mapping itself is not committed.
 
-H3 acceptance requires at least 5 trusted-reviewer completions in total with both A1/B1 represented, desktop and mobile coverage, median completion time at or below 4 minutes, no systematic UX confusion/readability issue, correct counterbalancing, and a successful durability-path exercise. Full criteria are in [`HUMAN_EVALUATION_H3_PILOT.md`](HUMAN_EVALUATION_H3_PILOT.md).
+### H4 aggregate result
 
-H3 is **active but not yet accepted**. DHE and SHAE remain closed.
+| Outcome | Count |
+|---|---:|
+| DPO V2 preferred | 7 |
+| SFT preferred | 9 |
+| About equal | 2 |
+| Neither good | 0 |
+| Not sure / unable to judge | 3 |
+
+Among 16 decisive preference judgments, DPO V2 received **43.75%** and SFT **56.25%**.
+
+Case majorities:
+
+- General — SFT
+- STEM — DPO V2
+- Educator — SFT
+- Hindi — DPO V2
+- Bengali — SFT
+
+SFT wins 3 of 5 case majorities; DPO V2 wins 2 of 5. Mean descriptive modal-choice agreement is 80%.
+
+A cluster bootstrap over the five cases produces wide intervals, as expected for such a small DHE pilot. H4 therefore remains diagnostic/development evidence rather than a superiority study.
+
+See:
+
+- [`H4_DHE_PILOT_V1_ANALYSIS_LOCK.md`](H4_DHE_PILOT_V1_ANALYSIS_LOCK.md)
+- [`H4_DHE_PILOT_V1_RESULTS.md`](H4_DHE_PILOT_V1_RESULTS.md)
+- [`HUMAN_EVALUATION_H4_DHE_PILOT.md`](HUMAN_EVALUATION_H4_DHE_PILOT.md)
+
+## H4 decision
+
+**Mixed; no DPO V2 promotion.**
+
+SFT remains the reference checkpoint. DPO V2 remains a valid experimental checkpoint with positive STEM and Hindi signals, while General, Educator, and Bengali are development areas for diagnosis.
+
+The H4 accessibility finding is also retained: future evaluator-interface work should preserve keyboard/screen-reader compatibility and evaluate optional multilingual text-to-speech assistance.
 
 ## Immediate next research steps
 
-1. Collect the H3 trusted-reviewer responses across both counterbalanced live forms.
-2. Analyze completion time, device coverage, readability and confusion.
-3. Exercise `tools/google_forms/H3DurabilityPayload.gs` through the already-proven Apps Script runtime and verify normalized rows, backup checksums and recovery/idempotency.
-4. If all H3 criteria pass, freeze the operating path and open H4 DHE preparation.
-5. Preserve SHAE as sealed final assurance only after a future candidate is frozen.
+H4 itself has no remaining blocker. The next work should be explicitly chosen as one of two paths:
+
+1. **DHE follow-up/model development:** use H4 findings to diagnose and improve the experimental checkpoint, with new development material and a new evaluation cycle; or
+2. **future assurance preparation:** freeze a future candidate first, then separately design SHAE without exposing or contaminating sealed assurance material.
+
+Do not start SHAE merely because H4 is complete. SHAE requires its own frozen-candidate and sealed-assurance boundary.
 
 ## Public website state
 
-The website is a presentation and participation layer, not a second research database.
-
-Website implementations should consume:
+The website is a presentation layer, not a second research database. It should consume:
 
 - [`../public/research-status.json`](../public/research-status.json)
 - [`../public/human-evaluation.json`](../public/human-evaluation.json)
 
-and follow [`WEBSITE_INTEGRATION.md`](WEBSITE_INTEGRATION.md).
-
-No public human-evaluation round is currently accepting responses. H3 is an internal/trusted-reviewer pilot. The public website must not expose H3 reviewer links, H2 sandbox links, response sheets, private A/B maps, or any future sealed-assurance material.
+No public human-evaluation round is accepting responses. Reviewer links, response sheets, private A/B maps, and SHAE material must remain non-public.
 
 ## Claim boundary
 
 ### Supported
 
-- the DPO V2 run is technically valid;
-- DPO V2 changed intended trainable parameters;
-- mixed behavioral changes were observed;
-- the existing 50-case DPO V2 comparison is contaminated and diagnostic;
-- SFT remains the reference checkpoint;
-- H2 human-evaluation infrastructure is formally accepted;
-- H3 internal disposable pilot is active.
+- DPO V2 is technically valid;
+- the earlier 50-case comparison is contaminated and diagnostic;
+- H2, H3, and H4 are complete;
+- H4 DHE produced 21 judgments across five eligible development cases;
+- H4 aggregate result was 7 DPO-preferred, 9 SFT-preferred, 2 equal, 0 neither, 3 unable-to-judge;
+- DPO V2 won the STEM and Hindi H4 case majorities;
+- SFT won General, Educator, and Bengali;
+- H4 result is mixed and no DPO V2 promotion was made;
+- SFT remains the safer reference checkpoint.
 
 ### Not supported
 
-- DPO V2 is superior to SFT;
-- the current benchmark delta proves progress or regression overall;
-- H3 is complete before its acceptance criteria pass;
-- DHE may begin before H3 acceptance;
-- SHAE may begin during H3;
-- H3 responses constitute model-comparison evidence.
+- DPO V2 is broadly superior to SFT;
+- H4 is final assurance;
+- the earlier contaminated 50-case delta proves overall progress or regression;
+- SHAE has started or passed;
+- H4 development cases can later be reclassified as untouched assurance evidence.
 
 ## Canonical detail documents
 
@@ -136,5 +163,7 @@ No public human-evaluation round is currently accepting responses. H3 is an inte
 - [`HUMAN_EVALUATION_PROTOCOL.md`](HUMAN_EVALUATION_PROTOCOL.md)
 - [`HUMAN_EVALUATION_H2_SANDBOX.md`](HUMAN_EVALUATION_H2_SANDBOX.md)
 - [`HUMAN_EVALUATION_H3_PILOT.md`](HUMAN_EVALUATION_H3_PILOT.md)
+- [`HUMAN_EVALUATION_H4_DHE_PILOT.md`](HUMAN_EVALUATION_H4_DHE_PILOT.md)
+- [`H4_DHE_PILOT_V1_ANALYSIS_LOCK.md`](H4_DHE_PILOT_V1_ANALYSIS_LOCK.md)
+- [`H4_DHE_PILOT_V1_RESULTS.md`](H4_DHE_PILOT_V1_RESULTS.md)
 - [`HUMAN_EVALUATION_WORKFLOW.md`](HUMAN_EVALUATION_WORKFLOW.md)
-- [`REVIEWER_IDENTITY_AND_RESPONSE_DURABILITY.md`](REVIEWER_IDENTITY_AND_RESPONSE_DURABILITY.md)
