@@ -1,0 +1,174 @@
+name: DPO V4 P10 Data Verification
+
+on:
+  pull_request:
+    paths:
+      - 'data/train/dpo_v4/**'
+      - 'docs/DPO_V4_P10_AUDIT.md'
+      - '.github/workflows/dpo-v4-data-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install repository environment
+        run: |
+          python -m pip install --upgrade uv
+          uv sync --frozen --extra eval
+
+      - name: Assemble and validate P10 records
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run python - <<'PY'
+          import hashlib, json, re
+          from pathlib import Path
+
+          shards = [
+              Path('data/train/dpo_v4/conservation_law_consistency.jsonl'),
+              Path('data/train/dpo_v4/diagnostic_socratic_questioning.jsonl'),
+              Path('data/train/dpo_v4/direct_explanation_multilingual.jsonl'),
+              Path('data/train/dpo_v4/bengali_scientific_fidelity.jsonl'),
+              Path('data/train/dpo_v4/evidence_first_general_assistance.jsonl'),
+              Path('data/train/dpo_v4/research_methodology_preservation.jsonl'),
+          ]
+          expected_tracks = {
+              'conservation_law_consistency': 6,
+              'diagnostic_socratic_questioning': 6,
+              'direct_explanation_multilingual': 6,
+              'bengali_scientific_fidelity': 4,
+              'evidence_first_general_assistance': 4,
+              'research_methodology_preservation': 4,
+          }
+          records=[]
+          for path in shards:
+              assert path.is_file(), path
+              for line in path.read_text(encoding='utf-8').splitlines():
+                  if line.strip(): records.append(json.loads(line))
+          assert len(records)==30, len(records)
+          counts={k:0 for k in expected_tracks}
+          required={'id','track','domain','language','rejection_reason','prompt','chosen','rejected','metadata'}
+          for r in records:
+              assert required <= set(r), r.get('id')
+              assert r['id'].startswith('paul_dpo_v4_')
+              assert r['track'] in expected_tracks, r['track']
+              counts[r['track']]+=1
+              assert r['prompt'].strip() and r['chosen'].strip() and r['rejected'].strip()
+              assert r['chosen'] != r['rejected']
+              m=r['metadata']
+              assert m.get('source')=='post_h5_p9_authored'
+              assert m.get('human_verified') is False
+              assert m.get('benchmark_leakage_checked') is False
+              assert m.get('difficulty')
+              assert m.get('corrective_category')
+          assert counts==expected_tracks, counts
+          for key in ('id','prompt','chosen','rejected'):
+              vals=[r[key] for r in records]
+              assert len(vals)==len(set(vals)), f'duplicate {key}'
+
+          comparison=[]
+          for p in ('data/h4_dhe_pilot_v1.jsonl','data/h5_dhe_v3_pilot_v1.jsonl','data/train/dpo_train.jsonl','data/train/dpo_v2_corrective.jsonl'):
+              path=Path(p)
+              if path.is_file():
+                  comparison += [(p,json.loads(x)) for x in path.read_text(encoding='utf-8').splitlines() if x.strip()]
+          for path in sorted(Path('data/train/dpo_v3').glob('*.jsonl')):
+              comparison += [(str(path),json.loads(x)) for x in path.read_text(encoding='utf-8').splitlines() if x.strip()]
+
+          prior_prompts={r.get('prompt','') for _,r in comparison}
+          prior_chosen={r.get('chosen','') for _,r in comparison if r.get('chosen')}
+          prior_rejected={r.get('rejected','') for _,r in comparison if r.get('rejected')}
+          assert not {r['prompt'] for r in records}.intersection(prior_prompts), 'exact prior prompt reuse'
+          assert not {r['chosen'] for r in records}.intersection(prior_chosen|prior_rejected), 'exact prior completion reuse'
+          assert not {r['rejected'] for r in records}.intersection(prior_chosen|prior_rejected), 'exact prior completion reuse'
+
+          def toks(s): return set(re.findall(r'\w+', s.lower(), flags=re.UNICODE))
+          max_pair=(0.0,None,None)
+          for c in records:
+              a=toks(c['prompt'])
+              for source,p in comparison:
+                  b=toks(p.get('prompt','')); u=a|b
+                  score=len(a&b)/len(u) if u else 0.0
+                  if score>max_pair[0]: max_pair=(score,c['id'],source)
+          assert max_pair[0] < 0.35, f'near-duplicate guard failed: {max_pair}'
+
+          payload=''.join(json.dumps(r,ensure_ascii=False,sort_keys=True)+'\n' for r in records)
+          out=Path('/tmp/dpo_v4_corrective.jsonl')
+          out.write_text(payload,encoding='utf-8')
+          digest=hashlib.sha256(payload.encode('utf-8')).hexdigest()
+          expected='0e42bf37f13a3a2a42fa4cfb82682d3953bbcc0d5561ce13d70a30818d3625ab'
+          assert digest==expected, (digest,expected)
+          Path('/tmp/p10_machine_summary.json').write_text(json.dumps({
+              'status':'PASS','records':len(records),'track_counts':counts,
+              'max_prior_prompt_token_jaccard':max_pair[0],
+              'max_prior_prompt_pair':[max_pair[1],max_pair[2]],
+              'dataset_sha256':digest,
+              'h4_h5_raw_response_text_accessed':False,
+              'shae_material_accessed':False,
+          },indent=2,sort_keys=True)+'\n')
+          print(Path('/tmp/p10_machine_summary.json').read_text())
+          PY
+
+      - name: Run canonical benchmark leakage checker
+        run: |
+          uv run python scripts/check_leakage.py /tmp/dpo_v4_corrective.jsonl --json-output /tmp/dpo_v4_leakage_report.json --verbose
+
+      - name: Install Gemini CLI for independent non-human audit
+        run: npm install -g @google/gemini-cli
+
+      - name: Independent preference, factuality, and language audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GEMINI_API_KEY"
+          python - <<'PY'
+          from pathlib import Path
+          data=Path('/tmp/dpo_v4_corrective.jsonl').read_text(encoding='utf-8')
+          prompt='''You are an independent reviewer for a frozen development-only DPO preference dataset. Do not edit the data. Review every record conservatively. For each record check: (1) chosen is clearly preferable to rejected for the prompt and declared rejection_reason; (2) factual/scientific/research-methodological correctness where applicable; (3) natural and intelligible language for the declared language, including Hindi, Bengali, Spanish and French; (4) no chosen response appears incomplete relative to the prompt. Return ONLY valid JSON, no markdown, with this schema: {"overall_pass": boolean, "records": [{"id": string, "preference_direction_pass": boolean, "factual_pass": boolean, "language_pass": boolean, "completion_pass": boolean, "notes": string}], "summary": string}. overall_pass may be true only if all four booleans are true for all 30 records. Do not treat deliberately flawed rejected answers as defects in the chosen answer.\n\nDATASET:\n'''+data
+          Path('/tmp/p10_gemini_prompt.txt').write_text(prompt,encoding='utf-8')
+          PY
+          gemini -p "$(cat /tmp/p10_gemini_prompt.txt)" > /tmp/p10_gemini_raw.txt
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          raw=Path('/tmp/p10_gemini_raw.txt').read_text(encoding='utf-8').strip()
+          if raw.startswith('```'):
+              raw=re.sub(r'^```(?:json)?\s*','',raw)
+              raw=re.sub(r'\s*```$','',raw)
+          obj=json.loads(raw)
+          rows=obj.get('records',[])
+          assert len(rows)==30, len(rows)
+          ids=[r.get('id') for r in rows]
+          assert len(ids)==len(set(ids))==30
+          fields=('preference_direction_pass','factual_pass','language_pass','completion_pass')
+          failures=[]
+          for r in rows:
+              if not all(r.get(k) is True for k in fields): failures.append(r)
+          assert obj.get('overall_pass') is True and not failures, failures
+          Path('/tmp/p10_independent_audit.json').write_text(json.dumps(obj,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
+          print(json.dumps({'status':'PASS','records':30,'review':'independent_non_human'}))
+          PY
+
+      - name: Upload P10 audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: dpo-v4-p10-audit-evidence
+          path: |
+            /tmp/p10_machine_summary.json
+            /tmp/dpo_v4_leakage_report.json
+            /tmp/p10_independent_audit.json
+          if-no-files-found: error
+          retention-days: 30
