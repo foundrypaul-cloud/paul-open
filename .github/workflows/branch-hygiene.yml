@@ -1,0 +1,105 @@
+name: Branch Hygiene
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/branch-hygiene.yml'
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup-existing-stale-branches:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete audited stale branch allowlist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          branches=(
+            'automation/h4-kaggle-generation-20260911'
+            'automation/h4-p1-diagnostic-20260912'
+            'codex/authorize-kaggle-dpo-v2-training-run'
+            'docs/human-eval-reviewer-link-safety'
+            'docs/public-source-of-truth-20260910'
+            'docs/translation-eval-policy'
+            'fix/dpo-v3-kaggle-import-20260912'
+            'fix/h2-closed-message-best-effort'
+            'fix/h2-closed-message-best-effort-pr'
+            'fix/h2-closed-message-best-effort-v2'
+            'fix/h4-adaptive-form-control'
+            'fix/h5-kaggle-dataset-title-20260912'
+            'research/dpo-v3-corrective-data-20260912'
+            'research/dpo-v3-p5-h5-dhe-20260912'
+            'research/dpo-v3-training-20260912'
+            'research/h4-analysis-lock-20260912'
+            'research/h4-collection-progress-20260912'
+            'research/h4-controlled-unblind-20260912'
+            'research/h4-dhe-preparation-20260911'
+            'research/h4-p1-failure-analysis-20260912'
+            'research/h4-results-20260912'
+            'research/h4-target-reached-20260912'
+            'research/h5-generation-ready-20260912'
+            'research/human-eval-batch-builder-h1'
+            'research/human-eval-google-forms-h2'
+            'research/human-eval-one-click-sandbox-h2'
+            'research/human-eval-reviewer-durability-h2-1'
+            'research/human-eval-workflow-v1'
+            'research/p2-corrective-spec-20260912'
+            'research/post-h4-development-plan-20260912'
+            'run/dpo-v2-production-a3e97'
+            'run/dpo-v2-production-e51d46'
+            'maintenance/branch-hygiene-20260912'
+          )
+
+          for branch in "${branches[@]}"; do
+            case "$branch" in
+              main|research-freeze/*|release/*)
+                echo "Refusing to delete protected branch pattern: $branch" >&2
+                exit 1
+                ;;
+            esac
+
+            if gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${branch}" >/dev/null 2>&1; then
+              echo "Deleting stale branch: $branch"
+              gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}"
+            else
+              echo "Already absent: $branch"
+            fi
+          done
+
+          echo 'Audited stale-branch cleanup complete.'
+
+  cleanup-future-merged-pr-branch:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete merged PR head branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$HEAD_BRANCH" in
+            main|research-freeze/*|release/*)
+              echo "Preserving protected branch: $HEAD_BRANCH"
+              exit 0
+              ;;
+          esac
+
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${HEAD_BRANCH}" >/dev/null 2>&1; then
+            echo "Deleting merged PR branch: $HEAD_BRANCH"
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${HEAD_BRANCH}"
+          else
+            echo "Merged PR branch already absent: $HEAD_BRANCH"
+          fi
