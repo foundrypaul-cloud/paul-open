@@ -1,0 +1,61 @@
+name: DPO V3 Contract Verification
+
+on:
+  pull_request:
+    paths:
+      - 'configs/training/dpo_v3_e4b_corrective.yaml'
+      - 'scripts/dpo_v3_e4b_train.py'
+      - 'data/train/dpo_v3/**'
+      - '.github/workflows/dpo-v3-contract-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pyyaml
+      - name: Verify assembly, hash, and methodology preservation
+        run: |
+          python - <<'PY'
+          import copy
+          from pathlib import Path
+          import yaml
+          from scripts import dpo_v2_e4b_train as v2
+          from scripts import dpo_v3_e4b_train as v3
+
+          v3.materialize_dataset()
+          assert v3.DATASET_PATH.is_file()
+          contract=v3.install_v3_contract()
+          config=yaml.safe_load(Path(v3.CONFIG_PATH).read_text(encoding='utf-8'))
+          expected={k:contract[k] for k in ('experiment','training')}
+          assert config==expected, 'V3 YAML differs from V3 locked contract'
+
+          original=copy.deepcopy(v2.LOCKED_EXPERIMENT)
+          # v2.LOCKED_EXPERIMENT has already been replaced by install_v3_contract;
+          # reconstruct the immutable V2 contract from its canonical YAML.
+          v2_yaml=yaml.safe_load(Path('configs/training/dpo_v2_e4b_corrective.yaml').read_text())
+
+          assert config['training']['method']==v2_yaml['training']['method']=='dpo'
+          v3_dpo=copy.deepcopy(config['training']['dpo_config'])
+          v2_dpo=copy.deepcopy(v2_yaml['training']['dpo_config'])
+          assert v3_dpo.pop('output_dir')=='./results/dpo_v3_e4b_corrective'
+          assert v2_dpo.pop('output_dir')=='./results/dpo_v2_e4b_corrective'
+          assert v3_dpo==v2_dpo, 'DPO optimizer/training methodology drift detected'
+
+          allowed={'id','name','provenance','dataset_path','dataset_sha256','dataset_records'}
+          v3_exp=copy.deepcopy(config['experiment'])
+          v2_exp=copy.deepcopy(v2_yaml['experiment'])
+          for key in allowed:
+              v3_exp.pop(key); v2_exp.pop(key)
+          assert v3_exp==v2_exp, 'model/adapter/tokenizer/runtime contract drift detected'
+          print('DPO V3 CONTRACT VERIFICATION: PASS')
+          print('DATASET_SHA256='+v3.DATASET_SHA256)
+          print('DATASET_RECORDS='+str(v3.DATASET_RECORDS))
+          PY
