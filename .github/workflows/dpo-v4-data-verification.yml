@@ -109,7 +109,8 @@ jobs:
           out=Path('/tmp/dpo_v4_corrective.jsonl')
           out.write_text(payload,encoding='utf-8')
           digest=hashlib.sha256(payload.encode('utf-8')).hexdigest()
-          expected='832bd3837e4d583f00c6a1356b9561be4f517e4ce438c70619e559077fbc657f'
+          expected=Path('data/train/dpo_v4/DATASET_SHA256').read_text(encoding='utf-8').strip()
+          assert re.fullmatch(r'[0-9a-f]{64}', expected), expected
           assert digest==expected, (digest,expected)
           Path('/tmp/p10_machine_summary.json').write_text(json.dumps({
               'status':'PASS','records':len(records),'track_counts':counts,
