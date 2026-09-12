@@ -1,0 +1,111 @@
+name: H6 DHE V4 Verification
+
+on:
+  pull_request:
+    paths:
+      - 'data/h6_dhe_v4_pilot_v1.jsonl'
+      - 'configs/evaluation/h6_dhe_v4_pilot_v1.yaml'
+      - 'scripts/h6_dhe_generate.py'
+      - 'docs/DPO_V4_P11_P12_RESULTS.md'
+      - '.github/workflows/h6-dhe-v4-verification.yml'
+      - '.github/workflows/h6-dhe-v4-kaggle-generation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-h6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install repository environment
+        run: |
+          python -m pip install --upgrade uv
+          uv sync --frozen --extra eval
+      - name: Verify frozen H6 contract and development separation
+        run: |
+          uv run python - <<'PY'
+          import json, unicodedata
+          from pathlib import Path
+          import yaml
+
+          manifest=Path('data/h6_dhe_v4_pilot_v1.jsonl')
+          rows=[json.loads(x) for x in manifest.read_text(encoding='utf-8').splitlines() if x.strip()]
+          assert len(rows)==6, len(rows)
+          ids=[r['case_id'] for r in rows]
+          prompts=[r['prompt'] for r in rows]
+          assert len(ids)==len(set(ids))
+          assert len(prompts)==len(set(prompts))
+          assert all(r['partition']=='development' for r in rows)
+          assert all(r['development_exposed'] is True for r in rows)
+          assert set(r['reviewer_cohort'] for r in rows)=={'stem_capable','educator','domain_expert','bilingual'}
+          assert {r['language'] for r in rows}=={'en','hi','bn','es'}
+
+          cfg=yaml.safe_load(Path('configs/evaluation/h6_dhe_v4_pilot_v1.yaml').read_text(encoding='utf-8'))['h6_dhe_v4_pilot']
+          assert cfg['status']=='frozen_pre_generation'
+          assert cfg['partition']=='development'
+          assert cfg['generation']['max_new_tokens']==256
+          assert cfg['generation']['temperature']==0.7
+          assert cfg['generation']['top_p']==0.9
+          assert cfg['generation']['random_seed']==42
+          assert cfg['sources']['candidate']['experiment_id']=='paul_e4b_dpo_v4_corrective'
+          assert cfg['sources']['candidate']['source_revision']=='6bd98c516ed1c4c53251ba4a9bbb6507d4b9cb73'
+          assert cfg['sources']['candidate']['production_run']==34704441705
+          assert cfg['sources']['candidate']['production_artifact']==10301858693
+          assert cfg['sources']['candidate']['adapter_config_sha256']=='8e601627e6c9a256ed37acffb747c64e675f176ef92950470c6e85f7f09f146e'
+          assert cfg['sources']['candidate']['adapter_weights_sha256']=='773116e424401dc7009421616c303a0688ce2f1bc7191f2d61b715a447f44b8b'
+
+          comparison=[]
+          def add_jsonl(source,path,id_key='case_id'):
+              p=Path(path)
+              if not p.is_file(): return
+              for line in p.read_text(encoding='utf-8').splitlines():
+                  if line.strip():
+                      r=json.loads(line); comparison.append((source,r.get(id_key,r.get('id','?')),r['prompt']))
+
+          add_jsonl('h4','data/h4_dhe_pilot_v1.jsonl')
+          add_jsonl('h5','data/h5_dhe_v3_pilot_v1.jsonl')
+          add_jsonl('dpo_v1_train','data/train/dpo_train.jsonl','id')
+          add_jsonl('dpo_v2_train','data/train/dpo_v2_corrective.jsonl','id')
+          for shard in sorted(Path('data/train/dpo_v3').glob('*.jsonl')):
+              add_jsonl('dpo_v3_train',str(shard),'id')
+          for shard in sorted(Path('data/train/dpo_v4').glob('*.jsonl')):
+              add_jsonl('dpo_v4_train',str(shard),'id')
+
+          forbidden_exact={q for _,_,q in comparison}
+          assert not set(prompts).intersection(forbidden_exact), 'exact H4/H5/prior-DPO/V4-training prompt reuse'
+
+          def toks(text):
+              # Group Unicode letters/numbers plus combining marks into words.
+              # Python re `\w+` fragments Indic grapheme clusters and inflates overlap.
+              text=unicodedata.normalize('NFKC',text).casefold()
+              tokens=[]; current=[]
+              for ch in text:
+                  category=unicodedata.category(ch)
+                  if category[0] in {'L','N','M'} or ch=='_':
+                      current.append(ch)
+                  elif current:
+                      tokens.append(''.join(current)); current=[]
+              if current: tokens.append(''.join(current))
+              return set(tokens)
+
+          best=(0.0,None,None,None)
+          for r in rows:
+              a=toks(r['prompt'])
+              for source,other_id,q in comparison:
+                  b=toks(q); u=a|b
+                  score=len(a&b)/len(u) if u else 0.0
+                  if score>best[0]: best=(score,r['case_id'],source,other_id)
+          assert best[0] < 0.35, f'development overlap too high: {best}'
+          print(json.dumps({'cases':len(rows),'tokenizer':'unicode_letter_mark_word_v1','max_development_token_jaccard':best[0],'nearest_pair':best[1:]},sort_keys=True))
+          PY
+      - name: Run canonical benchmark leakage checker
+        run: |
+          uv run python scripts/check_leakage.py data/h6_dhe_v4_pilot_v1.jsonl --json-output /tmp/h6_baseline_leakage_report.json --verbose
+      - name: Verify H6 generation entry point imports
+        run: |
+          uv run python scripts/h6_dhe_generate.py --help >/dev/null
