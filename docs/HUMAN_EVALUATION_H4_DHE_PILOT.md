@@ -1,6 +1,6 @@
 # PAUL Open Human Evaluation — H4 DHE Pilot
 
-**Status:** preparation only  
+**Status:** collecting  
 **Stage:** H4 — Development Human Evaluation (DHE)  
 **Protocol:** `docs/HUMAN_EVALUATION_WORKFLOW.md` + `configs/evaluation/human_eval_v1.yaml`  
 **Precondition:** H3 formally accepted on 2026-09-11
@@ -177,6 +177,12 @@ Preparation is complete only when all of the following are true:
 
 Only then may H4 collection move to `COLLECTING`.
 
+## Accessibility finding
+
+During H4 collection, a reviewer identified that the text-only Google Forms experience is not sufficiently self-evident for evaluators with poor or no vision. Future evaluator-interface work should explicitly preserve keyboard and screen-reader compatibility and evaluate multilingual text-to-speech assistance without making TTS the sole accessibility path.
+
+This is a DHE interface finding for future iterations; do not modify the active H4 forms in a way that changes this collection round after distribution.
+
 ## Current boundary
 
-As of 2026-09-11, H4 is in **preparation**. No H4 research responses have been collected yet, and public participation remains disabled unless a later reviewed manifest explicitly enables it.
+As of 2026-09-12, H4 is **COLLECTING**. The five eligible cases have each reached the initial three-judgment coverage target (15 judgments total). Under the frozen adaptive allocation policy, cases containing disagreement or a `not_sure` judgment escalate to five total judgments before closure. Public participation remains disabled, reviewer links remain private, and no SHAE material has been exposed.
