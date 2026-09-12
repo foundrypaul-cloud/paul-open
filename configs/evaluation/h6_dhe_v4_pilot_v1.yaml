@@ -1,5 +1,5 @@
 h6_dhe_v4_pilot:
-  version: "1.0"
+  version: "1.1"
   status: "frozen_pre_generation"
   partition: "development"
   case_manifest: "data/h6_dhe_v4_pilot_v1.jsonl"
@@ -27,16 +27,20 @@ h6_dhe_v4_pilot:
 
   generation:
     matched_between_sources: true
-    max_new_tokens: 256
+    max_new_tokens: 768
+    require_eos_before_limit: true
     temperature: 0.7
     top_p: 0.9
     random_seed: 42
     chat_template: "tokenizer_apply_chat_template"
     add_generation_prompt: true
     notes: >-
-      Match the established H4/H5 DHE generation settings exactly. Both checkpoints
-      use identical prompt text, tokenizer/chat formatting, generation settings,
-      base-model revision, and runtime generation path.
+      Audit amendment 2026-09-13: the initial 256-token H6 generation produced
+      reviewer-visible mid-sentence truncation in multiple cases. Both checkpoints
+      therefore use the same enlarged 768-token ceiling and a fail-closed gate that
+      rejects any generation that reaches the ceiling without EOS. Model/adapters,
+      prompts, tokenizer/chat formatting, sampling settings, base-model revision,
+      and runtime generation path remain unchanged.
 
   required_outputs:
     reference_jsonl: "outputs/h6_dhe/private/sft_reference.jsonl"
@@ -50,6 +54,7 @@ h6_dhe_v4_pilot:
   pre_form_gates:
     - "generation_completed"
     - "nonempty_output"
+    - "no_generation_truncation_gate"
     - "automated_safety_gate"
     - "malformed_output_gate"
     - "evaluation_partition_integrity"

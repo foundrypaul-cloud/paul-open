@@ -90,6 +90,8 @@ def generate_source(
     gate_details: list[dict[str, Any]] = []
     expected_scripts = {"hi": "Devanagari", "bn": "Bengali", "es": "Latin"}
     start = time.time()
+    max_new_tokens = int(generation["max_new_tokens"])
+    require_eos_before_limit = bool(generation.get("require_eos_before_limit", False))
 
     for index, row in enumerate(rows):
         seed = int(generation["random_seed"]) + index
@@ -98,18 +100,31 @@ def generate_source(
         messages = [{"role": "user", "content": row["prompt"]}]
         rendered = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = tokenizer(rendered, return_tensors="pt").to(model.device)
+        input_length = inputs["input_ids"].shape[-1]
         with torch.no_grad():
             generated = model.generate(
                 **inputs,
-                max_new_tokens=int(generation["max_new_tokens"]),
+                max_new_tokens=max_new_tokens,
                 do_sample=True,
                 temperature=float(generation["temperature"]),
                 top_p=float(generation["top_p"]),
                 pad_token_id=tokenizer.eos_token_id,
             )
-        response = tokenizer.decode(
-            generated[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True
-        ).strip()
+        new_token_ids = generated[0][input_length:]
+        generated_token_count = int(new_token_ids.shape[-1])
+        ended_with_eos = bool(
+            generated_token_count > 0
+            and tokenizer.eos_token_id is not None
+            and int(new_token_ids[-1].item()) == int(tokenizer.eos_token_id)
+        )
+        hit_token_limit = generated_token_count >= max_new_tokens
+        if require_eos_before_limit and hit_token_limit and not ended_with_eos:
+            raise RuntimeError(
+                f"{row['case_id']}: generation truncation gate failed; "
+                f"reached max_new_tokens={max_new_tokens} without EOS"
+            )
+
+        response = tokenizer.decode(new_token_ids, skip_special_tokens=True).strip()
         if not response:
             raise RuntimeError(f"{row['case_id']}: empty generation")
         if "Traceback (most recent call last)" in response:
@@ -138,6 +153,11 @@ def generate_source(
             "case_id": row["case_id"],
             "nonempty": True,
             "malformed": False,
+            "no_generation_truncation": "PASS",
+            "generated_token_count": generated_token_count,
+            "max_new_tokens": max_new_tokens,
+            "hit_token_limit": hit_token_limit,
+            "ended_with_eos": ended_with_eos,
             "anti_anthropomorphism_safety": "PASS",
             "detected_script": script,
             "expected_script": expected_script,
@@ -236,6 +256,7 @@ def main() -> None:
         "gates": {
             "generation_completed": "PASS",
             "nonempty_output": "PASS",
+            "no_generation_truncation_gate": "PASS",
             "automated_safety_gate": "PASS",
             "malformed_output_gate": "PASS",
             "evaluation_partition_integrity": "PASS",
