@@ -1,0 +1,69 @@
+name: Materialize H5 Forms Payload
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/materialize-h5-forms-payload.yml'
+      - 'scripts/materialize_h5_forms_payload.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact main revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download frozen reviewer-safe H5 artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: '10297811566'
+          EXPECTED_ARTIFACT_SHA256: '19ec31d93516f312fa339aa8e1a4e287ef1c4b1c9d36a8a50aff950905423f54'
+        run: |
+          set -euo pipefail
+          curl -L --fail \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+            -o /tmp/h5-reviewer-safe.zip
+          actual="$(sha256sum /tmp/h5-reviewer-safe.zip | awk '{print $1}')"
+          test "${actual}" = "${EXPECTED_ARTIFACT_SHA256}"
+          rm -rf /tmp/h5-reviewer-safe
+          mkdir -p /tmp/h5-reviewer-safe
+          unzip -q /tmp/h5-reviewer-safe.zip -d /tmp/h5-reviewer-safe
+          test -f /tmp/h5-reviewer-safe/reviewer_bundle/variant_v01.json
+          test -f /tmp/h5-reviewer-safe/reviewer_bundle/variant_v02.json
+
+      - name: Generate exact reviewer-safe Apps Script payload
+        run: |
+          set -euo pipefail
+          python scripts/materialize_h5_forms_payload.py \
+            /tmp/h5-reviewer-safe/reviewer_bundle \
+            tools/google_forms/H5Payload.gs
+
+          grep -q 'HEB1-64CDCC9521D3' tools/google_forms/H5Payload.gs
+          grep -q 'function createPaulHumanEvalH5Forms()' tools/google_forms/H5Payload.gs
+          ! grep -Eq 'sft_reference|dpo_v3_corrective|private_mapping|source_label' tools/google_forms/H5Payload.gs
+
+          cp tools/google_forms/H5Payload.gs /tmp/H5Payload.js
+          node --check /tmp/H5Payload.js
+
+      - name: Commit reviewer-safe payload to main
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- tools/google_forms/H5Payload.gs && git ls-files --error-unmatch tools/google_forms/H5Payload.gs >/dev/null 2>&1; then
+            echo 'H5Payload.gs already materialized; nothing to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tools/google_forms/H5Payload.gs
+          git commit -m 'research: materialize blinded H5 Forms payload'
+          git push origin HEAD:main
