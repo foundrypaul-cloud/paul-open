@@ -25,7 +25,7 @@ The six source shards live under `data/train/dpo_v5/` and are assembled determin
 
 Frozen assembled SHA-256:
 
-`634a507ffc63e731f48887f8a471bf08807ca94b600ad88d703ccfd9875ce364`
+`bc45c98470198d284cc97fe4a704f6ec42cf4ed80b7d2e68c3c93468b2260ee2`
 
 Total records: **30**.
 
