@@ -4,166 +4,144 @@
 **Public research repository:** `foundrypaul-cloud/paul-open`  
 **Public website:** https://open.paulfoundry.com/
 
-This document is the concise public status layer for the repository. Detailed historical evidence remains in the experiment-specific documents and immutable artifacts.
+This document is the concise public status layer. Detailed evidence remains in experiment-specific documents and immutable artifacts.
 
 ## Current position
 
-PAUL Open has completed the H4 Development Human Evaluation (DHE) pilot for the frozen SFT reference checkpoint versus DPO V2 Corrective on `google/gemma-4-E4B-it`.
+PAUL Open has completed a full post-H4 development cycle through DPO V3 Corrective and the fresh H5 Development Human Evaluation (DHE).
 
 The current research conclusion is:
 
-> **SFT remains the safer reference checkpoint. DPO V2 Corrective is technically valid and shows meaningful positive signals in some H4 strata, but H4 is mixed and does not establish broad superiority. DPO V2 is not promoted over SFT on H4 evidence alone.**
+> **SFT remains the reference checkpoint. DPO V3 Corrective is technically valid and produced positive fresh H5 signals in Bengali, General and Research, but H5 tied SFT overall and failed the pre-specified STEM/Hindi preservation objective. DPO V3 is therefore not promoted or frozen for SHAE.**
 
-H2 infrastructure, H3 UX/durability, and H4 DHE are complete. SHAE remains sealed and has not started.
+SHAE remains sealed and has not started.
 
-## Step 2 — DPO V2 Corrective
+## Experiment lineage
 
-Immutable experiment freeze:
+### DPO V2 Corrective
+
+The immutable Step-2 freeze remains:
 
 - branch: `research-freeze/step2-dpo-v2-20260909`
 - SHA: `ac899e879f930f25b2081550bd8c5dd5c983df35`
 
-The final DPO V2 production run established technical validity, including:
+DPO V2 was technically valid but H4 was mixed, so SFT remained the reference.
 
-- 14-record corrective preference dataset;
-- two-GPU policy/reference topology on Tesla T4;
-- 4-bit NF4 base models;
-- 516 / 516 intended trainable tensors changed;
-- optimizer/placement/reference gates passed;
-- external-reference mathematical equivalence passed at the validated boundary;
-- final train loss `0.687744140625`;
-- runtime `238.58 s`.
+### Post-H4 development
 
-See [`E4B_DPO_V2_CORRECTIVE.md`](E4B_DPO_V2_CORRECTIVE.md).
+The repository then completed:
 
-## Earlier behavioral evidence
+- **P1:** H4 response-level failure analysis;
+- **P2:** corrective-data specification;
+- **P3:** 30-pair audited DPO V3 corrective dataset;
+- **P4:** DPO V3 training with the validated DPO V2 methodology;
+- **P5:** automated technical, contamination and regression gates;
+- **P6/H5:** fresh blinded DHE against SFT.
 
-The existing 50-case SFT-vs-DPO V2 comparison remains **diagnostic only** because DPO V2 source material overlaps the canonical suite at exact, content, template, and concept levels.
+The final DPO V3 corrective dataset SHA-256 is `5ce4a82f32827a07f339d2b8c437dc4b45ec3f60ac9f5d50f165ea308369c741`.
 
-Its heuristic aggregate therefore is not clean held-out evidence and cannot establish superiority.
+## H4 — completed development evidence
 
-See [`EXPERIMENT_JOURNEY_E4B.md`](EXPERIMENT_JOURNEY_E4B.md).
+H4 compared DPO V2 Corrective with SFT on five eligible development cases and 21 judgments. Aggregate result: DPO V2 7, SFT 9, about equal 2, neither 0, not sure 3. DPO V2 won the STEM and Hindi case majorities; SFT won General, Educator and Bengali. Decision: mixed, no promotion.
 
-## Human evaluation milestones
+See [`H4_DHE_PILOT_V1_RESULTS.md`](H4_DHE_PILOT_V1_RESULTS.md).
 
-### H2 — complete
+## H5 — completed fresh DHE for DPO V3
 
-H2 formally validated the live Google Forms infrastructure, linked raw responses, normalized rows, independent backup ledgers, checksums, idempotent recovery, and desktop/mobile opening. H2 is infrastructure evidence, not model-preference evidence.
+Batch: `HEB1-64CDCC9521D3`
 
-### H3 — complete
+- eligible fresh cases: 6
+- complementary blinded forms: 12
+- frozen initial judgments: 18
+- adaptive follow-up judgments: 0
+- final judgments: **18**
+- collection closed: yes
+- durability audit: PASS
+- blinded analysis lock: committed before unblinding
+- controlled unblinding: PASS
 
-H3 validated the trusted-reviewer UX and durability path using disposable non-research material. It passed the frozen acceptance criteria before H4 opened.
+All six cases were unanimous 3/3 after complementary display-swap normalization, so the frozen 3→5 adaptive rule was not triggered.
 
-### H4 — DHE complete; decision recorded
-
-Batch: `HEB1-E928B35C90D7`
-
-- source cases: 6
-- eligible cases: 5
-- identical pair excluded: 1
-- complementary reviewer-facing forms: 10
-- initial judgments: 15
-- adaptive follow-up judgments: 6
-- final judgments: **21**
-
-Final case reviewer totals:
-
-- General: 3
-- STEM: 5
-- Educator: 5
-- Hindi: 3
-- Bengali: 5
-
-The response-durability audit passed before unblinding: 21 raw responses, 21 normalized response IDs, and 21 matching independent backup-ledger IDs, with SHA-256 and backup-write timestamps present for every response.
-
-The judgment set was analysis-locked before the private A/B mapping was read. Controlled unblinding used the private mapping retained in the private Kaggle generation output; the private mapping itself is not committed.
-
-### H4 aggregate result
+### H5 aggregate result
 
 | Outcome | Count |
 |---|---:|
-| DPO V2 preferred | 7 |
+| DPO V3 preferred | 9 |
 | SFT preferred | 9 |
-| About equal | 2 |
+| About equal | 0 |
 | Neither good | 0 |
-| Not sure / unable to judge | 3 |
+| Not sure / unable to judge | 0 |
 
-Among 16 decisive preference judgments, DPO V2 received **43.75%** and SFT **56.25%**.
+Case results:
 
-Case majorities:
-
-- General — SFT
-- STEM — DPO V2
+- STEM — SFT
 - Educator — SFT
-- Hindi — DPO V2
-- Bengali — SFT
+- Research — DPO V3
+- Hindi — SFT
+- Bengali — DPO V3
+- General — DPO V3
 
-SFT wins 3 of 5 case majorities; DPO V2 wins 2 of 5. Mean descriptive modal-choice agreement is 80%.
+Case-majority split: **3 DPO V3 / 3 SFT**. Mean modal-choice agreement: **100%**.
 
-A cluster bootstrap over the five cases produces wide intervals, as expected for such a small DHE pilot. H4 therefore remains diagnostic/development evidence rather than a superiority study.
+The controlled-unblinding workflow exposed only a safe aggregate. The private A/B mapping, randomization seed, fingerprints and private case identifiers remain outside the public repository.
 
 See:
 
-- [`H4_DHE_PILOT_V1_ANALYSIS_LOCK.md`](H4_DHE_PILOT_V1_ANALYSIS_LOCK.md)
-- [`H4_DHE_PILOT_V1_RESULTS.md`](H4_DHE_PILOT_V1_RESULTS.md)
-- [`HUMAN_EVALUATION_H4_DHE_PILOT.md`](HUMAN_EVALUATION_H4_DHE_PILOT.md)
+- [`H5_DHE_V3_PILOT.md`](H5_DHE_V3_PILOT.md)
+- [`H5_DHE_V3_PILOT_V1_ANALYSIS_LOCK.md`](H5_DHE_V3_PILOT_V1_ANALYSIS_LOCK.md)
+- [`H5_DHE_V3_PILOT_V1_RESULTS.md`](H5_DHE_V3_PILOT_V1_RESULTS.md)
 
-## H4 decision
+## H5 decision
 
-**Mixed; no DPO V2 promotion.**
+**Mixed; no DPO V3 promotion. Preservation objective failed.**
 
-SFT remains the reference checkpoint. DPO V2 remains a valid experimental checkpoint with positive STEM and Hindi signals, while General, Educator, and Bengali are development areas for diagnosis.
+The post-H4 plan explicitly designated STEM and Hindi as preservation strata. Both fresh H5 cases favored SFT unanimously. Although DPO V3 won Bengali, General and Research, the aggregate 9–9 tie does not satisfy the pre-specified preservation requirement. Educator also remains a reference win.
 
-The H4 accessibility finding is also retained: future evaluator-interface work should preserve keyboard/screen-reader compatibility and evaluate optional multilingual text-to-speech assistance.
+Therefore:
 
-## Immediate next research steps
+- SFT remains the reference checkpoint;
+- DPO V2 and DPO V3 remain immutable experimental checkpoints;
+- DPO V3 is not frozen for SHAE;
+- SHAE remains sealed;
+- H4 and H5 remain development evidence only.
 
-H4 itself has no remaining blocker. The next work should be explicitly chosen as one of two paths:
+## Immediate next research step
 
-1. **DHE follow-up/model development:** use H4 findings to diagnose and improve the experimental checkpoint, with new development material and a new evaluation cycle; or
-2. **future assurance preparation:** freeze a future candidate first, then separately design SHAE without exposing or contaminating sealed assurance material.
+The next authorized work is **post-H5 diagnosis**, not DPO V4 training.
 
-Do not start SHAE merely because H4 is complete. SHAE requires its own frozen-candidate and sealed-assurance boundary.
+`POST_H5_DEVELOPMENT_PLAN.md` requires response-level analysis of the H5 STEM, Educator and Hindi losses while using Bengali, General and Research as preservation controls. Only if that diagnosis identifies actionable behavior classes may a new corrective-data specification be created and separately audited before any new training run.
 
-## Public website state
-
-The website is a presentation layer, not a second research database. It should consume:
-
-- [`../public/research-status.json`](../public/research-status.json)
-- [`../public/human-evaluation.json`](../public/human-evaluation.json)
-
-No public human-evaluation round is accepting responses. Reviewer links, response sheets, private A/B maps, and SHAE material must remain non-public.
+See [`POST_H5_DEVELOPMENT_PLAN.md`](POST_H5_DEVELOPMENT_PLAN.md).
 
 ## Claim boundary
 
 ### Supported
 
-- DPO V2 is technically valid;
-- the earlier 50-case comparison is contaminated and diagnostic;
-- H2, H3, and H4 are complete;
-- H4 DHE produced 21 judgments across five eligible development cases;
-- H4 aggregate result was 7 DPO-preferred, 9 SFT-preferred, 2 equal, 0 neither, 3 unable-to-judge;
-- DPO V2 won the STEM and Hindi H4 case majorities;
-- SFT won General, Educator, and Bengali;
-- H4 result is mixed and no DPO V2 promotion was made;
-- SFT remains the safer reference checkpoint.
+- DPO V2 and DPO V3 are technically valid experimental checkpoints;
+- H4 and H5 DHE are complete;
+- H5 collected 18 judgments across six fresh development cases;
+- H5 result was 9 DPO V3 preferences and 9 SFT preferences;
+- DPO V3 won Bengali, General and Research H5 cases;
+- SFT won STEM, Educator and Hindi H5 cases;
+- DPO V3 failed the pre-specified STEM/Hindi preservation objective;
+- DPO V3 was not promoted;
+- SFT remains the reference checkpoint;
+- SHAE remains sealed.
 
 ### Not supported
 
-- DPO V2 is broadly superior to SFT;
-- H4 is final assurance;
-- the earlier contaminated 50-case delta proves overall progress or regression;
+- DPO V3 is broadly superior to SFT;
+- the 9–9 H5 result establishes equivalence;
+- six unanimous cases establish domain-wide behavior;
+- H5 is final assurance;
 - SHAE has started or passed;
-- H4 development cases can later be reclassified as untouched assurance evidence.
+- H4/H5 cases can later be treated as untouched assurance evidence.
 
-## Canonical detail documents
+## Public website state
 
-- [`EXPERIMENT_JOURNEY_E4B.md`](EXPERIMENT_JOURNEY_E4B.md)
-- [`E4B_DPO_V2_CORRECTIVE.md`](E4B_DPO_V2_CORRECTIVE.md)
-- [`HUMAN_EVALUATION_PROTOCOL.md`](HUMAN_EVALUATION_PROTOCOL.md)
-- [`HUMAN_EVALUATION_H2_SANDBOX.md`](HUMAN_EVALUATION_H2_SANDBOX.md)
-- [`HUMAN_EVALUATION_H3_PILOT.md`](HUMAN_EVALUATION_H3_PILOT.md)
-- [`HUMAN_EVALUATION_H4_DHE_PILOT.md`](HUMAN_EVALUATION_H4_DHE_PILOT.md)
-- [`H4_DHE_PILOT_V1_ANALYSIS_LOCK.md`](H4_DHE_PILOT_V1_ANALYSIS_LOCK.md)
-- [`H4_DHE_PILOT_V1_RESULTS.md`](H4_DHE_PILOT_V1_RESULTS.md)
-- [`HUMAN_EVALUATION_WORKFLOW.md`](HUMAN_EVALUATION_WORKFLOW.md)
+The website is a presentation layer and should consume:
+
+- [`../public/research-status.json`](../public/research-status.json)
+- [`../public/human-evaluation.json`](../public/human-evaluation.json)
+
+No public human-evaluation round is accepting responses. Reviewer links, response sheets, private A/B mappings and SHAE material remain non-public.
