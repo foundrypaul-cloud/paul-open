@@ -1,0 +1,58 @@
+experiment:
+  id: paul_e4b_dpo_v3_corrective
+  name: PAUL Open E4B DPO V3 Corrective
+  provenance: POST-H4 P1/P2/P3 DEVELOPMENT CANDIDATE — DPO V2 METHODOLOGY PRESERVED
+  model_id: google/gemma-4-E4B-it
+  model_revision: ee0ef6023621cff504d758262d4e04895a5af4a2
+  dataset_path: data/train/dpo_v3_corrective.jsonl
+  dataset_sha256: 5ce4a82f32827a07f339d2b8c437dc4b45ec3f60ac9f5d50f165ea308369c741
+  dataset_records: 30
+  adapter_source: paulfoundry/paul-open-sft
+  adapter:
+    config_sha256: cff65bd42928536886168b09d9b133b25ac444c01d901d2a56d98c7b8b03a0ce
+    weights_sha256: 73bab121009e2130f387b5deebfe1d15f4f7ac2afbd622164b11b3024000ec49
+    base_model_name_or_path: google/gemma-4-E4B-it
+    peft_type: LORA
+    task_type: CAUSAL_LM
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.05
+    bias: none
+    modules_to_save: null
+    target_module_suffixes: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  tokenizer:
+    tokenizer_json_sha256: cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f
+    chat_template_sha256: 0a2c8073c878ab1da004bee933a998606537bbb62016310352c7285c3f01c5b5
+    expected_max_formatted_length: 349
+  runtime:
+    transformers_version: 5.15.0
+    trl_version: 1.10.0
+    peft_version: 0.20.0
+    accelerate_version: 1.14.0
+    bitsandbytes_version: 0.50.1
+    policy_device: 0
+    reference_device: 1
+    required_gpu_count: 2
+    required_gpu_name: Tesla T4
+training:
+  method: dpo
+  dpo_config:
+    output_dir: ./results/dpo_v3_e4b_corrective
+    num_train_epochs: 4
+    per_device_train_batch_size: 1
+    gradient_accumulation_steps: 8
+    learning_rate: 5.0e-7
+    beta: 0.1
+    max_length: 4096
+    bf16: false
+    fp16: true
+    gradient_checkpointing: true
+    optim: paged_adamw_8bit
+    seed: 42
+    report_to: none
+    logging_steps: 1
+    save_strategy: epoch
+    save_total_limit: 1
+    loss_type: sigmoid
+    precompute_ref_log_probs: false
+    sync_ref_model: false
