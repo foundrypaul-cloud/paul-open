@@ -25,7 +25,7 @@ The six source shards live under `data/train/dpo_v5/` and are assembled determin
 
 Frozen assembled SHA-256:
 
-`bc45c98470198d284cc97fe4a704f6ec42cf4ed80b7d2e68c3c93468b2260ee2`
+`1584705bf332137ade1ee24873e5d463653a2b26e26c63f6dc9c87515618bbd4`
 
 Total records: **30**.
 
@@ -63,7 +63,7 @@ Training is blocked until all gates pass:
 1. valid JSONL/schema, exact 30-record allocation, unique IDs/prompts/completions;
 2. frozen assembled SHA-256 match;
 3. no exact prior prompt or completion reuse;
-4. prompt near-duplicate guard against H4, H5, H6, DPO V1/V2/V3/V4;
+4. prompt near-duplicate guard against H4, H5, H6, DPO V1/V2/V3/V4 using the established `unicode_letter_mark_word_v1` tokenizer and an exclusive 0.35 Jaccard threshold;
 5. canonical benchmark leakage checker PASS;
 6. independent preference-direction audit PASS for all records;
 7. independent factual/methodological audit PASS for all records;
