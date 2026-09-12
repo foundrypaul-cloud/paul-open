@@ -11,7 +11,7 @@
 
 The first H6 reviewer bundle passed contamination, blinding, counterbalancing, and basic generation gates, but it is **not admissible for human preference collection**. A post-generation form audit found that the 256-token generation ceiling produced reviewer-visible truncation in multiple model outputs, and the direct Google Forms API construction path did not reproduce the H5 durability/normalization/auto-close controls.
 
-The 12 first-pass H6 forms were therefore paused and are retired from research collection. Any accidental/test submission to those forms is inadmissible and must not enter H6 analysis.
+The 12 first-pass H6 forms were therefore unpublished and retired from research collection. Any accidental/test submission to those forms is inadmissible and must not enter H6 analysis.
 
 No model training methodology, checkpoint, adapter, prompt set, or source mapping is changed by this audit amendment.
 
@@ -102,25 +102,12 @@ The following are not blockers on their own, but should be locked before collect
 
 - Progress bar, response editing, response summary, submit-another-response behavior and confirmation message should be explicitly controlled through the Apps Script runtime rather than left to defaults.
 - The protocol recommends sparse quality-control items (~20% of forms). If controls are used in H6, they must be clearly marked non-research internally and excluded from model preference statistics.
-- A public/reviewer-safe form manifest should map `form_id → batch_id → comparison_id → variant_id → target_count` without containing private source identity.
-- The private source map must remain outside the public repository until controlled unblinding.
+- Form IDs, respondent URLs, Sheet IDs and private A/B source mappings remain operational/private data and must not be committed to the public repository.
+- A private operational manifest should map `form_id → batch_id → comparison_id → variant_id → target_count` while the public repository retains only non-sensitive batch metadata permitted by policy.
 
 ## Retired first-pass form set
 
-The following form IDs are audit-retired and must not be reused for H6 research collection:
-
-- STEM A: `1UQyXPw0LHTm7ZAJ9xdsaiuiDJAXKFmEWUaCQXjeKNNk`
-- STEM B: `1v5HWQggEfWPqUgy9pwqKQ5hJJqcyrJALaoxht2NiGlA`
-- Educator A: `1RQIcj2yoGHEGb1xMrn7Cuu9Tiiyu9jmO_SQv8bsSMFw`
-- Educator B: `1r8-uhuSYu0D1D57sJMyidNVGpxWWnipaZB8LGB4tzlc`
-- Research A: `1A0BGWQwUlb-OnADYtPgr14XzX37lGnPCb9ZrBZqNjSo`
-- Research B: `1c-CDt66lvvPcepUI4ksDCyiPCeGz_gYx2lOU6JEX0PE`
-- Hindi A: `1eLO_3I3mCb18xHuVShTGwQ69fKOiHRdV_8ikp9iucMc`
-- Hindi B: `1HQdXGxdXTxqITCcRy5dnexOR9F4Wxg_69sPnfmz8rRU`
-- Bengali A: `1xmf5HdVmwhoEgIuuTUBHVDoK4FICHQRxXDk5yHHZ5sw`
-- Bengali B: `1JVRzq3DaetWAqyS4HBG0k3m_Wl9jKReboogusfvT7d8`
-- Spanish A: `1HMUx6sD2kpaJTLboLadYGOPBbzPvmQfJr5krAy_2DdQ`
-- Spanish B: `1jRSiYbQfwvVWP6SbbXBfBg0gBw5S_bQM_kdki8k1Ri0`
+The 12 first-pass forms are unpublished and audit-retired. Their identifiers are intentionally omitted from the public repository in accordance with `docs/REVIEWER_IDENTITY_AND_RESPONSE_DURABILITY.md`. They must not be reused for H6 research collection.
 
 ## Authorization to resume collection
 
@@ -131,7 +118,7 @@ H6 human collection may resume only when all of the following are true:
 3. a fresh two-variant reviewer bundle is built;
 4. form text is checked against the fresh bundle after Markdown sanitation/localization;
 5. H5-equivalent response normalization, independent backup, target monitoring and auto-close are active;
-6. the reviewer-safe form manifest is frozen before links are distributed;
+6. the private operational form manifest is frozen before links are distributed;
 7. source identities remain blinded.
 
 Until then, H6 remains `AUDIT_HOLD` and SHAE remains sealed.
