@@ -155,12 +155,19 @@ jobs:
               raw=re.sub(r'^```(?:json)?\s*','',raw); raw=re.sub(r'\s*```$','',raw)
           obj=json.loads(raw); rows=obj.get('records',[])
           assert len(rows)==30, len(rows)
-          ids=[r.get('id') for r in rows]; assert len(ids)==len(set(ids))==30
+          ids=[r.get('id') for r in rows]
+          assert len(ids)==len(set(ids))==30
+          source_ids={json.loads(line)['id'] for line in Path('/tmp/dpo_v5_corrective.jsonl').read_text(encoding='utf-8').splitlines() if line.strip()}
+          returned_ids=set(ids)
+          assert returned_ids==source_ids, {
+              'missing_ids': sorted(source_ids-returned_ids),
+              'unexpected_ids': sorted(returned_ids-source_ids),
+          }
           fields=('preference_direction_pass','factual_pass','language_pass','completion_pass','hard_negative_pass')
           failures=[r for r in rows if not all(r.get(k) is True for k in fields)]
           assert obj.get('overall_pass') is True and not failures, failures
           Path('/tmp/v5_p10_independent_audit.json').write_text(json.dumps(obj,ensure_ascii=False,indent=2,sort_keys=True)+'\n',encoding='utf-8')
-          print(json.dumps({'status':'PASS','records':30,'review':'independent_non_human'}))
+          print(json.dumps({'status':'PASS','records':30,'exact_dataset_ids_verified':True,'review':'independent_non_human'}))
           PY
 
       - name: Upload V5 P10 audit evidence
