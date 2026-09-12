@@ -11,9 +11,9 @@
   "model_research": {
     "base_model": "google/gemma-4-E4B-it",
     "reference_checkpoint": "SFT",
-    "experimental_checkpoint": "DPO V2 Corrective",
+    "latest_experimental_checkpoint": "DPO V3 Corrective",
     "superiority_established": false,
-    "current_conclusion": "H4 DHE is complete and mixed. SFT remains the safer reference checkpoint; DPO V2 Corrective is technically valid and shows positive STEM/Hindi signals but is not established as broadly superior and is not promoted over SFT on H4 evidence alone."
+    "current_conclusion": "H5 DHE is complete and mixed. DPO V3 tied SFT 9-9 in judgments and 3-3 in case majorities. DPO V3 won Bengali, General, and Research; SFT won STEM, Educator, and Hindi. Because STEM and Hindi were pre-specified preservation strata, DPO V3 is not promoted. SFT remains the reference and SHAE remains sealed."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
@@ -21,92 +21,78 @@
     "immutable": true
   },
   "dpo_v2": {
-    "experiment_id": "paul_e4b_dpo_v2_corrective",
     "technical_validity": "pass",
-    "dataset_records": 14,
-    "train_loss": 0.687744140625,
-    "train_runtime_seconds": 238.58,
-    "behavioral_result": "mixed",
-    "promoted_over_reference": false
+    "behavioral_result": "mixed_no_promotion",
+    "immutable_experimental_checkpoint": true
   },
-  "evaluation": {
-    "current_50_case_comparison": "diagnostic_contaminated_for_dpo_v2",
-    "clean_superiority_evaluation_available": false,
-    "aggregate_score_is_sufficient_for_superiority": false,
-    "h4_dhe_complete": true,
-    "h4_dhe_is_final_assurance": false,
-    "details": "docs/EXPERIMENT_JOURNEY_E4B.md"
+  "dpo_v3": {
+    "technical_validity": "pass",
+    "dataset_records": 30,
+    "dataset_sha256": "5ce4a82f32827a07f339d2b8c437dc4b45ec3f60ac9f5d50f165ea308369c741",
+    "p5_automated_gate": "cleared_for_fresh_dhe_with_regression_flags",
+    "h5_behavioral_result": "mixed_no_promotion_preservation_failure",
+    "promoted_over_reference": false,
+    "immutable_experimental_checkpoint": true
   },
   "human_evaluation": {
-    "stage": "H4_decision_recorded",
-    "formal_acceptance": "H3_pass",
-    "h2_accepted_on": "2026-09-10",
-    "h3_accepted_on": "2026-09-11",
-    "h4_batch_id": "HEB1-E928B35C90D7",
-    "h4_partition": "development",
-    "h4_source_cases": 6,
-    "h4_eligible_cases": 5,
-    "h4_excluded_identical_pairs": 1,
-    "h4_forms_generated": 10,
-    "h4_initial_judgments": 15,
-    "h4_adaptive_followup_judgments": 6,
-    "h4_judgments_total": 21,
-    "h4_case_judgment_totals": {
-      "general": 3,
-      "stem": 5,
-      "educator": 5,
-      "hindi": 3,
-      "bengali": 5
-    },
-    "h4_collection_closed": true,
-    "h4_durability_audit": "pass",
-    "h4_analysis_locked": true,
-    "h4_unblinded": true,
-    "h4_decision_recorded": true,
-    "h4_outcomes": {
-      "dpo_v2_preferred": 7,
+    "stage": "H5_decision_recorded",
+    "h4_complete": true,
+    "h5_batch_id": "HEB1-64CDCC9521D3",
+    "h5_partition": "development",
+    "h5_eligible_cases": 6,
+    "h5_forms_generated": 12,
+    "h5_judgments_total": 18,
+    "h5_adaptive_followup_judgments": 0,
+    "h5_collection_closed": true,
+    "h5_durability_audit": "pass",
+    "h5_analysis_locked": true,
+    "h5_unblinded": true,
+    "h5_decision_recorded": true,
+    "h5_outcomes": {
+      "dpo_v3_preferred": 9,
       "sft_preferred": 9,
-      "about_equal": 2,
+      "about_equal": 0,
       "neither_good": 0,
-      "not_sure": 3
+      "not_sure": 0
     },
-    "h4_decisive_preference_share": {
-      "dpo_v2": 0.4375,
-      "sft": 0.5625
-    },
-    "h4_case_majorities": {
-      "dpo_v2": 2,
+    "h5_case_majorities": {
+      "dpo_v3": 3,
       "sft": 3
     },
-    "h4_mean_modal_choice_agreement": 0.8,
-    "h4_decision": "mixed_no_promotion",
-    "h4_superiority_established": false,
-    "h4_results": "docs/H4_DHE_PILOT_V1_RESULTS.md",
-    "remaining_blocker": "No H4 blocker remains. Any next model-development action should be explicitly scoped as DHE follow-up; SHAE remains sealed and requires a separately frozen candidate and assurance plan.",
-    "next_gate": "Decide the next development experiment or freeze a future candidate before any SHAE planning."
+    "h5_case_results": {
+      "stem": "sft",
+      "educator": "sft",
+      "research": "dpo_v3",
+      "hindi": "sft",
+      "bengali": "dpo_v3",
+      "general": "dpo_v3"
+    },
+    "h5_mean_modal_choice_agreement": 1.0,
+    "h5_decision": "mixed_no_promotion_preservation_failure",
+    "h5_superiority_established": false,
+    "h5_results": "docs/H5_DHE_V3_PILOT_V1_RESULTS.md",
+    "next_gate": "Post-H5 response-level diagnosis under docs/POST_H5_DEVELOPMENT_PLAN.md. No new candidate training or SHAE is authorized yet."
+  },
+  "assurance": {
+    "shae_sealed": true,
+    "shae_started": false,
+    "candidate_frozen_for_shae": false
   },
   "canonical_docs": {
     "project_status": "docs/PROJECT_STATUS.md",
-    "experiment_journey": "docs/EXPERIMENT_JOURNEY_E4B.md",
-    "dpo_v2": "docs/E4B_DPO_V2_CORRECTIVE.md",
-    "human_evaluation_protocol": "docs/HUMAN_EVALUATION_PROTOCOL.md",
-    "human_evaluation_h3": "docs/HUMAN_EVALUATION_H3_PILOT.md",
-    "human_evaluation_h4": "docs/HUMAN_EVALUATION_H4_DHE_PILOT.md",
-    "h4_analysis_lock": "docs/H4_DHE_PILOT_V1_ANALYSIS_LOCK.md",
+    "post_h5_plan": "docs/POST_H5_DEVELOPMENT_PLAN.md",
+    "h5_pilot": "docs/H5_DHE_V3_PILOT.md",
+    "h5_analysis_lock": "docs/H5_DHE_V3_PILOT_V1_ANALYSIS_LOCK.md",
+    "h5_results": "docs/H5_DHE_V3_PILOT_V1_RESULTS.md",
     "h4_results": "docs/H4_DHE_PILOT_V1_RESULTS.md",
-    "website_integration": "docs/WEBSITE_INTEGRATION.md",
     "agent_context": "AGENTS.md"
   },
   "public_claims": {
-    "may_say_dpo_v2_is_technically_valid": true,
-    "may_say_dpo_v2_is_superior_to_sft": false,
-    "may_describe_50_case_result_as_clean_held_out": false,
-    "may_say_h2_is_formally_complete": true,
-    "may_say_h3_is_complete": true,
-    "may_say_h4_collection_complete": true,
-    "may_say_h4_analysis_complete": true,
-    "may_report_h4_dhe_aggregate": true,
-    "may_say_h4_establishes_overall_superiority": false,
+    "may_say_dpo_v3_is_technically_valid": true,
+    "may_report_h5_dhe_aggregate": true,
+    "may_report_h5_case_results": true,
+    "may_say_dpo_v3_is_superior_to_sft": false,
+    "may_say_h5_is_final_assurance": false,
     "may_start_shae": false
   }
 }

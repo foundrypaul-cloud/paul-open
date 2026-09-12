@@ -1,10 +1,8 @@
 {
   "schema_version": "1.0",
   "status_as_of": "2026-09-12",
-  "state": "h4_decision_recorded",
-  "internal_stage": "H4",
-  "h2_formal_acceptance": "pass",
-  "h3_acceptance": "pass",
+  "state": "h5_decision_recorded",
+  "internal_stage": "H5",
   "public_participation_enabled": false,
   "provider": "google_forms",
   "protocol_version": "1.0",
@@ -14,38 +12,54 @@
   "h4": {
     "batch_id": "HEB1-E928B35C90D7",
     "partition": "development",
-    "source_cases": 6,
-    "eligible_cases": 5,
-    "excluded_identical_pairs": 1,
-    "forms_generated": 10,
-    "initial_coverage_judgments": 15,
-    "adaptive_followup_judgments": 6,
     "judgments_total": 21,
+    "candidate": "DPO V2 Corrective",
+    "reference": "SFT",
+    "outcomes": {"candidate_preferred": 7, "reference_preferred": 9, "about_equal": 2, "neither_good": 0, "not_sure": 3},
+    "decision": "mixed_no_promotion",
+    "superiority_established": false,
+    "results": "docs/H4_DHE_PILOT_V1_RESULTS.md"
+  },
+  "h5": {
+    "batch_id": "HEB1-64CDCC9521D3",
+    "partition": "development",
+    "eligible_cases": 6,
+    "forms_generated": 12,
+    "initial_judgments": 18,
+    "adaptive_followup_judgments": 0,
+    "judgments_total": 18,
     "collection_closed": true,
     "durability_audit_passed": true,
     "analysis_locked": true,
     "unblinded": true,
     "decision_recorded": true,
-    "candidate": "DPO V2 Corrective",
+    "candidate": "DPO V3 Corrective",
     "reference": "SFT",
     "outcomes": {
-      "candidate_preferred": 7,
+      "candidate_preferred": 9,
       "reference_preferred": 9,
-      "about_equal": 2,
+      "about_equal": 0,
       "neither_good": 0,
-      "not_sure": 3
+      "not_sure": 0
     },
-    "case_majorities": {
-      "candidate": 2,
-      "reference": 3
+    "case_majorities": {"candidate": 3, "reference": 3},
+    "case_results": {
+      "stem": "reference",
+      "educator": "reference",
+      "research": "candidate",
+      "hindi": "reference",
+      "bengali": "candidate",
+      "general": "candidate"
     },
-    "decision": "mixed_no_promotion",
+    "unanimous_cases": 6,
+    "mean_modal_choice_agreement": 1.0,
+    "decision": "mixed_no_promotion_preservation_failure",
     "superiority_established": false,
-    "blinded_analysis_snapshot": "data/h4_dhe_pilot_v1_blinded_analysis_lock.json",
-    "unblinded_aggregate": "data/h4_dhe_pilot_v1_unblinded_aggregate.json",
-    "results": "docs/H4_DHE_PILOT_V1_RESULTS.md"
+    "blinded_analysis_snapshot": "data/h5_dhe_v3_pilot_v1_blinded_analysis_lock.json",
+    "unblinded_aggregate": "data/h5_dhe_v3_pilot_v1_unblinded_aggregate.json",
+    "results": "docs/H5_DHE_V3_PILOT_V1_RESULTS.md"
   },
-  "public_message": "PAUL Open completed the H4 Development Human Evaluation pilot. Across 21 judgments on five development cases, SFT was preferred 9 times and DPO V2 Corrective 7 times, with 2 ties and 3 unable-to-judge responses. DPO V2 won the STEM and Hindi case majorities; SFT won General, Educator, and Bengali. The result is mixed and does not establish overall model superiority, so DPO V2 is not promoted over SFT on H4 evidence alone. SHAE remains sealed.",
+  "public_message": "PAUL Open completed the H5 Development Human Evaluation pilot for DPO V3 Corrective versus SFT. Across 18 judgments on six fresh development cases, DPO V3 and SFT were each preferred 9 times, with no ties or unable-to-judge responses. DPO V3 won Bengali, General and Research; SFT won STEM, Educator and Hindi. Because STEM and Hindi were pre-specified preservation targets, DPO V3 is not promoted. SFT remains the reference and SHAE remains sealed.",
   "safety": {
     "reviewer_links_publicly_allowed": false,
     "response_sheets_publicly_allowed": false,
@@ -54,9 +68,9 @@
   },
   "source": {
     "protocol": "docs/HUMAN_EVALUATION_PROTOCOL.md",
-    "h4_runbook": "docs/HUMAN_EVALUATION_H4_DHE_PILOT.md",
-    "h4_analysis_lock": "docs/H4_DHE_PILOT_V1_ANALYSIS_LOCK.md",
-    "h4_results": "docs/H4_DHE_PILOT_V1_RESULTS.md",
+    "h5_runbook": "docs/H5_DHE_V3_PILOT.md",
+    "h5_analysis_lock": "docs/H5_DHE_V3_PILOT_V1_ANALYSIS_LOCK.md",
+    "h5_results": "docs/H5_DHE_V3_PILOT_V1_RESULTS.md",
     "current_status": "docs/PROJECT_STATUS.md"
   }
 }

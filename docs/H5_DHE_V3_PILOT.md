@@ -1,55 +1,63 @@
-# H5 DHE V3 Pilot — Generation and Collection Freeze
+# H5 DHE V3 Pilot — Final Development Result
 
-**State:** GENERATED_READY_FOR_COLLECTION  
+**State:** DECISION_RECORDED  
 **Partition:** Development Human Evaluation (DHE)  
 **Batch:** `HEB1-64CDCC9521D3`  
 **Candidate:** DPO V3 Corrective  
 **Reference:** SFT  
+**Decision:** mixed / no promotion / preservation failure  
 **SHAE:** sealed / not started
 
-## Generation result
+## Generation and pre-collection gates
 
-GitHub Actions run `34692176820` completed successfully at source revision
-`36b525486dfe8e4cee5785f082186e77efe9d550`.
+GitHub Actions paired-generation run `34692176820` completed successfully. The reviewer-safe generation artifact contained six eligible fresh development cases, two complementary blinded variants per case, and zero identical-pair exclusions.
 
-Reviewer-safe artifact:
+Pre-form gates passed: paired generation, blinded-batch construction, canonical baseline leakage (6/6 clean), and H4/V3-training development separation. Maximum token-set Jaccard against H4/V3 training was `0.3333333333333333`, below the frozen `< 0.35` threshold.
 
-- artifact ID: `10297811566`
-- name: `h5-dhe-v3-reviewer-safe-bundle`
-- digest: `sha256:19ec31d93516f312fa339aa8e1a4e287ef1c4b1c9d36a8a50aff950905423f54`
-- six eligible cases
-- two complementary blinded variants
-- zero identical response pairs skipped
+## Human collection
 
-The reviewer-safe artifact contains only the public blinded bundle and safe gate reports. The private
-A/B source mapping remains outside the reviewer-safe artifact and is **not authorized for reading before
-the blinded analysis lock**.
+The frozen initial allocation completed at exactly **18 valid judgments**: three per case with 9 V01 and 9 V02 judgments. All six cases were unanimous after complementary-swap normalization, so no 3→5 adaptive follow-up was authorized.
 
-## Pre-form gates
+All twelve forms were closed after reaching their targets.
 
-- paired generation workflow: **PASS**
-- blinded batch build: **PASS**
-- canonical baseline leakage audit: **PASS (6/6 clean)**
-- H4/V3-training development separation: **PASS**
-- maximum token-set Jaccard against H4/V3 training: `0.3333333333333333`
-- frozen threshold: `< 0.35`
+## Durability and lock
 
-## Frozen initial review allocation
+Durability passed before unblinding:
 
-H5 follows the existing protocol: three independent valid judgments per case initially, disagreement or
-uncertainty escalation to five, and exceptional hard cap seven.
+- 18 accepted Form responses;
+- 18 normalized rows;
+- 18 independent backup rows;
+- normalized and backup response-ID sets matched exactly;
+- all backup snapshots carried SHA-256 digests.
 
-The initial 18 judgments are counterbalanced at the display-variant level: nine submissions to V01 and
-nine to V02. Per case, the initial split alternates between 2/1 and 1/2. Exact packet targets and
-comparison IDs are frozen in `data/h5_dhe_v3_pilot_v1_collection_plan.json`.
+The blinded analysis was committed in `data/h5_dhe_v3_pilot_v1_blinded_analysis_lock.json` before source identity was consulted.
 
-The Google Forms payload was generated only from the reviewer-safe artifact. Its SHA-256 is
-`1e56484d2bb4da1a4a93aeaae2860ca91e04cf775e51f15c7c261fbfa49d37ab`. The response text payload is deliberately **not committed** to the public repository
-before collection.
+## Controlled unblinding
 
-## Interpretation boundary
+Controlled unblinding completed successfully in GitHub Actions run `34699579869`. The private Kaggle mapping remained outside the repository. Only a safe aggregate was emitted.
 
-H5 is fresh DHE for the frozen V3 candidate. It may inform later development and therefore cannot become
-sealed assurance evidence. H5 cannot by itself establish broad model superiority or authorize promotion.
+Final result:
 
-No SHAE prompts have been opened or used.
+| Case | Preferred checkpoint | Agreement |
+|---|---|---:|
+| STEM | SFT | 3/3 |
+| Educator | SFT | 3/3 |
+| Research | DPO V3 | 3/3 |
+| Hindi | SFT | 3/3 |
+| Bengali | DPO V3 | 3/3 |
+| General | DPO V3 | 3/3 |
+
+Aggregate judgments: **9 DPO V3 / 9 SFT / 0 equal / 0 neither / 0 not-sure**. Case-majority split: **3–3**.
+
+## Decision
+
+DPO V3 is **not promoted**. STEM and Hindi were pre-specified preservation strata and both favored SFT unanimously in fresh H5 cases. That preservation failure outweighs any temptation to interpret the aggregate tie as sufficient progress.
+
+SFT remains the reference checkpoint. DPO V2 and DPO V3 remain immutable experimental checkpoints. SHAE remains sealed.
+
+See:
+
+- `docs/H5_DHE_V3_PILOT_V1_ANALYSIS_LOCK.md`
+- `docs/H5_DHE_V3_PILOT_V1_RESULTS.md`
+- `docs/POST_H5_DEVELOPMENT_PLAN.md`
+- `data/h5_dhe_v3_pilot_v1_unblinded_aggregate.json`
