@@ -7,6 +7,7 @@ on:
       - 'scripts/dpo_v3_e4b_train.py'
       - 'data/train/dpo_v3/**'
       - '.github/workflows/dpo-v3-contract-verification.yml'
+      - '.github/workflows/kaggle-dpo-v3-production.yml'
 
 permissions:
   contents: read
@@ -37,11 +38,7 @@ jobs:
           expected={k:contract[k] for k in ('experiment','training')}
           assert config==expected, 'V3 YAML differs from V3 locked contract'
 
-          original=copy.deepcopy(v2.LOCKED_EXPERIMENT)
-          # v2.LOCKED_EXPERIMENT has already been replaced by install_v3_contract;
-          # reconstruct the immutable V2 contract from its canonical YAML.
           v2_yaml=yaml.safe_load(Path('configs/training/dpo_v2_e4b_corrective.yaml').read_text())
-
           assert config['training']['method']==v2_yaml['training']['method']=='dpo'
           v3_dpo=copy.deepcopy(config['training']['dpo_config'])
           v2_dpo=copy.deepcopy(v2_yaml['training']['dpo_config'])
