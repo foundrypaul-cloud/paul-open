@@ -13,7 +13,7 @@
     "reference_checkpoint": "SFT",
     "experimental_checkpoint": "DPO V2 Corrective",
     "superiority_established": false,
-    "current_conclusion": "SFT remains the safer reference checkpoint. DPO V2 is technically valid with mixed behavioral effects and is not established as superior. H4 human-evaluation judgments are analysis-locked but not yet unblinded."
+    "current_conclusion": "H4 DHE is complete and mixed. SFT remains the safer reference checkpoint; DPO V2 Corrective is technically valid and shows positive STEM/Hindi signals but is not established as broadly superior and is not promoted over SFT on H4 evidence alone."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
@@ -24,10 +24,6 @@
     "experiment_id": "paul_e4b_dpo_v2_corrective",
     "technical_validity": "pass",
     "dataset_records": 14,
-    "trainable_tensors_changed": {
-      "changed": 516,
-      "intended": 516
-    },
     "train_loss": 0.687744140625,
     "train_runtime_seconds": 238.58,
     "behavioral_result": "mixed",
@@ -37,32 +33,17 @@
     "current_50_case_comparison": "diagnostic_contaminated_for_dpo_v2",
     "clean_superiority_evaluation_available": false,
     "aggregate_score_is_sufficient_for_superiority": false,
+    "h4_dhe_complete": true,
+    "h4_dhe_is_final_assurance": false,
     "details": "docs/EXPERIMENT_JOURNEY_E4B.md"
   },
   "human_evaluation": {
-    "stage": "H4_analysis_locked",
+    "stage": "H4_decision_recorded",
     "formal_acceptance": "H3_pass",
     "h2_accepted_on": "2026-09-10",
-    "h3_started_on": "2026-09-10",
     "h3_accepted_on": "2026-09-11",
-    "h3_live_ux_forms": 2,
-    "h3_underlying_disposable_cases": 3,
-    "h3_displayed_counterbalanced_instances": 6,
-    "h3_public_participation": false,
-    "h3_reviewer_scope": "small_internal_or_trusted_group",
-    "h3_ux_submissions": 6,
-    "h3_form_a1_submissions": 3,
-    "h3_form_b1_submissions": 3,
-    "h3_device_coverage": {
-      "mobile": true,
-      "desktop_or_laptop": true
-    },
-    "h3_completion_time_result": "pass",
-    "h3_readability_result": "pass",
-    "h3_ab_confusion_result": "pass",
-    "h3_durability_result": "pass",
     "h4_batch_id": "HEB1-E928B35C90D7",
-    "h4_generation_result": "pass",
+    "h4_partition": "development",
     "h4_source_cases": 6,
     "h4_eligible_cases": 5,
     "h4_excluded_identical_pairs": 1,
@@ -77,21 +58,32 @@
       "hindi": 3,
       "bengali": 5
     },
-    "h4_counterbalancing": "predeclared_2_to_1_or_1_to_2_across_complementary_variants",
-    "h4_public_participation": false,
-    "h4_collection_scope": "curated_invited_reviewers_by_cohort",
-    "h4_target_reached": true,
     "h4_collection_closed": true,
     "h4_durability_audit": "pass",
-    "h4_raw_response_rows": 21,
-    "h4_normalized_response_ids": 21,
-    "h4_backup_response_ids": 21,
-    "h4_backup_sha256_complete": true,
     "h4_analysis_locked": true,
-    "h4_unblinded": false,
-    "h4_analysis_lock": "docs/H4_DHE_PILOT_V1_ANALYSIS_LOCK.md",
-    "remaining_blocker": "Controlled unblinding of the frozen H4 judgment set and calculation of the predeclared H4 metrics.",
-    "next_gate": "Unblind only against the frozen 21-judgment analysis lock, calculate the predeclared H4 DHE metrics, record the decision, and keep SHAE sealed."
+    "h4_unblinded": true,
+    "h4_decision_recorded": true,
+    "h4_outcomes": {
+      "dpo_v2_preferred": 7,
+      "sft_preferred": 9,
+      "about_equal": 2,
+      "neither_good": 0,
+      "not_sure": 3
+    },
+    "h4_decisive_preference_share": {
+      "dpo_v2": 0.4375,
+      "sft": 0.5625
+    },
+    "h4_case_majorities": {
+      "dpo_v2": 2,
+      "sft": 3
+    },
+    "h4_mean_modal_choice_agreement": 0.8,
+    "h4_decision": "mixed_no_promotion",
+    "h4_superiority_established": false,
+    "h4_results": "docs/H4_DHE_PILOT_V1_RESULTS.md",
+    "remaining_blocker": "No H4 blocker remains. Any next model-development action should be explicitly scoped as DHE follow-up; SHAE remains sealed and requires a separately frozen candidate and assurance plan.",
+    "next_gate": "Decide the next development experiment or freeze a future candidate before any SHAE planning."
   },
   "canonical_docs": {
     "project_status": "docs/PROJECT_STATUS.md",
@@ -101,6 +93,7 @@
     "human_evaluation_h3": "docs/HUMAN_EVALUATION_H3_PILOT.md",
     "human_evaluation_h4": "docs/HUMAN_EVALUATION_H4_DHE_PILOT.md",
     "h4_analysis_lock": "docs/H4_DHE_PILOT_V1_ANALYSIS_LOCK.md",
+    "h4_results": "docs/H4_DHE_PILOT_V1_RESULTS.md",
     "website_integration": "docs/WEBSITE_INTEGRATION.md",
     "agent_context": "AGENTS.md"
   },
@@ -109,14 +102,11 @@
     "may_say_dpo_v2_is_superior_to_sft": false,
     "may_describe_50_case_result_as_clean_held_out": false,
     "may_say_h2_is_formally_complete": true,
-    "may_say_h3_is_active": false,
-    "may_say_h3_ux_pilot_passed": true,
     "may_say_h3_is_complete": true,
-    "may_prepare_dhe": true,
-    "may_start_dhe": true,
     "may_say_h4_collection_complete": true,
-    "may_say_h4_analysis_locked": true,
-    "may_say_h4_model_outcome": false,
+    "may_say_h4_analysis_complete": true,
+    "may_report_h4_dhe_aggregate": true,
+    "may_say_h4_establishes_overall_superiority": false,
     "may_start_shae": false
   }
 }
