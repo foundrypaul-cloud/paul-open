@@ -1,0 +1,67 @@
+name: One-shot Public Boundary Remediation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-shot-public-boundary-remediation.yml'
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  remediate:
+    if: github.repository == 'foundrypaul-cloud/paul-open'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Cancel unintended duplicate Kaggle bridge runs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for run_id in 34756197136 34756197121; do
+            echo "Requesting cancellation for Actions run ${run_id}"
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/cancel" >/dev/null 2>&1 || true
+          done
+
+      - name: Delete exposed legacy artifact and workflow run
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Deleting exposed Actions artifact 10313363821"
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/artifacts/10313363821" >/dev/null 2>&1 || true
+          echo "Deleting legacy Actions run 34744004957"
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/runs/34744004957" >/dev/null 2>&1 || true
+
+      - name: Retire stale H7 working branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Deleting stale working branch h7-dhe-v5-binding-20260913"
+          gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/h7-dhe-v5-binding-20260913" >/dev/null 2>&1 || true
+
+      - name: Verify remediation state
+        shell: bash
+        run: |
+          set -euo pipefail
+          artifact_status=$(gh api -i "repos/${GITHUB_REPOSITORY}/actions/artifacts/10313363821" 2>&1 | head -n 1 || true)
+          run_status=$(gh api -i "repos/${GITHUB_REPOSITORY}/actions/runs/34744004957" 2>&1 | head -n 1 || true)
+          branch_status=$(gh api -i "repos/${GITHUB_REPOSITORY}/git/ref/heads/h7-dhe-v5-binding-20260913" 2>&1 | head -n 1 || true)
+          echo "Artifact lookup: ${artifact_status}"
+          echo "Legacy run lookup: ${run_status}"
+          echo "Stale branch lookup: ${branch_status}"
+          if ! echo "$artifact_status" | grep -q '404'; then
+            echo "Artifact still retrievable" >&2
+            exit 1
+          fi
+          if ! echo "$run_status" | grep -q '404'; then
+            echo "Legacy workflow run still retrievable" >&2
+            exit 1
+          fi
+          if ! echo "$branch_status" | grep -q '404'; then
+            echo "Stale H7 branch still retrievable" >&2
+            exit 1
+          fi
