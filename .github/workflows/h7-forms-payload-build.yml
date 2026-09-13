@@ -1,0 +1,70 @@
+name: H7 Forms Payload Build
+
+on:
+  push:
+    branches: [h7-forms-payload-20260913]
+    paths:
+      - '.github/workflows/h7-forms-payload-build.yml'
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build-payload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      H7_GENERATION_RUN: '34742383378'
+      H7_ARTIFACT: h7-dhe-v5-reviewer-safe-bundle
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download reviewer-safe H7 bundle
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/h7-artifact
+          gh run download "$H7_GENERATION_RUN" -R "$GITHUB_REPOSITORY" -n "$H7_ARTIFACT" -D /tmp/h7-artifact
+          find /tmp/h7-artifact -maxdepth 4 -type f -print
+      - name: Locate reviewer bundle and materialize repaired payload
+        run: |
+          set -euo pipefail
+          BUNDLE=$(find /tmp/h7-artifact -type d -name reviewer_bundle -print -quit)
+          test -n "$BUNDLE"
+          python scripts/materialize_h7_forms_payload.py "$BUNDLE" /tmp/H7Payload.gs
+          test -s /tmp/H7Payload.gs
+          grep -q 'function createPaulHumanEvalH7Forms()' /tmp/H7Payload.gs
+          grep -q 'preparePaulHumanEvalH7TriggerCapacity_' /tmp/H7Payload.gs
+          grep -q "PAUL_H5_LOCKED_BATCH_ID_FOR_H7_ = 'HEB1-64CDCC9521D3'" /tmp/H7Payload.gs
+          grep -q "PAUL_H6_LOCKED_BATCH_ID_FOR_H7_ = 'HEB1-5AE2CE4166CD'" /tmp/H7Payload.gs
+          grep -q 'deleted_duplicate_recovery_trigger_count' /tmp/H7Payload.gs
+          grep -q 'stale_h7_forms_sheets_or_responses_deleted: 0' /tmp/H7Payload.gs
+          ! grep -Eq 'dpo_v5_corrective|sft_reference|private_mapping|adapter_model' /tmp/H7Payload.gs
+          mkdir -p h7-forms-payload
+          cp /tmp/H7Payload.gs h7-forms-payload/H7Payload.gs
+          python - <<'PY'
+          import re, pathlib
+          p=pathlib.Path('h7-forms-payload/H7Payload.gs')
+          t=p.read_text(encoding='utf-8')
+          packet_count=t.count('"form_packet_version": "1.1"')
+          targets=[int(x) for x in re.findall(r'"sandbox_auto_close_after_submissions": (\d+)', t)]
+          assert packet_count==12, packet_count
+          assert len(targets)==12, targets
+          assert sum(targets)==18, targets
+          print({'packet_count':packet_count,'initial_judgment_total':sum(targets)})
+          PY
+      - name: JavaScript syntax check
+        run: |
+          cp /tmp/H7Payload.gs /tmp/H7Payload.js
+          node --check /tmp/H7Payload.js
+      - name: Upload freshly repaired H7 payload
+        uses: actions/upload-artifact@v4
+        with:
+          name: h7-google-forms-payload-repaired
+          path: h7-forms-payload/H7Payload.gs
+          if-no-files-found: error
+          retention-days: 30
