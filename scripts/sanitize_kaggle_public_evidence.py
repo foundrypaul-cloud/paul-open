@@ -131,7 +131,11 @@ def sanitize_json(path: Path, kind: str) -> dict[str, Any] | None:
             out["authentic_update_evidence"] = updates
         return out or None
     if kind == "failure":
-        return allow_scalars(data, FAILURE_FIELDS) or None
+        out = allow_scalars(data, FAILURE_FIELDS)
+        # H6 wrappers historically wrote `stage`; normalize it to the public schema.
+        if "failed_stage" not in out and isinstance(data.get("stage"), SAFE_SCALAR_TYPES):
+            out["failed_stage"] = data["stage"]
+        return out or None
     if kind == "status":
         return allow_scalars(data, STATUS_FIELDS) or None
     if kind == "results":
