@@ -1,0 +1,92 @@
+name: H7 V5 Candidate Binding Audit
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/h7-v5-candidate-binding-audit.yml'
+      - 'scripts/h7_dhe_generate.py'
+      - 'configs/evaluation/h7_dhe_v5_pilot_v1.yaml'
+      - '.github/workflows/h7-dhe-v5-kaggle-generation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit-v5-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: paulfoundry
+      PRODUCTION_KERNEL: paulfoundry/paul-open-dpo-v5-production
+      EXPECTED_SOURCE_REVISION: 08a0857bbd5a93d58b8ca64a61625e69f68bf442
+      EXPECTED_DATASET_SHA256: 1584705bf332137ade1ee24873e5d463653a2b26e26c63f6dc9c87515618bbd4
+      EXPECTED_EXPERIMENT_ID: paul_e4b_dpo_v5_corrective
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+      - name: Recover completed V5 production output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KAGGLE_API_TOKEN"
+          STATUS=$(kaggle kernels status "$PRODUCTION_KERNEL")
+          echo "$STATUS"
+          echo "$STATUS" | grep -qi complete
+          OUT="$RUNNER_TEMP/v5-production"
+          mkdir -p "$OUT"
+          kaggle kernels output "$PRODUCTION_KERNEL" -p "$OUT"
+          echo "V5_OUT=$OUT" >> "$GITHUB_ENV"
+      - name: Verify training provenance and emit frozen adapter identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_corrective/training_manifest.json' -print -quit)
+          CONFIG=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_corrective/final-dpo-adapter/dpo/adapter_config.json' -print -quit)
+          WEIGHTS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_corrective/final-dpo-adapter/dpo/adapter_model.safetensors' -print -quit)
+          test -n "$MANIFEST" && test -n "$CONFIG" && test -n "$WEIGHTS"
+          python - "$MANIFEST" <<'PY'
+          import json, os, pathlib, sys
+          m=json.loads(pathlib.Path(sys.argv[1]).read_text())
+          print('TRAINING_MANIFEST='+json.dumps(m,sort_keys=True))
+          locked=m.get('locked_experiment',{})
+          exp=locked.get('experiment',{})
+          assert m.get('source_revision')==os.environ['EXPECTED_SOURCE_REVISION'], (m.get('source_revision'),os.environ['EXPECTED_SOURCE_REVISION'])
+          assert exp.get('id')==os.environ['EXPECTED_EXPERIMENT_ID'], exp.get('id')
+          assert exp.get('dataset_sha256')==os.environ['EXPECTED_DATASET_SHA256'], exp.get('dataset_sha256')
+          assert exp.get('dataset_records')==30, exp.get('dataset_records')
+          auth=m.get('training_authenticity',{})
+          assert auth.get('finite') is True, auth
+          assert int(auth.get('changed_tensor_count',0))>0, auth
+          print('TRAINING_PROVENANCE=PASS')
+          print('TRAINING_CHANGED_TENSORS='+str(auth.get('changed_tensor_count')))
+          PY
+          echo "CANDIDATE_CONFIG_SHA256=$(sha256sum "$CONFIG" | awk '{print $1}')"
+          echo "CANDIDATE_WEIGHTS_SHA256=$(sha256sum "$WEIGHTS" | awk '{print $1}')"
+          echo "CANDIDATE_CONFIG_BYTES=$(stat -c%s "$CONFIG")"
+          echo "CANDIDATE_WEIGHTS_BYTES=$(stat -c%s "$WEIGHTS")"
+      - name: Emit bounded automated diagnostic summaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          SFT_STATUS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/sft/*/STATUS.json' -print -quit)
+          DPO_STATUS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/dpo/*/STATUS.json' -print -quit)
+          SFT_RESULTS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/sft/*/results.json' -print -quit)
+          DPO_RESULTS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/dpo/*/results.json' -print -quit)
+          SFT_SUMMARY=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/sft/*/summary.md' -print -quit)
+          DPO_SUMMARY=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/dpo/*/summary.md' -print -quit)
+          for F in "$SFT_STATUS" "$DPO_STATUS" "$SFT_RESULTS" "$DPO_RESULTS" "$SFT_SUMMARY" "$DPO_SUMMARY"; do test -n "$F" && test -f "$F"; done
+          echo '--- SFT STATUS ---'; cat "$SFT_STATUS"
+          echo '--- DPO V5 STATUS ---'; cat "$DPO_STATUS"
+          python - "$SFT_RESULTS" "$DPO_RESULTS" <<'PY'
+          import json, pathlib, sys
+          for label,p in [('SFT',sys.argv[1]),('DPO_V5',sys.argv[2])]:
+              data=json.loads(pathlib.Path(p).read_text())
+              print(label+'_RESULTS='+json.dumps(data,sort_keys=True,ensure_ascii=False))
+          PY
+          echo '--- SFT SUMMARY ---'; cat "$SFT_SUMMARY"
+          echo '--- DPO V5 SUMMARY ---'; cat "$DPO_SUMMARY"
