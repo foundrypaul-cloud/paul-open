@@ -2,14 +2,6 @@ name: Kaggle DPO V4 Preflight and Production
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/kaggle-dpo-v4-production.yml'
-      - 'scripts/dpo_v4_e4b_train.py'
-      - 'scripts/sanitize_kaggle_public_evidence.py'
-      - 'configs/training/dpo_v4_e4b_corrective.yaml'
-      - 'data/train/dpo_v4/**'
 
 permissions:
   contents: read
