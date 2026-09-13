@@ -43,11 +43,15 @@ This frozen revision is retained as immutable evidence of the Step 2 DPO V2 rese
 Licensing and third-party components
 ------------------------------------
 
-The PAUL Open source-code layer is distributed under the Apache License 2.0 unless a file or component states otherwise.
+The PAUL Open-authored source-code layer is distributed under the Apache License 2.0 unless a file or component states otherwise.
 
-Gemma 4 is released by Google under Apache 2.0. Third-party datasets, libraries, benchmarks, models, and other materials retain their respective licenses, notices, attribution requirements, and usage restrictions.
+The current `google/gemma-4-E4B-it` model repository identifies the model as Apache-2.0 licensed. Third-party datasets, libraries, benchmarks, models, and other materials retain their respective licenses, notices, attribution requirements, and usage restrictions.
 
-A dataset or model being publicly accessible does not by itself establish that it may be used for every training, redistribution, or release purpose. See DATASET_REGISTRY.md and the applicable upstream terms.
+A dataset or model being publicly accessible does not by itself establish that it may be used for every training, redistribution, or release purpose. Permission to train on material and permission to redistribute the underlying content are separate questions. See `docs/DATASET_REGISTRY.md`, `docs/PUBLIC_REPOSITORY_BOUNDARY.md`, and the applicable upstream terms.
+
+Public availability of PAUL Open source does not relicense third-party content, confidential information, proprietary research, or material a contributor did not have permission to submit. Contributors must not submit credentials, private reviewer information, sealed assurance material, proprietary/confidential material, or third-party content they are not permitted to redistribute.
+
+The Apache License 2.0 does not grant trademark rights. Paul Foundry, PAUL Open, associated names, logos, and marks remain subject to applicable trademark law and any separate trademark policy.
 
 This NOTICE does not replace or modify any third-party license.
 
@@ -64,6 +68,7 @@ See:
 - docs/EXPERIMENT_JOURNEY_E4B.md
 - docs/E4B_DPO_V2_CORRECTIVE.md
 - docs/HUMAN_EVALUATION_PROTOCOL.md
+- docs/PUBLIC_REPOSITORY_BOUNDARY.md
 
 Recommended attribution
 -----------------------
