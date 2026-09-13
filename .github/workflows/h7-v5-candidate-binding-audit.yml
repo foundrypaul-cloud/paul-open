@@ -52,18 +52,28 @@ jobs:
           python - "$MANIFEST" <<'PY'
           import json, os, pathlib, sys
           m=json.loads(pathlib.Path(sys.argv[1]).read_text())
-          print('TRAINING_MANIFEST='+json.dumps(m,sort_keys=True))
-          locked=m.get('locked_experiment',{})
-          exp=locked.get('experiment',{})
           assert m.get('source_revision')==os.environ['EXPECTED_SOURCE_REVISION'], (m.get('source_revision'),os.environ['EXPECTED_SOURCE_REVISION'])
-          assert exp.get('id')==os.environ['EXPECTED_EXPERIMENT_ID'], exp.get('id')
-          assert exp.get('dataset_sha256')==os.environ['EXPECTED_DATASET_SHA256'], exp.get('dataset_sha256')
-          assert exp.get('dataset_records')==30, exp.get('dataset_records')
-          auth=m.get('training_authenticity',{})
+          assert m.get('experiment_id')==os.environ['EXPECTED_EXPERIMENT_ID'], m.get('experiment_id')
+          assert m.get('dataset_sha256')==os.environ['EXPECTED_DATASET_SHA256'], m.get('dataset_sha256')
+          assert m.get('dataset_records')==30, m.get('dataset_records')
+          assert m.get('completion_gate')=='PASS', m.get('completion_gate')
+          auth=m.get('authentic_update_evidence',{})
           assert auth.get('finite') is True, auth
-          assert int(auth.get('changed_tensor_count',0))>0, auth
+          assert auth.get('intended_tensor_count')==516, auth
+          assert auth.get('changed_tensor_count')==516, auth
+          invariants=m.get('post_training_invariants',{})
+          assert invariants.get('adapter_topology')=='PASS', invariants
+          assert invariants.get('optimizer_membership')=='PASS', invariants
+          assert invariants.get('placement')=='PASS', invariants
+          assert invariants.get('policy_reference_storage_independent')=='PASS', invariants
+          assert invariants.get('reference_frozen_eval')=='PASS', invariants
+          assert invariants.get('external_reference_math',{}).get('status')=='PASS', invariants
+          assert m.get('trainer_global_step')==8, m.get('trainer_global_step')
           print('TRAINING_PROVENANCE=PASS')
           print('TRAINING_CHANGED_TENSORS='+str(auth.get('changed_tensor_count')))
+          print('TRAIN_LOSS='+str(m.get('train_metrics',{}).get('train_loss')))
+          print('TRAIN_EPOCH='+str(m.get('train_metrics',{}).get('epoch')))
+          print('FINAL_AMP_SCALE='+str(m.get('native_amp',{}).get('final_scale')))
           PY
           echo "CANDIDATE_CONFIG_SHA256=$(sha256sum "$CONFIG" | awk '{print $1}')"
           echo "CANDIDATE_WEIGHTS_SHA256=$(sha256sum "$WEIGHTS" | awk '{print $1}')"
