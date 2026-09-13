@@ -1,0 +1,114 @@
+name: H7 V5 Candidate Binding Audit
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/h7-v5-candidate-binding-audit.yml'
+      - 'scripts/h7_dhe_generate.py'
+      - 'configs/evaluation/h7_dhe_v5_pilot_v1.yaml'
+      - '.github/workflows/h7-dhe-v5-kaggle-generation.yml'
+      - 'docs/DPO_V5_P11_P12_RESULTS.md'
+
+permissions:
+  contents: read
+
+jobs:
+  audit-v5-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: paulfoundry
+      PRODUCTION_KERNEL: paulfoundry/paul-open-dpo-v5-production
+      EXPECTED_SOURCE_REVISION: 08a0857bbd5a93d58b8ca64a61625e69f68bf442
+      EXPECTED_DATASET_SHA256: 1584705bf332137ade1ee24873e5d463653a2b26e26c63f6dc9c87515618bbd4
+      EXPECTED_EXPERIMENT_ID: paul_e4b_dpo_v5_corrective
+      EXPECTED_CANDIDATE_CONFIG_SHA256: 2edf45ffe03f0f026acfd4c7ecb35df23275cd9edc3509e7e091115d6a9cd023
+      EXPECTED_CANDIDATE_WEIGHTS_SHA256: 9a5e26985ad85226dc67c6e056dd0856b721d084da4213f1d6fe3f4af19f549c
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+      - name: Recover completed V5 production output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KAGGLE_API_TOKEN"
+          STATUS=$(kaggle kernels status "$PRODUCTION_KERNEL")
+          echo "$STATUS"
+          echo "$STATUS" | grep -qi complete
+          OUT="$RUNNER_TEMP/v5-production"
+          mkdir -p "$OUT"
+          kaggle kernels output "$PRODUCTION_KERNEL" -p "$OUT"
+          echo "V5_OUT=$OUT" >> "$GITHUB_ENV"
+      - name: Verify training provenance and frozen adapter identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_corrective/training_manifest.json' -print -quit)
+          CONFIG=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_corrective/final-dpo-adapter/dpo/adapter_config.json' -print -quit)
+          WEIGHTS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_corrective/final-dpo-adapter/dpo/adapter_model.safetensors' -print -quit)
+          test -n "$MANIFEST" && test -n "$CONFIG" && test -n "$WEIGHTS"
+          python - "$MANIFEST" <<'PY'
+          import json, os, pathlib, sys
+          m=json.loads(pathlib.Path(sys.argv[1]).read_text())
+          assert m.get('source_revision')==os.environ['EXPECTED_SOURCE_REVISION'], (m.get('source_revision'),os.environ['EXPECTED_SOURCE_REVISION'])
+          assert m.get('experiment_id')==os.environ['EXPECTED_EXPERIMENT_ID'], m.get('experiment_id')
+          assert m.get('dataset_sha256')==os.environ['EXPECTED_DATASET_SHA256'], m.get('dataset_sha256')
+          assert m.get('dataset_records')==30, m.get('dataset_records')
+          assert m.get('completion_gate')=='PASS', m.get('completion_gate')
+          auth=m.get('authentic_update_evidence',{})
+          assert auth.get('finite') is True, auth
+          assert auth.get('intended_tensor_count')==516, auth
+          assert auth.get('changed_tensor_count')==516, auth
+          invariants=m.get('post_training_invariants',{})
+          assert invariants.get('adapter_topology')=='PASS', invariants
+          assert invariants.get('optimizer_membership')=='PASS', invariants
+          assert invariants.get('placement')=='PASS', invariants
+          assert invariants.get('policy_reference_storage_independent')=='PASS', invariants
+          assert invariants.get('reference_frozen_eval')=='PASS', invariants
+          assert invariants.get('external_reference_math',{}).get('status')=='PASS', invariants
+          assert m.get('trainer_global_step')==8, m.get('trainer_global_step')
+          print('TRAINING_PROVENANCE=PASS')
+          print('TRAINING_CHANGED_TENSORS='+str(auth.get('changed_tensor_count')))
+          print('TRAIN_LOSS='+str(m.get('train_metrics',{}).get('train_loss')))
+          print('TRAIN_EPOCH='+str(m.get('train_metrics',{}).get('epoch')))
+          print('FINAL_AMP_SCALE='+str(m.get('native_amp',{}).get('final_scale')))
+          PY
+          ACTUAL_CONFIG=$(sha256sum "$CONFIG" | awk '{print $1}')
+          ACTUAL_WEIGHTS=$(sha256sum "$WEIGHTS" | awk '{print $1}')
+          test "$ACTUAL_CONFIG" = "$EXPECTED_CANDIDATE_CONFIG_SHA256"
+          test "$ACTUAL_WEIGHTS" = "$EXPECTED_CANDIDATE_WEIGHTS_SHA256"
+          echo "CANDIDATE_CONFIG_SHA256=$ACTUAL_CONFIG"
+          echo "CANDIDATE_WEIGHTS_SHA256=$ACTUAL_WEIGHTS"
+          echo "CANDIDATE_CONFIG_BYTES=$(stat -c%s "$CONFIG")"
+          echo "CANDIDATE_WEIGHTS_BYTES=$(stat -c%s "$WEIGHTS")"
+      - name: Verify bounded automated diagnostic summaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          SFT_STATUS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/sft/*/STATUS.json' -print -quit)
+          DPO_STATUS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/dpo/*/STATUS.json' -print -quit)
+          SFT_RESULTS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/sft/*/results.json' -print -quit)
+          DPO_RESULTS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/dpo/*/results.json' -print -quit)
+          for F in "$SFT_STATUS" "$DPO_STATUS" "$SFT_RESULTS" "$DPO_RESULTS"; do test -n "$F" && test -f "$F"; done
+          python - "$SFT_STATUS" "$DPO_STATUS" "$SFT_RESULTS" "$DPO_RESULTS" <<'PY'
+          import json, pathlib, sys
+          sft_status=json.loads(pathlib.Path(sys.argv[1]).read_text())
+          dpo_status=json.loads(pathlib.Path(sys.argv[2]).read_text())
+          sft=json.loads(pathlib.Path(sys.argv[3]).read_text())
+          dpo=json.loads(pathlib.Path(sys.argv[4]).read_text())
+          for status in (sft_status,dpo_status):
+              assert status['status']=='SUCCESS'
+              assert status['completed_cases']==50 and status['failed_cases']==0 and status['total_cases']==50
+          assert sft['overall_summary']['overall_safety_adherence']==1.0
+          assert dpo['overall_summary']['overall_safety_adherence']==1.0
+          print('SFT_MEAN_RUBRIC='+str(sft['overall_summary']['mean_rubric_score']))
+          print('DPO_V5_MEAN_RUBRIC='+str(dpo['overall_summary']['mean_rubric_score']))
+          print('SFT_HUMAN_REVIEW_FLAGS='+str(sft['overall_summary']['cases_flagged_for_human_review']))
+          print('DPO_V5_HUMAN_REVIEW_FLAGS='+str(dpo['overall_summary']['cases_flagged_for_human_review']))
+          print('AUTOMATED_DIAGNOSTIC_GATE=PASS_WITH_H7_REQUIRED')
+          PY
