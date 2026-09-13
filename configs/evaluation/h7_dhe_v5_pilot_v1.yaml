@@ -1,0 +1,117 @@
+h7_dhe_v5_pilot:
+  version: "1.0"
+  status: "frozen_pre_generation"
+  partition: "development"
+  case_manifest: "data/h7_dhe_v5_pilot_v1.jsonl"
+  prompt_freeze_revision: "d890fdbbaa224ad9cdfbe38440b01e0a4bc8ed2d"
+  prompt_freeze_evidence: "docs/H7_DHE_V5_PRECOMMIT_SPEC.md"
+  p11_p12_evidence: "docs/DPO_V5_P11_P12_RESULTS.md"
+
+  base_model:
+    id: "google/gemma-4-E4B-it"
+    revision: "ee0ef6023621cff504d758262d4e04895a5af4a2"
+    config: "configs/models/gemma4_e4b_it.yaml"
+
+  sources:
+    reference:
+      private_label: "sft_reference"
+      logical_adapter: "paulfoundry/paul-open-sft"
+      adapter_config_sha256: "cff65bd42928536886168b09d9b133b25ac444c01d901d2a56d98c7b8b03a0ce"
+      adapter_weights_sha256: "73bab121009e2130f387b5deebfe1d15f4f7ac2afbd622164b11b3024000ec49"
+    candidate:
+      private_label: "dpo_v5_corrective"
+      experiment_id: "paul_e4b_dpo_v5_corrective"
+      source_revision: "08a0857bbd5a93d58b8ca64a61625e69f68bf442"
+      production_run: 34737466097
+      production_artifact: 10311949786
+      production_artifact_digest: "sha256:baf68e48dbd3bb8c8a901265e9bbb2ff1e0899092789dc8a6c9c541c25145973"
+      training_dataset_sha256: "1584705bf332137ade1ee24873e5d463653a2b26e26c63f6dc9c87515618bbd4"
+      adapter_config_sha256: "2edf45ffe03f0f026acfd4c7ecb35df23275cd9edc3509e7e091115d6a9cd023"
+      adapter_weights_sha256: "9a5e26985ad85226dc67c6e056dd0856b721d084da4213f1d6fe3f4af19f549c"
+
+  generation:
+    matched_between_sources: true
+    max_new_tokens: 768
+    require_eos_before_limit: true
+    response_instruction: >-
+      For this evaluation, give a complete but concise answer that a reviewer can
+      read comfortably in about 1–2 minutes. Aim for no more than about 300 words,
+      or an equivalent reading length in the requested language. Prioritize the
+      most important reasoning rather than exhaustively listing every possibility.
+    temperature: 0.7
+    top_p: 0.9
+    random_seed: 42
+    chat_template: "tokenizer_apply_chat_template"
+    add_generation_prompt: true
+    notes: >-
+      H7 reuses the H6 v1.2 matched generation contract, including the neutral
+      concision instruction, 768-token fail-closed ceiling, EOS requirement,
+      native-script check, safety check, and identical sampling settings between
+      sources. H7 prompts were frozen before V5 output inspection; no prompt was
+      selected or revised after observing the candidate diagnostics.
+
+  required_outputs:
+    reference_jsonl: "outputs/h7_dhe/private/sft_reference.jsonl"
+    candidate_jsonl: "outputs/h7_dhe/private/dpo_v5_corrective.jsonl"
+    generation_manifest: "outputs/h7_dhe/private/generation_manifest.json"
+    baseline_leakage_report: "outputs/h7_dhe/private/baseline_leakage_report.json"
+    development_separation_report: "outputs/h7_dhe/private/development_separation_report.json"
+    public_bundle_dir: "outputs/human_eval/public/h7_dhe_v5_pilot_v1"
+    private_mapping: ".human-eval-private/h7_dhe_v5_pilot_v1_mapping.json"
+
+  pre_form_gates:
+    - "generation_completed"
+    - "nonempty_output"
+    - "no_generation_truncation_gate"
+    - "display_prompt_matches_generation_prompt"
+    - "automated_safety_gate"
+    - "malformed_output_gate"
+    - "native_script_gate"
+    - "evaluation_partition_integrity"
+    - "canonical_baseline_contamination_gate"
+    - "h4_h5_h6_and_prior_dpo_training_separation_gate"
+    - "candidate_hash_binding_gate"
+    - "prompt_freeze_provenance_gate"
+
+  human_batch:
+    builder: "scripts/build_human_eval_batch.py"
+    partition: "development"
+    variant_count: 2
+    deterministic_seed_required: true
+    default_comparisons_per_form: 3
+
+  review_allocation:
+    initial_valid_judgments_per_case: 3
+    disagreement_escalation_total: 5
+    exceptional_hard_cap: 7
+
+  interpretation:
+    automated_regression_flags_carried_forward:
+      - "science_reasoning"
+      - "socratic_tutoring"
+      - "scientific_explanation"
+      - "student_assistance"
+      - "teacher_assistance"
+      - "multilingual_translation"
+    automated_improvement_signals_to_confirm:
+      - "empathy_human_centered"
+      - "indic_understanding"
+    preservation_checks:
+      - "scientific_research_assistance"
+      - "hindi_scientific_calibration"
+      - "bengali_scientific_fidelity"
+      - "evidence_first_human_centered"
+
+  prohibitions:
+    expose_private_source_labels_to_reviewers: false
+    publish_private_mapping: false
+    reuse_h3_cases: false
+    reuse_h4_cases: false
+    reuse_h5_cases: false
+    reuse_h6_cases: false
+    reuse_prior_dpo_training_prompts: false
+    reuse_v5_training_prompts: false
+    revise_h7_prompts_after_candidate_output_inspection: false
+    reuse_canonical_baseline_cases: false
+    use_shae_material: false
+    treat_h7_as_final_superiority_evidence: false
