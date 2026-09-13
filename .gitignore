@@ -45,10 +45,20 @@ env/
 adapter_model/
 merged_model/
 
-# ----- Datasets & Data Cache (Root level) -----
+# ----- Datasets & Data Cache -----
+# New/untracked material under data/ is PRIVATE BY DEFAULT.
+# Existing Git-tracked research datasets are intentionally public/frozen evidence and
+# remain tracked despite this ignore rule. Never use `git add -f` for new data without
+# provenance/license review and `python scripts/check_public_boundary.py`.
 /data/*
 !/data/schemas/
 !/data/schemas/**
+
+# Explicit never-public namespaces (documentation + defense in depth).
+/data/private/
+/data/sealed/
+/data/reviewer-private/
+/data/kaggle-private/
 /datasets/
 /cache/
 *.parquet
@@ -74,6 +84,9 @@ tb_logs/
 /.human-eval-private/
 /human_eval_sealed/
 /sealed_evaluation/
+/reviewer_exports/
+/private_mappings/
+/sealed_mappings/
 
 # ----- Hugging Face & Framework Cache -----
 .cache/
