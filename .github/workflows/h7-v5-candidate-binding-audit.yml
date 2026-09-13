@@ -7,6 +7,7 @@ on:
       - 'scripts/h7_dhe_generate.py'
       - 'configs/evaluation/h7_dhe_v5_pilot_v1.yaml'
       - '.github/workflows/h7-dhe-v5-kaggle-generation.yml'
+      - 'docs/DPO_V5_P11_P12_RESULTS.md'
 
 permissions:
   contents: read
@@ -22,6 +23,8 @@ jobs:
       EXPECTED_SOURCE_REVISION: 08a0857bbd5a93d58b8ca64a61625e69f68bf442
       EXPECTED_DATASET_SHA256: 1584705bf332137ade1ee24873e5d463653a2b26e26c63f6dc9c87515618bbd4
       EXPECTED_EXPERIMENT_ID: paul_e4b_dpo_v5_corrective
+      EXPECTED_CANDIDATE_CONFIG_SHA256: 2edf45ffe03f0f026acfd4c7ecb35df23275cd9edc3509e7e091115d6a9cd023
+      EXPECTED_CANDIDATE_WEIGHTS_SHA256: 9a5e26985ad85226dc67c6e056dd0856b721d084da4213f1d6fe3f4af19f549c
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,7 +44,7 @@ jobs:
           mkdir -p "$OUT"
           kaggle kernels output "$PRODUCTION_KERNEL" -p "$OUT"
           echo "V5_OUT=$OUT" >> "$GITHUB_ENV"
-      - name: Verify training provenance and emit frozen adapter identity
+      - name: Verify training provenance and frozen adapter identity
         shell: bash
         run: |
           set -euo pipefail
@@ -75,11 +78,15 @@ jobs:
           print('TRAIN_EPOCH='+str(m.get('train_metrics',{}).get('epoch')))
           print('FINAL_AMP_SCALE='+str(m.get('native_amp',{}).get('final_scale')))
           PY
-          echo "CANDIDATE_CONFIG_SHA256=$(sha256sum "$CONFIG" | awk '{print $1}')"
-          echo "CANDIDATE_WEIGHTS_SHA256=$(sha256sum "$WEIGHTS" | awk '{print $1}')"
+          ACTUAL_CONFIG=$(sha256sum "$CONFIG" | awk '{print $1}')
+          ACTUAL_WEIGHTS=$(sha256sum "$WEIGHTS" | awk '{print $1}')
+          test "$ACTUAL_CONFIG" = "$EXPECTED_CANDIDATE_CONFIG_SHA256"
+          test "$ACTUAL_WEIGHTS" = "$EXPECTED_CANDIDATE_WEIGHTS_SHA256"
+          echo "CANDIDATE_CONFIG_SHA256=$ACTUAL_CONFIG"
+          echo "CANDIDATE_WEIGHTS_SHA256=$ACTUAL_WEIGHTS"
           echo "CANDIDATE_CONFIG_BYTES=$(stat -c%s "$CONFIG")"
           echo "CANDIDATE_WEIGHTS_BYTES=$(stat -c%s "$WEIGHTS")"
-      - name: Emit bounded automated diagnostic summaries
+      - name: Verify bounded automated diagnostic summaries
         shell: bash
         run: |
           set -euo pipefail
@@ -87,16 +94,21 @@ jobs:
           DPO_STATUS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/dpo/*/STATUS.json' -print -quit)
           SFT_RESULTS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/sft/*/results.json' -print -quit)
           DPO_RESULTS=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/dpo/*/results.json' -print -quit)
-          SFT_SUMMARY=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/sft/*/summary.md' -print -quit)
-          DPO_SUMMARY=$(find "$V5_OUT" -path '*/paul_e4b_dpo_v5_evaluation/dpo/*/summary.md' -print -quit)
-          for F in "$SFT_STATUS" "$DPO_STATUS" "$SFT_RESULTS" "$DPO_RESULTS" "$SFT_SUMMARY" "$DPO_SUMMARY"; do test -n "$F" && test -f "$F"; done
-          echo '--- SFT STATUS ---'; cat "$SFT_STATUS"
-          echo '--- DPO V5 STATUS ---'; cat "$DPO_STATUS"
-          python - "$SFT_RESULTS" "$DPO_RESULTS" <<'PY'
+          for F in "$SFT_STATUS" "$DPO_STATUS" "$SFT_RESULTS" "$DPO_RESULTS"; do test -n "$F" && test -f "$F"; done
+          python - "$SFT_STATUS" "$DPO_STATUS" "$SFT_RESULTS" "$DPO_RESULTS" <<'PY'
           import json, pathlib, sys
-          for label,p in [('SFT',sys.argv[1]),('DPO_V5',sys.argv[2])]:
-              data=json.loads(pathlib.Path(p).read_text())
-              print(label+'_RESULTS='+json.dumps(data,sort_keys=True,ensure_ascii=False))
+          sft_status=json.loads(pathlib.Path(sys.argv[1]).read_text())
+          dpo_status=json.loads(pathlib.Path(sys.argv[2]).read_text())
+          sft=json.loads(pathlib.Path(sys.argv[3]).read_text())
+          dpo=json.loads(pathlib.Path(sys.argv[4]).read_text())
+          for status in (sft_status,dpo_status):
+              assert status['status']=='SUCCESS'
+              assert status['completed_cases']==50 and status['failed_cases']==0 and status['total_cases']==50
+          assert sft['overall_summary']['overall_safety_adherence']==1.0
+          assert dpo['overall_summary']['overall_safety_adherence']==1.0
+          print('SFT_MEAN_RUBRIC='+str(sft['overall_summary']['mean_rubric_score']))
+          print('DPO_V5_MEAN_RUBRIC='+str(dpo['overall_summary']['mean_rubric_score']))
+          print('SFT_HUMAN_REVIEW_FLAGS='+str(sft['overall_summary']['cases_flagged_for_human_review']))
+          print('DPO_V5_HUMAN_REVIEW_FLAGS='+str(dpo['overall_summary']['cases_flagged_for_human_review']))
+          print('AUTOMATED_DIAGNOSTIC_GATE=PASS_WITH_H7_REQUIRED')
           PY
-          echo '--- SFT SUMMARY ---'; cat "$SFT_SUMMARY"
-          echo '--- DPO V5 SUMMARY ---'; cat "$DPO_SUMMARY"
