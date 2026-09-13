@@ -2,11 +2,6 @@ name: H6 DHE V4 Failure Evidence
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/h6-dhe-v4-failure-evidence.yml'
-      - 'scripts/sanitize_kaggle_public_evidence.py'
 
 permissions:
   contents: read
