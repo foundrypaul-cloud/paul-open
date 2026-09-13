@@ -1,0 +1,27 @@
+name: H7 Binding Log Remediation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/h7-binding-log-remediation.yml'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  remove-affected-historical-runs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Delete historical audit runs that logged private Kaggle output
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for RUN_ID in 34742040633 34742084333; do
+            echo "Deleting historical run ${RUN_ID}"
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+          done
+          echo "Historical private-output audit logs deleted."
