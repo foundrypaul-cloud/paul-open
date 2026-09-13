@@ -15,12 +15,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-
-TEXT_EXTENSIONS = {
-    ".c", ".cc", ".cfg", ".conf", ".css", ".csv", ".env", ".example", ".gas",
-    ".html", ".ini", ".ipynb", ".java", ".js", ".json", ".jsonl", ".md",
-    ".mjs", ".py", ".rst", ".sh", ".toml", ".ts", ".tsx", ".txt", ".yaml", ".yml",
-}
+MAX_TEXT_SCAN_BYTES = 10 * 1024 * 1024
 
 FORBIDDEN_EXACT_PATHS = {".env", "kaggle.json", ".kaggle/kaggle.json"}
 FORBIDDEN_DIR_SEGMENTS = {
@@ -73,18 +68,23 @@ def rel(path: Path) -> str:
     return path.relative_to(ROOT).as_posix()
 
 
-def is_text_candidate(path: Path) -> bool:
-    return path.suffix.lower() in TEXT_EXTENSIONS or path.name in {
-        "Dockerfile", "LICENSE", "NOTICE", "Makefile", "AGENTS.md",
-    }
-
-
 def read_text(path: Path) -> str | None:
-    if not is_text_candidate(path):
+    """Best-effort UTF-8 scan for any reasonably sized tracked file.
+
+    Do not rely on filename extensions: credentials commonly live in dotfiles or
+    extensionless files such as .npmrc, .pypirc, id_rsa, or netrc-style files.
+    """
+    try:
+        if path.stat().st_size > MAX_TEXT_SCAN_BYTES:
+            return None
+        raw = path.read_bytes()
+    except OSError:
+        return None
+    if b"\x00" in raw[:8192]:
         return None
     try:
-        return path.read_text(encoding="utf-8")
-    except (UnicodeDecodeError, OSError):
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
         return None
 
 
@@ -97,6 +97,29 @@ def walk_json_keys(value, prefix=""):
     elif isinstance(value, list):
         for idx, child in enumerate(value):
             yield from walk_json_keys(child, f"{prefix}[{idx}]")
+
+
+def walk_json_strings(value, prefix=""):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            here = f"{prefix}.{key}" if prefix else key
+            yield from walk_json_strings(child, here)
+    elif isinstance(value, list):
+        for idx, child in enumerate(value):
+            yield from walk_json_strings(child, f"{prefix}[{idx}]")
+    elif isinstance(value, str):
+        yield value, prefix
+
+
+def public_value_issue(value: str) -> str | None:
+    lower = value.lower()
+    if "docs.google.com/spreadsheets/" in lower:
+        return "Google Sheets URLs are private/admin surfaces and must not appear in public manifests"
+    if "docs.google.com/forms/" in lower and "/viewform" not in lower:
+        return "Google Forms public links must be respondent-facing /viewform URLs only"
+    if "script.google.com/home/" in lower or "script.google.com/d/" in lower:
+        return "Google Apps Script editor/admin URLs must not appear in public manifests"
+    return None
 
 
 def check_paths(files: list[Path], errors: list[str]) -> None:
@@ -146,6 +169,10 @@ def check_public_json(files: list[Path], errors: list[str]) -> None:
         for key, where in walk_json_keys(parsed):
             if str(key).lower() in PUBLIC_JSON_FORBIDDEN_KEYS:
                 errors.append(f"{rp}: public manifest contains forbidden key {where!r}")
+        for value, where in walk_json_strings(parsed):
+            issue = public_value_issue(value)
+            if issue:
+                errors.append(f"{rp}: public manifest value {where!r}: {issue}")
 
 
 def artifact_blocks(text: str):
