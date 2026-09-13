@@ -9,6 +9,7 @@ if __package__ in (None, ""):
 
 from scripts import materialize_h6_forms_payload as h6
 
+H5_LOCKED_BATCH_ID = "HEB1-64CDCC9521D3"
 H6_LOCKED_BATCH_ID = "HEB1-5AE2CE4166CD"
 
 HEADER = '''// PAUL Open H7 DHE V5 reviewer-safe Google Forms payload.
@@ -25,15 +26,25 @@ HEADER = '''// PAUL Open H7 DHE V5 reviewer-safe Google Forms payload.
 //
 // Use with tools/google_forms/Code.gs in the already-authorized standalone
 // Apps Script project. Run createPaulHumanEvalH7Forms() once.
-// The runner first removes only obsolete, closed H6 per-Form submit triggers;
-// H6 Forms, Sheets, responses, backups and runtime metadata are preserved.
+//
+// Trigger-safety note:
+// H5 previously hit the Apps Script project trigger ceiling because obsolete
+// per-Form triggers from earlier evaluations and a failed H5 materialization were
+// still installed. This H7 runner performs a fail-closed preflight before creating
+// any Form. It removes only provably obsolete triggers from locked H5/H6 batches,
+// deduplicates the shared recovery trigger, and can clean a zero-response partial
+// H7 attempt without deleting any Form, Sheet, response, or backup ledger.
 
 '''
 
 TRIGGER_PREFLIGHT = r'''
 
+const PAUL_H5_LOCKED_BATCH_ID_FOR_H7_ = 'HEB1-64CDCC9521D3';
 const PAUL_H6_LOCKED_BATCH_ID_FOR_H7_ = 'HEB1-5AE2CE4166CD';
 const PAUL_APPS_SCRIPT_TRIGGER_LIMIT_FOR_H7_ = 20;
+const PAUL_OBSOLETE_HISTORICAL_HANDLERS_FOR_H7_ = new Set([
+  'monitorH4AdaptiveFollowup',
+]);
 
 function h7TriggerSourceId_(trigger) {
   try {
@@ -43,47 +54,158 @@ function h7TriggerSourceId_(trigger) {
   }
 }
 
+function h7ParseRuntimeConfig_(properties, formId) {
+  const key = PAUL_FORM_PROPERTY_PREFIX + formId;
+  const raw = properties.getProperty(key);
+  if (!raw) {
+    throw new Error(`H7 trigger preflight found an unmapped PAUL Form trigger for Form ${formId}.`);
+  }
+  try {
+    const config = JSON.parse(raw);
+    if (!config || !config.batch_id) {
+      throw new Error('runtime mapping has no batch_id');
+    }
+    return config;
+  } catch (error) {
+    throw new Error(`H7 trigger preflight could not parse runtime mapping for Form ${formId}: ${error}`);
+  }
+}
+
+function h7TargetBatchId_(packets) {
+  if (!Array.isArray(packets) || packets.length === 0) {
+    throw new Error('H7 trigger preflight requires a non-empty packet list.');
+  }
+  const batchIds = [...new Set(packets.map((packet) => packet.batch_id))];
+  if (batchIds.length !== 1 || !batchIds[0]) {
+    throw new Error(`H7 packets must contain exactly one non-empty batch_id; got ${batchIds}`);
+  }
+  return batchIds[0];
+}
+
+function h7InspectTargetBatchRuntime_(properties, targetBatchId) {
+  const values = properties.getProperties();
+  const staleZeroResponseForms = new Set();
+
+  for (const key of Object.keys(values).sort()) {
+    if (!key.startsWith(PAUL_FORM_PROPERTY_PREFIX)) {
+      continue;
+    }
+    let config;
+    try {
+      config = JSON.parse(values[key]);
+    } catch (error) {
+      continue;
+    }
+    if (!config || config.batch_id !== targetBatchId) {
+      continue;
+    }
+
+    const formId = key.slice(PAUL_FORM_PROPERTY_PREFIX.length);
+    const form = FormApp.openById(formId);
+    const responseCount = form.getResponses().length;
+
+    if (form.isAcceptingResponses()) {
+      throw new Error(
+          `H7 trigger preflight found an already-live H7 Form ${formId}. ` +
+          'Refusing to rerun materialization and create duplicates.',
+      );
+    }
+    if (responseCount > 0) {
+      throw new Error(
+          `H7 trigger preflight found an existing H7 Form ${formId} with ${responseCount} responses. ` +
+          'Refusing to remove its runtime mapping or rerun materialization.',
+      );
+    }
+
+    // A closed, zero-response target-batch Form can be left behind when a prior
+    // creation attempt fails before publish (for example at trigger creation).
+    // It is safe to detach that abandoned runtime mapping and retry. The Form,
+    // response Sheet and backup ledger themselves are deliberately preserved.
+    staleZeroResponseForms.add(formId);
+  }
+
+  return staleZeroResponseForms;
+}
+
 function preparePaulHumanEvalH7TriggerCapacity_(packetCount) {
   if (!Number.isInteger(packetCount) || packetCount <= 0) {
     throw new Error(`H7 trigger preflight requires a positive packet count, got ${packetCount}`);
   }
+  const packets = PAUL_HUMAN_EVAL_SPEC.packets;
+  if (!Array.isArray(packets) || packets.length !== packetCount) {
+    throw new Error('H7 trigger preflight packet-count mismatch.');
+  }
 
+  const targetBatchId = h7TargetBatchId_(packets);
   const properties = PropertiesService.getScriptProperties();
-  const deleted = [];
+  const staleTargetForms = h7InspectTargetBatchRuntime_(properties, targetBatchId);
 
-  // H6 is blinded-analysis locked and all H6 Forms are closed. Remove only
-  // submit triggers whose persisted runtime mapping proves they belong to that
-  // exact locked H6 batch. Preserve the runtime mappings as historical evidence.
+  const deletedHistoricalSubmitTriggers = [];
+  const deletedStaleTargetSubmitTriggers = [];
+  const deletedHistoricalHandlers = [];
+  const deletedDuplicateRecoveryTriggers = [];
+
+  let recoveryKept = false;
   for (const trigger of ScriptApp.getProjectTriggers()) {
-    if (trigger.getHandlerFunction() !== 'onPaulHumanEvalSubmit') {
+    const handler = trigger.getHandlerFunction();
+
+    if (PAUL_OBSOLETE_HISTORICAL_HANDLERS_FOR_H7_.has(handler)) {
+      ScriptApp.deleteTrigger(trigger);
+      deletedHistoricalHandlers.push({handler: handler, source_id: h7TriggerSourceId_(trigger)});
       continue;
     }
+
+    if (handler === PAUL_RECOVERY_HANDLER) {
+      if (!recoveryKept) {
+        recoveryKept = true;
+      } else {
+        ScriptApp.deleteTrigger(trigger);
+        deletedDuplicateRecoveryTriggers.push(h7TriggerSourceId_(trigger));
+      }
+      continue;
+    }
+
+    if (handler !== 'onPaulHumanEvalSubmit') {
+      continue;
+    }
+
     const sourceId = h7TriggerSourceId_(trigger);
     if (!sourceId) {
       throw new Error('H7 trigger preflight found a PAUL submit trigger without a source Form ID.');
     }
-    const raw = properties.getProperty(PAUL_FORM_PROPERTY_PREFIX + sourceId);
-    if (!raw) {
-      throw new Error(`H7 trigger preflight found an unmapped PAUL submit trigger for Form ${sourceId}.`);
+    const config = h7ParseRuntimeConfig_(properties, sourceId);
+    const batchId = config.batch_id;
+
+    if (batchId === PAUL_H5_LOCKED_BATCH_ID_FOR_H7_ || batchId === PAUL_H6_LOCKED_BATCH_ID_FOR_H7_) {
+      const form = FormApp.openById(sourceId);
+      if (form.isAcceptingResponses()) {
+        throw new Error(
+            `H7 trigger preflight refuses to delete a still-open historical PAUL Form ${sourceId}; ` +
+            `batch=${batchId}`,
+        );
+      }
+      ScriptApp.deleteTrigger(trigger);
+      deletedHistoricalSubmitTriggers.push({form_id: sourceId, batch_id: batchId});
+      continue;
     }
-    let config;
-    try {
-      config = JSON.parse(raw);
-    } catch (error) {
-      throw new Error(`H7 trigger preflight could not parse runtime mapping for Form ${sourceId}: ${error}`);
+
+    if (batchId === targetBatchId && staleTargetForms.has(sourceId)) {
+      ScriptApp.deleteTrigger(trigger);
+      deletedStaleTargetSubmitTriggers.push(sourceId);
+      continue;
     }
-    if (!config || config.batch_id !== PAUL_H6_LOCKED_BATCH_ID_FOR_H7_) {
-      throw new Error(
-          `H7 trigger preflight refuses to delete non-H6 submit trigger for Form ${sourceId}; ` +
-          `batch=${config && config.batch_id}`,
-      );
-    }
-    const form = FormApp.openById(sourceId);
-    if (form.isAcceptingResponses()) {
-      throw new Error(`H7 trigger preflight refuses to delete trigger for still-open H6 Form ${sourceId}.`);
-    }
-    ScriptApp.deleteTrigger(trigger);
-    deleted.push(sourceId);
+
+    throw new Error(
+        `H7 trigger preflight found a PAUL submit trigger that is not safe to remove: ` +
+        `Form ${sourceId}, batch=${batchId}. No H7 Form has been created.`,
+    );
+  }
+
+  const deletedStaleTargetRuntimeProperties = [];
+  for (const formId of [...staleTargetForms].sort()) {
+    const key = PAUL_FORM_PROPERTY_PREFIX + formId;
+    properties.deleteProperty(key);
+    deletedStaleTargetRuntimeProperties.push(key);
   }
 
   const remaining = ScriptApp.getProjectTriggers();
@@ -101,9 +223,19 @@ function preparePaulHumanEvalH7TriggerCapacity_(packetCount) {
   }
 
   const summary = {
+    target_h7_batch_id: targetBatchId,
+    h5_locked_batch_id: PAUL_H5_LOCKED_BATCH_ID_FOR_H7_,
     h6_locked_batch_id: PAUL_H6_LOCKED_BATCH_ID_FOR_H7_,
-    deleted_obsolete_h6_submit_trigger_count: deleted.length,
+    deleted_obsolete_historical_submit_trigger_count: deletedHistoricalSubmitTriggers.length,
+    deleted_obsolete_historical_submit_triggers: deletedHistoricalSubmitTriggers,
+    deleted_obsolete_historical_handler_count: deletedHistoricalHandlers.length,
+    deleted_obsolete_historical_handlers: deletedHistoricalHandlers,
+    deleted_duplicate_recovery_trigger_count: deletedDuplicateRecoveryTriggers.length,
+    deleted_stale_h7_submit_trigger_count: deletedStaleTargetSubmitTriggers.length,
+    deleted_stale_h7_runtime_property_count: deletedStaleTargetRuntimeProperties.length,
     h6_runtime_properties_deleted: 0,
+    historical_h5_h6_runtime_properties_deleted: 0,
+    stale_h7_forms_sheets_or_responses_deleted: 0,
     remaining_trigger_count: remaining.length,
     recovery_trigger_already_present: recoveryExists,
     h7_submit_triggers_required: packetCount,
@@ -171,6 +303,8 @@ def generate(bundle_dir: pathlib.Path) -> str:
         raise SystemExit(f"H7 expected 12 one-comparison packets, found {len(packets)}")
     if sum(p["sandbox_auto_close_after_submissions"] for p in packets) != 18:
         raise SystemExit("H7 initial allocation must total exactly 18 judgments")
+    if len({p["batch_id"] for p in packets}) != 1:
+        raise SystemExit("H7 packets must all share one batch_id")
 
     body = (
         "const PAUL_HUMAN_EVAL_SPEC = "

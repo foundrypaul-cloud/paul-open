@@ -1,0 +1,90 @@
+name: H7 Trigger Regression Verification
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/materialize_h7_forms_payload.py'
+      - '.github/workflows/h7-trigger-regression-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-trigger-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build synthetic H7 bundle and inspect generated repair logic
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts import materialize_h6_forms_payload as h6
+
+          root=Path('/tmp/h7-reviewer-bundle'); root.mkdir(parents=True,exist_ok=True)
+          v01=[]; v02=[]
+          for i,spec in enumerate(h6.CASE_SPECS,1):
+              cohort,language,domain=spec['key']
+              common={
+                  'reviewer_cohort':cohort,
+                  'language':language,
+                  'domain':domain,
+                  'prompt':f'H7 trigger regression prompt {i}',
+              }
+              a=f'Alpha {i}'; b=f'Beta {i}'
+              v01.append({**common,'comparison_id':f'R{i:02d}-V01','response_a':a,'response_b':b})
+              v02.append({**common,'comparison_id':f'R{i:02d}-V02','response_a':b,'response_b':a})
+          for variant,comparisons in [('V01',v01),('V02',v02)]:
+              (root/f'variant_{variant.lower()}.json').write_text(json.dumps({
+                  'batch_id':'HEB1-H7-TRIGGER-REGRESSION',
+                  'variant_id':variant,
+                  'partition':'development',
+                  'comparisons':comparisons,
+              },ensure_ascii=False)+'\n',encoding='utf-8')
+          PY
+          python scripts/materialize_h7_forms_payload.py /tmp/h7-reviewer-bundle /tmp/H7Payload.gs
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('/tmp/H7Payload.gs').read_text(encoding='utf-8')
+
+          # H5 incident: old PAUL submit/adaptive triggers consumed the project quota.
+          assert "PAUL_H5_LOCKED_BATCH_ID_FOR_H7_ = 'HEB1-64CDCC9521D3'" in text
+          assert "'monitorH4AdaptiveFollowup'" in text
+
+          # H6 handoff: locked H6 submit triggers are removable only after the
+          # corresponding Form is confirmed closed; historical runtime mappings stay.
+          assert "PAUL_H6_LOCKED_BATCH_ID_FOR_H7_ = 'HEB1-5AE2CE4166CD'" in text
+          assert 'still-open historical PAUL Form' in text
+          assert 'historical_h5_h6_runtime_properties_deleted: 0' in text
+
+          # Recovery trigger must be singleton to avoid silent quota consumption.
+          assert 'deleted_duplicate_recovery_trigger_count' in text
+          assert 'if (!recoveryKept)' in text
+
+          # Partial failed H7 materialization can leave closed zero-response runtime
+          # mappings; clean only those mappings/triggers and preserve all artifacts.
+          assert 'h7InspectTargetBatchRuntime_' in text
+          assert 'responseCount > 0' in text
+          assert 'staleZeroResponseForms.add(formId)' in text
+          assert 'properties.deleteProperty(key)' in text
+          assert 'stale_h7_forms_sheets_or_responses_deleted: 0' in text
+
+          # Unknown PAUL submit triggers and active/used H7 Forms fail closed.
+          assert 'not safe to remove' in text
+          assert 'already-live H7 Form' in text
+          assert 'Refusing to remove its runtime mapping or rerun materialization' in text
+
+          # Capacity is checked after cleanup and before any H7 Form is created.
+          assert 'projected > PAUL_APPS_SCRIPT_TRIGGER_LIMIT_FOR_H7_' in text
+          assert 'No H7 Form has been created.' in text
+          print('H7 TRIGGER REGRESSION VERIFICATION: PASS')
+          PY
+      - name: JavaScript syntax check
+        run: |
+          cp /tmp/H7Payload.gs /tmp/H7Payload.js
+          node --check /tmp/H7Payload.js
