@@ -2,6 +2,7 @@ name: Kaggle DPO V2 Production Resume
 
 # Operational-only watcher for an already-launched production kernel.
 # It never pushes/relaunches training and therefore cannot duplicate the locked experiment.
+# Private Kaggle output is never uploaded directly from this public repository.
 on:
   workflow_dispatch:
 
@@ -18,6 +19,9 @@ jobs:
       KAGGLE_PRODUCTION_SLUG: paul-open-dpo-v2-pr4-production
 
     steps:
+      - name: Check out sanitizer
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -53,22 +57,34 @@ jobs:
           echo "Timed out waiting for existing production training/evaluation; no relaunch was attempted."
           exit 1
 
-      - name: Download existing production and evaluation outputs
+      - name: Download private production output to runner temp
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p kaggle-production-output
-          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_PRODUCTION_SLUG" -p kaggle-production-output || true
-          find kaggle-production-output -maxdepth 6 -type f -print || true
+          PRIVATE_OUTPUT="$RUNNER_TEMP/kaggle-dpo-v2-private"
+          mkdir -p "$PRIVATE_OUTPUT"
+          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_PRODUCTION_SLUG" -p "$PRIVATE_OUTPUT" || true
+          echo "PRIVATE_OUTPUT=$PRIVATE_OUTPUT" >> "$GITHUB_ENV"
 
-      - name: Upload existing production and evaluation outputs
+      - name: Build aggregate-only public evidence
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public-evidence
+          python scripts/sanitize_kaggle_public_evidence.py \
+            --input "$PRIVATE_OUTPUT" \
+            --output public-evidence/dpo-v2-production.json
+
+      - name: Upload sanitized public evidence only
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: kaggle-dpo-v2-production-evaluation-output
-          path: kaggle-production-output
-          if-no-files-found: warn
+          name: kaggle-dpo-v2-public-evidence
+          path: public-evidence/dpo-v2-production.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Fail if existing production training or evaluation failed
         if: steps.production_wait.outcome != 'success'
