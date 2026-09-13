@@ -108,7 +108,7 @@ Each experiment produces the following isolated files under `results/baseline/<e
 
 ## 7. Post-Processing & Offline Analysis
 
-The CLI tool [scripts/analyze_baseline.py](file:///home/paul-foundry/Projects/Open%20Source/PAUL%20Open/paul-open/scripts/analyze_baseline.py) allows inspecting results completely offline without requiring GPU or model weights:
+The CLI tool [`scripts/analyze_baseline.py`](../scripts/analyze_baseline.py) allows inspecting results completely offline without requiring GPU or model weights:
 
 ```bash
 # Analyze latest run
