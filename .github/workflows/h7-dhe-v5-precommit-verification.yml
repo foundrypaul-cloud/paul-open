@@ -1,0 +1,103 @@
+name: H7 DHE V5 Precommit Verification
+
+on:
+  pull_request:
+    paths:
+      - 'data/h7_dhe_v5_pilot_v1.jsonl'
+      - 'docs/H7_DHE_V5_PRECOMMIT_SPEC.md'
+      - '.github/workflows/h7-dhe-v5-precommit-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-h7-precommit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install repository environment
+        run: |
+          python -m pip install --upgrade uv
+          uv sync --frozen --extra eval
+      - name: Verify H7 prompt freeze and development separation
+        run: |
+          uv run python - <<'PY'
+          import json, unicodedata
+          from pathlib import Path
+
+          manifest=Path('data/h7_dhe_v5_pilot_v1.jsonl')
+          rows=[json.loads(x) for x in manifest.read_text(encoding='utf-8').splitlines() if x.strip()]
+          assert len(rows)==6, len(rows)
+          ids=[r['case_id'] for r in rows]
+          prompts=[r['prompt'] for r in rows]
+          assert ids==[f'H7-DHE-{i:03d}' for i in range(1,7)], ids
+          assert len(ids)==len(set(ids))
+          assert len(prompts)==len(set(prompts))
+          assert all(r['partition']=='development' for r in rows)
+          assert all(r['development_exposed'] is True for r in rows)
+          assert all(r['provenance']=='authored_for_h7_2026-09-13' for r in rows)
+
+          expected=[
+              ('science_reasoning','en','stem_capable'),
+              ('socratic_tutoring','en','educator'),
+              ('scientific_research_assistance','en','domain_expert'),
+              ('scientific_explanation','hi','bilingual'),
+              ('scientific_explanation','bn','bilingual'),
+              ('evidence_first_human_centered','es','bilingual'),
+          ]
+          actual=[(r['domain'],r['language'],r['reviewer_cohort']) for r in rows]
+          assert actual==expected, actual
+
+          comparison=[]
+          def add_jsonl(source,path,id_key='case_id'):
+              p=Path(path)
+              if not p.is_file(): return
+              for line in p.read_text(encoding='utf-8').splitlines():
+                  if line.strip():
+                      r=json.loads(line)
+                      comparison.append((source,r.get(id_key,r.get('id','?')),r['prompt']))
+
+          add_jsonl('h4','data/h4_dhe_pilot_v1.jsonl')
+          add_jsonl('h5','data/h5_dhe_v3_pilot_v1.jsonl')
+          add_jsonl('h6','data/h6_dhe_v4_pilot_v1.jsonl')
+          add_jsonl('dpo_v1_train','data/train/dpo_train.jsonl','id')
+          add_jsonl('dpo_v2_train','data/train/dpo_v2_corrective.jsonl','id')
+          for version in ('dpo_v3','dpo_v4','dpo_v5'):
+              for shard in sorted(Path('data/train',version).glob('*.jsonl')):
+                  add_jsonl(version+'_train',str(shard),'id')
+
+          forbidden_exact={q for _,_,q in comparison}
+          assert not set(prompts).intersection(forbidden_exact), 'exact H4/H5/H6/DPO V1-V5 prompt reuse'
+
+          def toks(text):
+              text=unicodedata.normalize('NFKC',text).casefold()
+              tokens=[]; current=[]
+              for ch in text:
+                  category=unicodedata.category(ch)
+                  if category[0] in {'L','N','M'} or ch=='_':
+                      current.append(ch)
+                  elif current:
+                      tokens.append(''.join(current)); current=[]
+              if current: tokens.append(''.join(current))
+              return set(tokens)
+
+          best=(0.0,None,None,None)
+          per_case=[]
+          for r in rows:
+              a=toks(r['prompt']); local=(0.0,None,None)
+              for source_name,other_id,q in comparison:
+                  b=toks(q); u=a|b
+                  score=len(a&b)/len(u) if u else 0.0
+                  if score>local[0]: local=(score,source_name,other_id)
+                  if score>best[0]: best=(score,r['case_id'],source_name,other_id)
+              per_case.append({'case_id':r['case_id'],'max_token_set_jaccard':local[0],'nearest_source':local[1],'nearest_id':local[2]})
+          assert best[0] < 0.35, f'development overlap too high: {best}'
+          print(json.dumps({'status':'PASS','cases':len(rows),'tokenizer':'unicode_letter_mark_word_v1','threshold_exclusive':0.35,'max_development_token_jaccard':best[0],'nearest_pair':best[1:],'per_case':per_case},ensure_ascii=False,sort_keys=True))
+          PY
+      - name: Run canonical benchmark leakage checker
+        run: |
+          uv run python scripts/check_leakage.py data/h7_dhe_v5_pilot_v1.jsonl --json-output /tmp/h7_baseline_leakage_report.json --verbose
