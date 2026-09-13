@@ -4,6 +4,9 @@ import json
 import pathlib
 import sys
 
+if __package__ in (None, ""):
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+
 from scripts import materialize_h6_forms_payload as h6
 
 H6_LOCKED_BATCH_ID = "HEB1-5AE2CE4166CD"
