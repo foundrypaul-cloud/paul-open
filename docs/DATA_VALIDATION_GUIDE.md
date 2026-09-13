@@ -36,7 +36,7 @@ To ensure high data quality without brittle or overly rigid heuristic rejections
 
 ## 2. CLI Validation Tooling
 
-The repository provides two dedicated CLI tools under [`scripts/`](file:///home/paul-foundry/Projects/Open%20Source/PAUL%20Open/paul-open/scripts):
+The repository provides two dedicated CLI tools under [`scripts/`](../scripts/):
 
 ### A. Dataset Validator (`scripts/validate_dataset.py`)
 
@@ -64,7 +64,7 @@ uv run python scripts/validate_dataset.py data/pilot/sft/stem_calc.jsonl --verbo
 
 ### B. Benchmark Leakage Checker (`scripts/check_leakage.py`)
 
-Audits candidate training examples against the **Canonical Benchmark v1.0.0** ([`src/paul_open_model/evaluation/data/baseline_suite_v1.json`](file:///home/paul-foundry/Projects/Open%20Source/PAUL%20Open/paul-open/src/paul_open_model/evaluation/data/baseline_suite_v1.json)) in strictly read-only mode:
+Audits candidate training examples against the **Canonical Benchmark v1.0.0** ([`src/paul_open_model/evaluation/data/baseline_suite_v1.json`](../src/paul_open_model/evaluation/data/baseline_suite_v1.json)) in strictly read-only mode:
 
 ```bash
 # Audit a complete dataset file for benchmark leakage
@@ -87,9 +87,9 @@ uv run python scripts/check_leakage.py data/pilot/sft/all_pilot.jsonl --json-out
 
 ## 3. JSON Schemas
 
-Official schemas are located in [`data/schemas/`](file:///home/paul-foundry/Projects/Open%20Source/PAUL%20Open/paul-open/data/schemas):
+Official schemas are located in [`data/schemas/`](../data/schemas/):
 
-### SFT Schema ([`data/schemas/sft_schema.json`](file:///home/paul-foundry/Projects/Open%20Source/PAUL%20Open/paul-open/data/schemas/sft_schema.json))
+### SFT Schema ([`data/schemas/sft_schema.json`](../data/schemas/sft_schema.json))
 ```json
 {
   "id": "paul_sft_physics_optics_001",
@@ -122,7 +122,7 @@ Official schemas are located in [`data/schemas/`](file:///home/paul-foundry/Proj
 }
 ```
 
-### DPO Schema ([`data/schemas/dpo_schema.json`](file:///home/paul-foundry/Projects/Open%20Source/PAUL%20Open/paul-open/data/schemas/dpo_schema.json))
+### DPO Schema ([`data/schemas/dpo_schema.json`](../data/schemas/dpo_schema.json))
 ```json
 {
   "id": "paul_dpo_physics_calc_001",
