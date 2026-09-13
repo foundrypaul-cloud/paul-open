@@ -1,0 +1,80 @@
+name: H7 Forms Materializer Verification
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/materialize_h7_forms_payload.py'
+      - 'scripts/materialize_h6_forms_payload.py'
+      - '.github/workflows/h7-forms-materializer-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-h7-forms-materializer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Build synthetic complementary H7 reviewer bundle
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from scripts import materialize_h6_forms_payload as h6
+
+          root=Path('/tmp/h7-reviewer-bundle'); root.mkdir(parents=True,exist_ok=True)
+          left=[]; right=[]
+          for i,spec in enumerate(h6.CASE_SPECS,1):
+              cohort,language,domain=spec['key']
+              prompt=f'H7 synthetic prompt {i} ({language})'
+              a=f'H7 synthetic answer Alpha {i}'
+              b=f'H7 synthetic answer Beta {i}'
+              common={'reviewer_cohort':cohort,'language':language,'domain':domain,'prompt':prompt}
+              left.append({**common,'comparison_id':f'H7-TEST-{i:02d}-V01','response_a':a,'response_b':b})
+              right.append({**common,'comparison_id':f'H7-TEST-{i:02d}-V02','response_a':b,'response_b':a})
+          for variant_id,comparisons in [('V01',left),('V02',right)]:
+              (root/f'variant_{variant_id.lower()}.json').write_text(json.dumps({
+                  'batch_id':'HEB1-H7SYNTHETIC000','variant_id':variant_id,
+                  'partition':'development','comparisons':comparisons,
+              },ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+      - name: Materialize and validate H7 payload
+        run: |
+          set -euo pipefail
+          python scripts/materialize_h7_forms_payload.py /tmp/h7-reviewer-bundle /tmp/H7Payload.gs
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          text=Path('/tmp/H7Payload.gs').read_text(encoding='utf-8')
+          marker='const PAUL_HUMAN_EVAL_SPEC = '
+          payload=text.split(marker,1)[1].split(';\n',1)[0]
+          spec=json.loads(payload)
+          packets=spec['packets']
+          assert len(packets)==12
+          assert sum(p['sandbox_auto_close_after_submissions'] for p in packets)==18
+          assert all(p['packet_id'].startswith('HEF1-H7-') for p in packets)
+          assert len({p['packet_id'] for p in packets})==12
+          assert {p['variant_id'] for p in packets}=={'V01','V02'}
+          assert sum(p['variant_id']=='V01' for p in packets)==6
+          assert sum(p['variant_id']=='V02' for p in packets)==6
+          assert all(p['partition']=='development' for p in packets)
+          assert all(len(p['comparisons'])==1 for p in packets)
+          assert 'function createPaulHumanEvalH7Forms()' in text
+          assert 'preparePaulHumanEvalH7TriggerCapacity_(packets.length);' in text
+          assert "PAUL_H6_LOCKED_BATCH_ID_FOR_H7_ = 'HEB1-5AE2CE4166CD'" in text
+          assert 'h6_runtime_properties_deleted: 0' in text
+          assert 'form.isAcceptingResponses()' in text
+          assert 'projected > PAUL_APPS_SCRIPT_TRIGGER_LIMIT_FOR_H7_' in text
+          assert 'No H7 Form has been created.' in text
+          assert 'dpo_v5_corrective' not in text.lower()
+          assert 'sft_reference' not in text.lower()
+          print('H7 FORMS MATERIALIZER: PASS')
+          PY
+      - name: JavaScript syntax check generated payload
+        run: |
+          cp /tmp/H7Payload.gs /tmp/H7Payload.js
+          node --check /tmp/H7Payload.js
