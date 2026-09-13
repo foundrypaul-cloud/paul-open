@@ -21,19 +21,21 @@ data:
       target: "en"
     - source: "te"
       target: "en"
-  
+
   candidate_sources:
     - name: "FLORES-200"
       type: "evaluation"
       license: "CC-BY-SA-4.0"
-      notes: "Multi-way parallel evaluation benchmark — 200 languages"
+      notes: "Multi-way parallel evaluation benchmark — verify exact upstream terms before use"
     - name: "Samanantar"
-      type: "training"
-      license: "CC-BY-4.0"
+      type: "evaluation_only_pending_license_resolution"
+      license: "REVIEW_REQUIRED"
+      notes: "HF metadata reports CC-BY-NC-4.0 while upstream project text has also described CC0 packaging; do not train or redistribute until provenance/license resolution"
     - name: "IN22"
       type: "evaluation"
       license: "CC-BY-4.0"
-  
+      notes: "Keep out of training to preserve benchmark integrity"
+
   preprocessing:
     max_length: 2048
     min_length: 10

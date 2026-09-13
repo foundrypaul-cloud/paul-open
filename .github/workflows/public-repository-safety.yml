@@ -1,0 +1,22 @@
+name: Public Repository Safety Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Scan tracked public boundary
+        run: python3 scripts/check_public_boundary.py
+      - name: Test Kaggle public-evidence allowlist
+        run: python3 -m unittest tests.test_public_boundary

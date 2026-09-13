@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/kaggle-dpo-v4-production.yml'
       - 'scripts/dpo_v4_e4b_train.py'
+      - 'scripts/sanitize_kaggle_public_evidence.py'
       - 'configs/training/dpo_v4_e4b_corrective.yaml'
       - 'data/train/dpo_v4/**'
 
@@ -92,18 +93,24 @@ jobs:
             sleep 20
           done
           exit 1
-      - name: Download failed preflight evidence
+      - name: Download failed preflight output privately and sanitize
         if: steps.preflight_wait.outcome != 'success'
         run: |
-          mkdir -p kaggle-v4-preflight-output
-          kaggle kernels output "$KAGGLE_USERNAME/$PREFLIGHT_SLUG" -p kaggle-v4-preflight-output || true
-      - name: Upload failed preflight evidence
+          set -euo pipefail
+          PRIVATE_PREFLIGHT="$RUNNER_TEMP/kaggle-v4-preflight-private"
+          mkdir -p "$PRIVATE_PREFLIGHT" public-evidence
+          kaggle kernels output "$KAGGLE_USERNAME/$PREFLIGHT_SLUG" -p "$PRIVATE_PREFLIGHT" || true
+          python scripts/sanitize_kaggle_public_evidence.py \
+            --input "$PRIVATE_PREFLIGHT" \
+            --output public-evidence/dpo-v4-preflight.json
+      - name: Upload sanitized preflight evidence only
         if: steps.preflight_wait.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: kaggle-dpo-v4-preflight-output
-          path: kaggle-v4-preflight-output
-          if-no-files-found: warn
+          name: kaggle-dpo-v4-preflight-public-evidence
+          path: public-evidence/dpo-v4-preflight.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Stop if preflight failed
         if: steps.preflight_wait.outcome != 'success'
         run: exit 1
@@ -165,20 +172,24 @@ jobs:
             sleep 20
           done
           exit 1
-      - name: Download production outputs
+      - name: Download production output privately and sanitize
         if: always()
         run: |
-          mkdir -p kaggle-v4-production-output
-          kaggle kernels output "$KAGGLE_USERNAME/$PRODUCTION_SLUG" -p kaggle-v4-production-output || true
-          find kaggle-v4-production-output -maxdepth 6 -type f -print || true
-      - name: Upload production outputs
+          set -euo pipefail
+          PRIVATE_PRODUCTION="$RUNNER_TEMP/kaggle-v4-production-private"
+          mkdir -p "$PRIVATE_PRODUCTION" public-evidence
+          kaggle kernels output "$KAGGLE_USERNAME/$PRODUCTION_SLUG" -p "$PRIVATE_PRODUCTION" || true
+          python scripts/sanitize_kaggle_public_evidence.py \
+            --input "$PRIVATE_PRODUCTION" \
+            --output public-evidence/dpo-v4-production.json
+      - name: Upload sanitized production evidence only
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: kaggle-dpo-v4-production-evaluation-output
-          path: kaggle-v4-production-output
-          if-no-files-found: warn
-          retention-days: 30
+          name: kaggle-dpo-v4-public-evidence
+          path: public-evidence/dpo-v4-production.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Fail if production failed
         if: steps.production_wait.outcome != 'success'
         run: exit 1

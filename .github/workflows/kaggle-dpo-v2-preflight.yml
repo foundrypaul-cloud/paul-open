@@ -1,7 +1,8 @@
 name: Kaggle DPO V2 Preflight
 
-# Authenticated bridge for the exact PAUL Open PR head. Uses the authoritative
+# Authenticated bridge for the exact PAUL Open head. Uses the authoritative
 # historical adapter dataset and locked uv environment recorded by the repository.
+# Private Kaggle output is sanitized before any public Actions artifact is created.
 on:
   workflow_dispatch:
 
@@ -81,7 +82,7 @@ jobs:
                   f'{input_root}, found {len(adapter_matches)}: {adapter_matches}'
               )
           adapter_root = adapter_matches[0]
-          print(f'Resolved historical adapter mount: {adapter_root}')
+          print('Resolved historical adapter mount.')
 
           subprocess.run([
               'uv', 'run', 'python', str(repo_dir / 'scripts' / 'dpo_v2_e4b_train.py'),
@@ -148,22 +149,26 @@ jobs:
           echo "Timed out waiting for Kaggle preflight"
           exit 1
 
-      - name: Download Kaggle preflight output
+      - name: Download failed preflight output privately and sanitize
         if: steps.kaggle_wait.outcome != 'success'
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p kaggle-preflight-output
-          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_KERNEL_SLUG" -p kaggle-preflight-output || true
-          find kaggle-preflight-output -maxdepth 4 -type f -print || true
+          PRIVATE_PREFLIGHT="$RUNNER_TEMP/kaggle-dpo-v2-preflight-private"
+          mkdir -p "$PRIVATE_PREFLIGHT" public-evidence
+          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_KERNEL_SLUG" -p "$PRIVATE_PREFLIGHT" || true
+          python scripts/sanitize_kaggle_public_evidence.py \
+            --input "$PRIVATE_PREFLIGHT" \
+            --output public-evidence/dpo-v2-preflight.json
 
-      - name: Upload Kaggle preflight output
+      - name: Upload sanitized preflight evidence only
         if: steps.kaggle_wait.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: kaggle-dpo-v2-preflight-output
-          path: kaggle-preflight-output
-          if-no-files-found: warn
+          name: kaggle-dpo-v2-preflight-public-evidence
+          path: public-evidence/dpo-v2-preflight.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Fail if Kaggle preflight failed
         if: steps.kaggle_wait.outcome != 'success'
@@ -209,7 +214,7 @@ jobs:
                   f'{input_root}, found {len(adapter_matches)}: {adapter_matches}'
               )
           sft_adapter = adapter_matches[0]
-          print(f'Resolved historical adapter mount: {sft_adapter}')
+          print('Resolved historical adapter mount.')
 
           subprocess.run([
               'uv', 'run', 'python', str(repo_dir / 'scripts' / 'dpo_v2_e4b_train.py'),
@@ -298,22 +303,26 @@ jobs:
           echo "Timed out waiting for production training/evaluation"
           exit 1
 
-      - name: Download production and evaluation outputs
+      - name: Download production output privately and sanitize
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p kaggle-production-output
-          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_PRODUCTION_SLUG" -p kaggle-production-output || true
-          find kaggle-production-output -maxdepth 6 -type f -print || true
+          PRIVATE_PRODUCTION="$RUNNER_TEMP/kaggle-dpo-v2-production-private"
+          mkdir -p "$PRIVATE_PRODUCTION" public-evidence
+          kaggle kernels output "$KAGGLE_USERNAME/$KAGGLE_PRODUCTION_SLUG" -p "$PRIVATE_PRODUCTION" || true
+          python scripts/sanitize_kaggle_public_evidence.py \
+            --input "$PRIVATE_PRODUCTION" \
+            --output public-evidence/dpo-v2-production.json
 
-      - name: Upload production and evaluation outputs
+      - name: Upload sanitized production evidence only
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: kaggle-dpo-v2-production-evaluation-output
-          path: kaggle-production-output
-          if-no-files-found: warn
+          name: kaggle-dpo-v2-public-evidence
+          path: public-evidence/dpo-v2-production.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Fail if production training or evaluation failed
         if: steps.production_wait.outcome != 'success'

@@ -15,6 +15,8 @@ Authority order:
 
 A website, private monorepo, slide deck, social post, or agent-generated summary must never override repository evidence.
 
+For all publication-boundary decisions, also read [`docs/PUBLIC_REPOSITORY_BOUNDARY.md`](docs/PUBLIC_REPOSITORY_BOUNDARY.md).
+
 ## 2. Current research state
 
 Read [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) before making research-facing changes.
@@ -80,7 +82,8 @@ Never expose publicly:
 - response spreadsheets or backup ledgers;
 - hidden model/checkpoint identity;
 - hidden A/B variant mappings;
-- internal reviewer linkage data;
+- blinding seeds or private source mappings;
+- internal reviewer linkage data or reviewer contact information;
 - DHE/SHAE material not approved for release.
 
 Reviewer-facing links must be respondent links (`/viewform`) only.
@@ -99,11 +102,12 @@ Preferred implementation:
 - build evaluation CTA/state from `public/human-evaluation.json`;
 - link detailed claims back to versioned repository documents;
 - show a safe degraded/closed state if the manifest is unavailable or invalid;
-- never hard-code scientific claims in the private website monorepo when they can be sourced from this repository.
+- never hard-code scientific claims in the private website monorepo when they can be sourced from this repository;
+- never place admin URLs, Form/Sheet IDs, reviewer PII, secrets, private mappings, or sealed material in public manifests.
 
 A private website commit is not experimental evidence.
 
-## 8. Secrets and private artifacts
+## 8. Secrets, private artifacts, and public-boundary mechanics
 
 Never commit, print, log, or expose:
 
@@ -112,9 +116,28 @@ Never commit, print, log, or expose:
 - private adapters/checkpoints unless a deliberate release review approves them;
 - Google admin/editor URLs;
 - private reviewer contact information;
-- secrets from `.env` or CI secret stores.
+- secrets from `.env` or CI secret stores;
+- proprietary/confidential PAUL Foundry material;
+- third-party content that cannot legally be redistributed here.
 
 Use `.env.example` only for variable names and safe examples.
+
+For any private input that produces public evidence, the only supported flow is:
+
+`PRIVATE SOURCE -> EXPLICIT ALLOWLIST/SANITIZER -> PUBLIC SAFE OUTPUT`
+
+Never upload a private source and sanitize it afterward. For private Kaggle trees use `scripts/sanitize_kaggle_public_evidence.py`.
+
+New/untracked `data/` content is private by default. Existing tracked research data is public because it is already part of the versioned research record. Do not use `git add -f` to bypass the boundary without documented provenance/license/publication review.
+
+Before pushing a same-repository branch, run:
+
+```bash
+python scripts/check_public_boundary.py
+python -m unittest tests.test_public_boundary
+```
+
+CI cannot make a public branch private; the local/pre-push check is therefore mandatory for agents that can push.
 
 ## 9. Normal development workflow
 
@@ -123,9 +146,10 @@ For non-trivial changes:
 1. inspect current `main` and relevant evidence first;
 2. create a focused branch;
 3. make the smallest change consistent with the research boundary;
-4. run the relevant tests/verification workflows;
-5. open a PR with explicit research-impact notes;
-6. merge only after checks pass and the diff does not alter a frozen experiment unintentionally.
+4. run `python scripts/check_public_boundary.py` before the first push;
+5. run the relevant tests/verification workflows;
+6. open a PR with explicit research-impact notes;
+7. merge only after checks pass and the diff does not alter a frozen experiment unintentionally.
 
 Documentation-only changes must still avoid rewriting historical evidence.
 
@@ -134,10 +158,11 @@ Documentation-only changes must still avoid rewriting historical evidence.
 An external IDE agent updating the PAUL Open website should first read, in this order:
 
 1. `AGENTS.md`
-2. `docs/PROJECT_STATUS.md`
-3. `public/research-status.json`
-4. `public/human-evaluation.json`
-5. `docs/WEBSITE_INTEGRATION.md`
-6. `README.md`
+2. `docs/PUBLIC_REPOSITORY_BOUNDARY.md`
+3. `docs/PROJECT_STATUS.md`
+4. `public/research-status.json`
+5. `public/human-evaluation.json`
+6. `docs/WEBSITE_INTEGRATION.md`
+7. `README.md`
 
 Then inspect the private website codebase and implement only presentation/integration changes. Do not duplicate or mutate research source data inside the private monorepo.

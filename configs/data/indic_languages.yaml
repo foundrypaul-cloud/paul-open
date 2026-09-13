@@ -16,22 +16,22 @@ data:
       name: "Tamil"
     - code: "te"
       name: "Telugu"
-  
-  # Candidate datasets (to be evaluated — not downloaded yet)
+
+  # Candidate datasets (planning metadata only — not downloaded by this config)
   candidate_sources:
     - name: "IndicCorp v2"
-      type: "monolingual"
-      license: "CC-BY-4.0"
-      notes: "Large-scale monolingual corpora for Indian languages"
+      type: "monolingual_candidate_training"
+      license: "CC0-1.0"
+      notes: "Large-scale monolingual corpus; provenance review still required before training/release"
     - name: "Samanantar"
-      type: "parallel"
-      license: "CC-BY-4.0"
-      notes: "Largest publicly available parallel corpora for Indic languages"
+      type: "evaluation_only_pending_license_resolution"
+      license: "REVIEW_REQUIRED"
+      notes: "HF metadata reports CC-BY-NC-4.0 while upstream project text has also described CC0 packaging; do not train or redistribute until resolved"
     - name: "IN22"
-      type: "parallel"
+      type: "evaluation"
       license: "CC-BY-4.0"
-      notes: "AI4Bharat multi-way parallel evaluation set"
-  
+      notes: "AI4Bharat multi-way parallel evaluation set; keep out of training to preserve benchmark integrity"
+
   preprocessing:
     max_length: 4096
     deduplicate: true

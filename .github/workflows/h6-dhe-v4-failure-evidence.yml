@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/h6-dhe-v4-failure-evidence.yml'
+      - 'scripts/sanitize_kaggle_public_evidence.py'
 
 permissions:
   contents: read
@@ -25,34 +26,23 @@ jobs:
           python-version: '3.11'
       - name: Install Kaggle CLI
         run: python -m pip install --upgrade kaggle
-      - name: Download existing H6 kernel evidence
+      - name: Download private H6 failure evidence and allowlist public fields
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/h6-kaggle-output" h6-failure-evidence
-          kaggle kernels output "$KAGGLE_USERNAME/$H6_KERNEL_SLUG" -p "$RUNNER_TEMP/h6-kaggle-output"
-          LOG=$(find "$RUNNER_TEMP/h6-kaggle-output" -maxdepth 2 -type f -name '*.log' -print -quit)
-          test -n "$LOG"
-          python - "$LOG" h6-failure-evidence/sanitized_failure_excerpt.txt <<'PY'
-          import pathlib, re, sys
-          src = pathlib.Path(sys.argv[1]).read_text(encoding='utf-8', errors='replace')
-          lines = []
-          keep = re.compile(r'(generation truncation gate failed|native-script gate failed|automated safety gate failed|malformed generation|RuntimeError|Traceback|H6-DHE-|max_new_tokens|EOS)', re.I)
-          for line in src.splitlines():
-              if keep.search(line):
-                  line = line.replace('sft_reference', 'checkpoint').replace('dpo_v4_corrective', 'checkpoint')
-                  line = re.sub(r'/kaggle/input/[^\s\]\)\'\"]+', '<private-input>', line)
-                  line = re.sub(r'/tmp/paul-open', '<repo>', line)
-                  lines.append(line[-2000:])
-          pathlib.Path(sys.argv[2]).write_text('\n'.join(lines[-200:]) + '\n', encoding='utf-8')
-          PY
-          F=$(find "$RUNNER_TEMP/h6-kaggle-output" -type f -name failure_summary.json -print -quit)
-          [ -z "$F" ] || cp "$F" h6-failure-evidence/failure_summary.json
-          test -s h6-failure-evidence/sanitized_failure_excerpt.txt
-      - name: Upload sanitized failure evidence
+          PRIVATE_OUTPUT="$RUNNER_TEMP/h6-kaggle-output"
+          mkdir -p "$PRIVATE_OUTPUT" h6-failure-evidence
+          kaggle kernels output "$KAGGLE_USERNAME/$H6_KERNEL_SLUG" -p "$PRIVATE_OUTPUT"
+          python scripts/sanitize_kaggle_public_evidence.py \
+            --input "$PRIVATE_OUTPUT" \
+            --output h6-failure-evidence/failure_summary.json
+          printf '%s\n' \
+            'Private H6 generation failed. Public evidence is intentionally limited to allowlisted aggregate failure fields.' \
+            > h6-failure-evidence/README.txt
+      - name: Upload sanitized failure evidence only
         uses: actions/upload-artifact@v4
         with:
           name: h6-dhe-v4-sanitized-failure-evidence
           path: h6-failure-evidence
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 14
