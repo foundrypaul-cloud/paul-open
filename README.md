@@ -2,7 +2,7 @@
 
 **PAUL Open** is Paul Foundry's public, open-source research initiative for building and evaluating reproducible AI systems for multilingual knowledge work, science education, tutoring, teacher assistance, human-centered interaction, and scientific research.
 
-[Website](https://open.paulfoundry.com/) · [Current research status](docs/PROJECT_STATUS.md) · [E4B experiment journey](docs/EXPERIMENT_JOURNEY_E4B.md) · [Contributing](CONTRIBUTING.md)
+[Website](https://open.paulfoundry.com/) · [Current research status](docs/PROJECT_STATUS.md) · [Public repository boundary](docs/PUBLIC_REPOSITORY_BOUNDARY.md) · [E4B experiment journey](docs/EXPERIMENT_JOURNEY_E4B.md) · [Contributing](CONTRIBUTING.md)
 
 > [!IMPORTANT]
 > **Current research state — 10 September 2026**
@@ -30,7 +30,7 @@ For machine-readable website integration, see:
 - [`public/human-evaluation.json`](public/human-evaluation.json)
 - [`docs/WEBSITE_INTEGRATION.md`](docs/WEBSITE_INTEGRATION.md)
 
-For coding agents and IDEs, start with [`AGENTS.md`](AGENTS.md).
+For coding agents and IDEs, start with [`AGENTS.md`](AGENTS.md). For what may and may not cross the public boundary, read [`docs/PUBLIC_REPOSITORY_BOUNDARY.md`](docs/PUBLIC_REPOSITORY_BOUNDARY.md).
 
 ---
 
@@ -105,12 +105,13 @@ The public website can provide a more approachable entry point, but the followin
 
 - reviewer links must be respondent-facing `/viewform` URLs only;
 - editor/admin links and response spreadsheets must never be exposed;
+- reviewer identity/contact data, private linkage data, blinding seeds, and hidden A/B/source mappings must never be exposed;
 - model/checkpoint identity must stay blinded;
 - optional comments remain optional;
 - the website must not create a second, divergent research protocol;
 - when no reviewed evaluation packet is open, the website should show the evaluation as closed/preparing rather than exposing a sandbox instrument.
 
-See [`docs/WEBSITE_INTEGRATION.md`](docs/WEBSITE_INTEGRATION.md) and [`docs/HUMAN_EVALUATION_PROTOCOL.md`](docs/HUMAN_EVALUATION_PROTOCOL.md).
+See [`docs/WEBSITE_INTEGRATION.md`](docs/WEBSITE_INTEGRATION.md), [`docs/HUMAN_EVALUATION_PROTOCOL.md`](docs/HUMAN_EVALUATION_PROTOCOL.md), and [`docs/PUBLIC_REPOSITORY_BOUNDARY.md`](docs/PUBLIC_REPOSITORY_BOUNDARY.md).
 
 ---
 
@@ -159,7 +160,9 @@ cp .env.example .env
 uv run pytest
 ```
 
-Never commit tokens, private adapters, checkpoints, private Kaggle outputs, or credentials.
+Never commit tokens, private adapters/checkpoints, private Kaggle outputs, credentials, sealed assurance material, reviewer PII/private mappings, proprietary/confidential material, or third-party content that cannot be redistributed here. New/untracked content under `data/` is private by default; existing tracked datasets are public research evidence.
+
+Before pushing a same-repository branch, run `python scripts/check_public_boundary.py`.
 
 ---
 
@@ -170,7 +173,7 @@ paul-open/
 ├── AGENTS.md                  # Agent/IDE operating context and source-of-truth rules
 ├── public/                    # Machine-readable public status for website consumers
 ├── configs/                   # Model, training, data, and evaluation configuration
-├── data/                      # Public research datasets and schemas
+├── data/                      # Intentionally tracked public research; new data is private by default
 ├── docs/                      # Research protocols, experiment history, and methodology
 ├── notebooks/                 # Reproducibility notebooks
 ├── scripts/                   # Training, evaluation, export, and verification entry points
@@ -183,7 +186,7 @@ paul-open/
 
 ## Contributing
 
-PAUL Open welcomes technically rigorous contributions. Research-facing changes have stricter requirements than ordinary application code: provenance, contamination boundaries, experimental claims, and reproducibility must remain explicit.
+PAUL Open welcomes technically rigorous contributions. Research-facing changes have stricter requirements than ordinary application code: provenance, contamination boundaries, experimental claims, reproducibility, and the public/private publication boundary must remain explicit.
 
 Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request. The repository also provides issue and pull-request templates, a code of conduct, and a security policy.
 
@@ -202,11 +205,13 @@ Repository: https://github.com/foundrypaul-cloud/paul-open
 
 ## License boundary
 
-The repository source-code layer is distributed under the **Apache License 2.0**; see [`LICENSE`](LICENSE).
+The PAUL Open-authored source-code layer is distributed under the **Apache License 2.0**; see [`LICENSE`](LICENSE).
 
-Gemma 4 is released by Google under Apache 2.0. Third-party datasets, libraries, benchmarks, and other materials retain their own licenses and attribution requirements. Public release suitability is evaluated separately from whether a dataset can be downloaded or used experimentally.
+The current `google/gemma-4-E4B-it` model repository identifies the model as Apache-2.0 licensed. Third-party datasets, libraries, benchmarks, models, and other materials retain their own licenses and attribution requirements. Public availability or permission to train does not by itself grant permission to redistribute the underlying content in this repository or release every possible derived artifact.
 
-See [`NOTICE.md`](NOTICE.md), [`DATASET_REGISTRY.md`](DATASET_REGISTRY.md), and the applicable upstream terms before redistributing derived artifacts.
+Apache-2.0 does not relicense third-party content, confidential/proprietary research, or material a contributor lacked permission to submit, and it does not grant trademark rights in Paul Foundry or PAUL Open names or marks.
+
+See [`NOTICE.md`](NOTICE.md), [`docs/DATASET_REGISTRY.md`](docs/DATASET_REGISTRY.md), [`docs/PUBLIC_REPOSITORY_BOUNDARY.md`](docs/PUBLIC_REPOSITORY_BOUNDARY.md), and the applicable upstream terms before redistributing derived artifacts.
 
 ---
 
