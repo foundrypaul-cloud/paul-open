@@ -65,7 +65,9 @@ An independent Gemini CLI review evaluated every record without editing the data
 - explicit instruction completion;
 - coherent hard-negative quality without accidentally making the rejected answer preferable.
 
-All five booleans were **true for all 30 records** and `overall_pass` was **true**.
+The CI validator additionally requires the returned audit ID set to equal the exact 30 source-record IDs from the assembled dataset; 30 merely distinct or fabricated IDs are insufficient.
+
+All five booleans were **true for all 30 exact source records**, the returned ID set matched the dataset exactly, and `overall_pass` was **true**.
 
 Result: **PASS**.
 
@@ -90,8 +92,8 @@ P10 approval does not authorize a methodology change. DPO V5 must:
 
 ## Evidence provenance
 
-P10 workflow run: `34723501502`  
-Audit artifact: `dpo-v5-p10-audit-evidence` / artifact id `10306554359`  
-Artifact digest: `sha256:4c7e84611ea3912c098d16590fc4e1807c60d71131dc2c06707b6e5b41ab892b`
+P10 workflow run: `34723658439`  
+Audit artifact: `dpo-v5-p10-audit-evidence` / artifact id `10307450400`  
+Artifact digest: `sha256:1996d33c150ab600b4fc5f965ef031f0628a5b113d60ccd255e05fdad14ebc19`
 
 The artifact contains the machine summary, canonical leakage report, and independent audit. No SHAE material is included.
