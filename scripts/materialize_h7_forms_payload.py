@@ -85,7 +85,6 @@ function h7TargetBatchId_(packets) {
 function h7InspectTargetBatchRuntime_(properties, targetBatchId) {
   const values = properties.getProperties();
   const staleZeroResponseForms = new Set();
-  const targetRuntimeFormIds = [];
 
   for (const key of Object.keys(values).sort()) {
     if (!key.startsWith(PAUL_FORM_PROPERTY_PREFIX)) {
@@ -95,8 +94,6 @@ function h7InspectTargetBatchRuntime_(properties, targetBatchId) {
     try {
       config = JSON.parse(values[key]);
     } catch (error) {
-      // Historical malformed properties are preserved; an attached PAUL trigger
-      // will still fail closed later because its mapping cannot be parsed.
       continue;
     }
     if (!config || config.batch_id !== targetBatchId) {
@@ -106,7 +103,6 @@ function h7InspectTargetBatchRuntime_(properties, targetBatchId) {
     const formId = key.slice(PAUL_FORM_PROPERTY_PREFIX.length);
     const form = FormApp.openById(formId);
     const responseCount = form.getResponses().length;
-    targetRuntimeFormIds.push(formId);
 
     if (form.isAcceptingResponses()) {
       throw new Error(
@@ -128,15 +124,21 @@ function h7InspectTargetBatchRuntime_(properties, targetBatchId) {
     staleZeroResponseForms.add(formId);
   }
 
-  return {staleZeroResponseForms, targetRuntimeFormIds};
+  return staleZeroResponseForms;
 }
 
-function preparePaulHumanEvalH7TriggerCapacity_(packets) {
+function preparePaulHumanEvalH7TriggerCapacity_(packetCount) {
+  if (!Number.isInteger(packetCount) || packetCount <= 0) {
+    throw new Error(`H7 trigger preflight requires a positive packet count, got ${packetCount}`);
+  }
+  const packets = PAUL_HUMAN_EVAL_SPEC.packets;
+  if (!Array.isArray(packets) || packets.length !== packetCount) {
+    throw new Error('H7 trigger preflight packet-count mismatch.');
+  }
+
   const targetBatchId = h7TargetBatchId_(packets);
-  const packetCount = packets.length;
   const properties = PropertiesService.getScriptProperties();
-  const targetInspection = h7InspectTargetBatchRuntime_(properties, targetBatchId);
-  const staleTargetForms = targetInspection.staleZeroResponseForms;
+  const staleTargetForms = h7InspectTargetBatchRuntime_(properties, targetBatchId);
 
   const deletedHistoricalSubmitTriggers = [];
   const deletedStaleTargetSubmitTriggers = [];
@@ -231,6 +233,7 @@ function preparePaulHumanEvalH7TriggerCapacity_(packets) {
     deleted_duplicate_recovery_trigger_count: deletedDuplicateRecoveryTriggers.length,
     deleted_stale_h7_submit_trigger_count: deletedStaleTargetSubmitTriggers.length,
     deleted_stale_h7_runtime_property_count: deletedStaleTargetRuntimeProperties.length,
+    h6_runtime_properties_deleted: 0,
     historical_h5_h6_runtime_properties_deleted: 0,
     stale_h7_forms_sheets_or_responses_deleted: 0,
     remaining_trigger_count: remaining.length,
@@ -248,7 +251,7 @@ function preparePaulHumanEvalH7TriggerCapacity_(packets) {
 def runner() -> str:
     text = h6.RUNNER.replace("H6", "H7")
     marker = "  const created = [];\n"
-    replacement = "  preparePaulHumanEvalH7TriggerCapacity_(packets);\n\n  const created = [];\n"
+    replacement = "  preparePaulHumanEvalH7TriggerCapacity_(packets.length);\n\n  const created = [];\n"
     if marker not in text:
         raise RuntimeError("H6 runner structure changed; H7 trigger preflight insertion point missing")
     return text.replace(marker, replacement, 1) + TRIGGER_PREFLIGHT
