@@ -19,6 +19,7 @@ class PublicBoundarySanitizerTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             private = Path(tmp) / "private"
             private.mkdir()
+            fake_token = "KGAT_" + "never_public_fixture_token_value"
             (private / "sft_results.json").write_text(
                 json.dumps(
                     {
@@ -43,7 +44,7 @@ class PublicBoundarySanitizerTest(unittest.TestCase):
                                 "case_id": "sealed-1",
                                 "prompt": "NEVER_PUBLIC_PROMPT",
                                 "response": "NEVER_PUBLIC_RESPONSE",
-                                "token": "KGAT_never_public_fixture_token_value",
+                                "token": fake_token,
                             }
                         ],
                     }
@@ -75,7 +76,7 @@ class PublicBoundarySanitizerTest(unittest.TestCase):
                 "sampling_parameters",
                 "local_results_path",
                 "sanitized_message",
-                "KGAT_never_public_fixture_token_value",
+                fake_token,
                 "/kaggle/input/internal-source",
             ):
                 self.assertNotIn(forbidden, text)
