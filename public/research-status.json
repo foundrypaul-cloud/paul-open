@@ -1,77 +1,36 @@
 {
   "schema_version": "1.0",
-  "status_as_of": "2026-09-12",
-  "project": {
-    "name": "PAUL Open",
-    "organization": "Paul Foundry Technologies Private Limited",
-    "repository": "https://github.com/foundrypaul-cloud/paul-open",
-    "website": "https://open.paulfoundry.com/",
-    "research_source_of_truth": "repository"
-  },
+  "status_as_of": "2026-09-18",
   "model_research": {
     "base_model": "google/gemma-4-E4B-it",
     "reference_checkpoint": "SFT",
-    "latest_experimental_checkpoint": "DPO V3 Corrective",
+    "latest_experimental_checkpoint": "DPO V5 Corrective",
     "superiority_established": false,
-    "current_conclusion": "H5 DHE is complete and mixed. DPO V3 tied SFT 9-9 in judgments and 3-3 in case majorities. DPO V3 won Bengali, General, and Research; SFT won STEM, Educator, and Hindi. Because STEM and Hindi were pre-specified preservation strata, DPO V3 is not promoted. SFT remains the reference and SHAE remains sealed."
+    "current_conclusion": "DPO V5 is technically valid and cleared P12 only for precommitted H7 DHE with regression flags. H7 has no completed human result recorded. SFT remains reference; SHAE remains sealed."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
     "sha": "ac899e879f930f25b2081550bd8c5dd5c983df35",
     "immutable": true
   },
-  "dpo_v2": {
-    "technical_validity": "pass",
-    "behavioral_result": "mixed_no_promotion",
-    "immutable_experimental_checkpoint": true
-  },
-  "dpo_v3": {
+  "dpo_v5": {
     "technical_validity": "pass",
     "dataset_records": 30,
-    "dataset_sha256": "5ce4a82f32827a07f339d2b8c437dc4b45ec3f60ac9f5d50f165ea308369c741",
-    "p5_automated_gate": "cleared_for_fresh_dhe_with_regression_flags",
-    "h5_behavioral_result": "mixed_no_promotion_preservation_failure",
-    "promoted_over_reference": false,
-    "immutable_experimental_checkpoint": true
+    "p10_data_gate": "pass",
+    "p11_completion_gate": "pass",
+    "intended_trainable_tensors": 516,
+    "changed_trainable_tensors": 516,
+    "p12_automated_gate": "cleared_for_precommitted_h7_with_regression_flags",
+    "promoted_over_reference": false
   },
   "human_evaluation": {
-    "stage": "H5_decision_recorded",
+    "stage": "H7_precommitted_pending_human_result",
     "h4_complete": true,
-    "h5_batch_id": "HEB1-64CDCC9521D3",
-    "h5_partition": "development",
-    "h5_eligible_cases": 6,
-    "h5_forms_generated": 12,
-    "h5_judgments_total": 18,
-    "h5_adaptive_followup_judgments": 0,
-    "h5_collection_closed": true,
-    "h5_durability_audit": "pass",
-    "h5_analysis_locked": true,
-    "h5_unblinded": true,
-    "h5_decision_recorded": true,
-    "h5_outcomes": {
-      "dpo_v3_preferred": 9,
-      "sft_preferred": 9,
-      "about_equal": 0,
-      "neither_good": 0,
-      "not_sure": 0
-    },
-    "h5_case_majorities": {
-      "dpo_v3": 3,
-      "sft": 3
-    },
-    "h5_case_results": {
-      "stem": "sft",
-      "educator": "sft",
-      "research": "dpo_v3",
-      "hindi": "sft",
-      "bengali": "dpo_v3",
-      "general": "dpo_v3"
-    },
-    "h5_mean_modal_choice_agreement": 1.0,
-    "h5_decision": "mixed_no_promotion_preservation_failure",
-    "h5_superiority_established": false,
-    "h5_results": "docs/H5_DHE_V3_PILOT_V1_RESULTS.md",
-    "next_gate": "Post-H5 response-level diagnosis under docs/POST_H5_DEVELOPMENT_PLAN.md. No new candidate training or SHAE is authorized yet."
+    "h5_complete": true,
+    "h6_complete": true,
+    "h7_cases": 6,
+    "h7_human_result_recorded": false,
+    "next_gate": "Complete precommitted H7 blinded DHE for SFT vs DPO V5. Do not open SHAE."
   },
   "assurance": {
     "shae_sealed": true,
@@ -80,19 +39,15 @@
   },
   "canonical_docs": {
     "project_status": "docs/PROJECT_STATUS.md",
-    "post_h5_plan": "docs/POST_H5_DEVELOPMENT_PLAN.md",
-    "h5_pilot": "docs/H5_DHE_V3_PILOT.md",
-    "h5_analysis_lock": "docs/H5_DHE_V3_PILOT_V1_ANALYSIS_LOCK.md",
-    "h5_results": "docs/H5_DHE_V3_PILOT_V1_RESULTS.md",
-    "h4_results": "docs/H4_DHE_PILOT_V1_RESULTS.md",
-    "agent_context": "AGENTS.md"
+    "v5_p10": "docs/DPO_V5_P10_AUDIT.md",
+    "v5_p11_p12": "docs/DPO_V5_P11_P12_RESULTS.md",
+    "h7_precommit": "docs/H7_DHE_V5_PRECOMMIT_SPEC.md",
+    "h6_analysis": "docs/H6_DHE_V4_PILOT_V1_UNBLINDED_ANALYSIS.md"
   },
   "public_claims": {
-    "may_say_dpo_v3_is_technically_valid": true,
-    "may_report_h5_dhe_aggregate": true,
-    "may_report_h5_case_results": true,
-    "may_say_dpo_v3_is_superior_to_sft": false,
-    "may_say_h5_is_final_assurance": false,
+    "may_say_dpo_v5_is_technically_valid": true,
+    "may_say_dpo_v5_passed_h7": false,
+    "may_say_dpo_v5_is_superior_to_sft": false,
     "may_start_shae": false
   }
 }
