@@ -5,13 +5,14 @@
 [Website](https://open.paulfoundry.com/) · [Current research status](docs/PROJECT_STATUS.md) · [Public repository boundary](docs/PUBLIC_REPOSITORY_BOUNDARY.md) · [E4B experiment journey](docs/EXPERIMENT_JOURNEY_E4B.md) · [Contributing](CONTRIBUTING.md)
 
 > [!IMPORTANT]
-> **Current research state — 10 September 2026**
+> **Current research state — 18 September 2026**
 >
 > - Base model: `google/gemma-4-E4B-it`.
 > - The historical SFT adapter remains the **reference checkpoint**.
-> - DPO V2 Corrective is a **technically valid research checkpoint with mixed behavioral effects**. It has **not** been established as superior to SFT.
+> - DPO V2/H4, DPO V3/H5, and DPO V4/H6 are completed development cycles; none earned promotion over SFT.
+> - DPO V5 Corrective is technically valid and P12 cleared it only for the precommitted H7 DHE with regression flags.
 > - The existing 50-case SFT-vs-DPO V2 comparison is useful diagnostically but is **contaminated for DPO V2** and must not be used as clean held-out superiority evidence.
-> - Human-evaluation infrastructure has completed genuine sandbox collection and verifier checks. Final H2 recovery/closure acceptance is still being completed after a live Google Forms runtime incompatibility was isolated and patched in the repository.
+> - H7 contains six fresh development cases frozen before V5 output inspection; no completed H7 human-evaluation result is recorded yet. SHAE remains sealed.
 > - Immutable Step 2 research freeze: `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
 The detailed, evidence-oriented status is maintained in [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md).
@@ -49,7 +50,7 @@ The project separates four evidence layers:
 3. **Behavioral quality** — are responses actually better under task-specific review?
 4. **Model superiority** — does improvement hold under clean evaluation, preservation checks, robustness testing, and blinded human preference?
 
-The current DPO V2 result passes the first layer. The fourth has not been established.
+DPO V2 through V5 have produced technically valid experimental checkpoints, but model superiority has not been established. DPO V5 awaits H7.
 
 ---
 
@@ -57,7 +58,7 @@ The current DPO V2 result passes the first layer. The fourth has not been establ
 
 The current research line follows:
 
-`Gemma 4 E4B` → `PAUL SFT reference` → `DPO V1 diagnosis` → `DPO V2 Corrective` → `clean evaluation + blinded human review`
+`Gemma 4 E4B` → `PAUL SFT reference` → `DPO V2/H4` → `DPO V3/H5` → `DPO V4/H6` → `DPO V5` → `H7 DHE`
 
 ### DPO V2 Corrective
 
