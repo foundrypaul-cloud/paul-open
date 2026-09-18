@@ -21,15 +21,16 @@ For all publication-boundary decisions, also read [`docs/PUBLIC_REPOSITORY_BOUND
 
 Read [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md) before making research-facing changes.
 
-As of 2026-09-10:
+As of 2026-09-18:
 
 - base research model: `google/gemma-4-E4B-it`;
 - historical SFT adapter remains the reference checkpoint;
-- DPO V2 Corrective is technically valid but is **not established as behaviorally superior**;
+- DPO V2/H4, DPO V3/H5, and DPO V4/H6 are completed development cycles; none earned promotion;
+- DPO V5 Corrective is technically valid and cleared P12 only for precommitted H7 DHE with regression flags;
 - the existing 50-case SFT-vs-DPO V2 comparison is diagnostic and contaminated for DPO V2;
 - Step 2 immutable freeze: `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`;
-- human-evaluation collection/normalization/backup and verifier paths have been exercised with genuine sandbox submissions;
-- formal H2 completion still requires the live Apps Script runtime to be synchronized with the repository patch and the remaining recovery/closure acceptance checks to pass.
+- H7 has six fresh precommitted development cases and no completed human result recorded yet;
+- SHAE remains sealed and has not started.
 
 Never convert any of the above into a stronger claim without new repository evidence.
 
@@ -49,11 +50,12 @@ If current `main` differs from the freeze, that is expected. Documentation, huma
 
 Do not claim:
 
-- that DPO V2 is better than SFT;
+- that any DPO V2–V5 candidate is established as better than SFT;
 - that a higher aggregate benchmark number proves model superiority;
 - that the current 50-case comparison is clean held-out evidence;
 - that an automated metric proves human usefulness;
-- that H2 human evaluation is formally complete until all acceptance items are evidenced.
+- that DPO V5 has passed H7 human evaluation;
+- that SHAE may be opened or has started.
 
 Use the language and evidence boundaries in:
 
