@@ -2,13 +2,6 @@ name: H7 DHE V5 Kaggle Paired Generation
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/h7-dhe-v5-kaggle-generation.yml'
-      - 'scripts/h7_dhe_generate.py'
-      - 'data/h7_dhe_v5_pilot_v1.jsonl'
-      - 'configs/evaluation/h7_dhe_v5_pilot_v1.yaml'
 
 permissions:
   contents: read
