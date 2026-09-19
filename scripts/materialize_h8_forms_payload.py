@@ -208,12 +208,15 @@ def make_group_packet(
     letter = "A" if variant["variant_id"] == "V01" else "B"
     cohort_label = "-".join(sorted(cohorts)).upper().replace("_", "-")
     desc = h6.BILINGUAL_DESC if any(lang in {"hi", "bn", "es"} for lang in languages) else h6.BASE_DESC
-    context = context_for(cases[0]) if len(cohorts) == 1 else {
-        "enabled": True,
-        "title": "Can you confidently judge all three response pairs on this form?",
-        "choices": h6.CONFIDENCE,
-        "required": True,
-    }
+    if len(cohorts) == 1 and not (next(iter(cohorts)) == "bilingual" and len(languages) > 1):
+        context = context_for(cases[0])
+    else:
+        context = {
+            "enabled": True,
+            "title": "Can you confidently judge all three response pairs on this form, including any requested languages?",
+            "choices": h6.CONFIDENCE,
+            "required": True,
+        }
     return {
         "form_packet_version": "1.2",
         "protocol_version": "1.0",
