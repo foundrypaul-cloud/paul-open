@@ -28,12 +28,13 @@ The web preview intentionally disables native purchases.
 npm install
 npm run build
 npx cap add android
+npm run assets:android
 npm run android:patch
 npx cap sync android
 npx cap open android
 ```
 
-The patch step changes the generated MainActivity launch mode to `singleTop`, matching RevenueCat's Capacitor guidance for payment flows that temporarily background the app.
+`assets:android` generates branded Android icons/splash resources from `assets/logo.svg`. The patch step changes the generated MainActivity launch mode to `singleTop`, matching RevenueCat's Capacitor guidance for payment flows that temporarily background the app.
 
 ## RevenueCat contract
 
