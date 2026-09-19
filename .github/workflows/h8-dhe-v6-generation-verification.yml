@@ -1,0 +1,57 @@
+name: H8 DHE V6 Generation Contract Verification
+
+on:
+  pull_request:
+    paths:
+      - 'configs/evaluation/h8_dhe_v6_pilot_v1.yaml'
+      - 'scripts/h8_dhe_generate.py'
+      - '.github/workflows/h8-dhe-v6-generation-verification.yml'
+      - '.github/workflows/h8-dhe-v6-kaggle-generation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-h8-generation-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install repository environment
+        run: |
+          python -m pip install --upgrade uv
+          uv sync --frozen --extra eval
+      - name: Verify H8 configuration lock
+        run: |
+          uv run python - <<'PY'
+          import yaml
+          from pathlib import Path
+          cfg=yaml.safe_load(Path('configs/evaluation/h8_dhe_v6_pilot_v1.yaml').read_text())['h8_dhe_v6_pilot']
+          assert cfg['status']=='frozen_pre_generation'
+          assert cfg['partition']=='development'
+          assert cfg['case_manifest']=='data/h8_dhe_v6_pilot_v1.jsonl'
+          assert cfg['prompt_freeze_revision']=='2c100970d8d22d78078086a61a1e59a907899433'
+          assert cfg['sources']['reference']['adapter_config_sha256']=='cff65bd42928536886168b09d9b133b25ac444c01d901d2a56d98c7b8b03a0ce'
+          assert cfg['sources']['reference']['adapter_weights_sha256']=='73bab121009e2130f387b5deebfe1d15f4f7ac2afbd622164b11b3024000ec49'
+          candidate=cfg['sources']['candidate']
+          assert candidate['experiment_id']=='paul_e4b_dpo_v6_synthetic_corrective'
+          assert candidate['source_revision']=='c4c942d3c455c8745d4756ca2a775772b1215a4a'
+          assert candidate['production_run']==35446312134
+          assert candidate['training_dataset_sha256']=='eca6b25c27f8c03d221854b2e7aee59f5da0e4f128cd2b9605c10453723dc732'
+          assert candidate['adapter_weights_sha256']=='c6505d38987f4509017063fe044ec06f731badbb514bb47ccef788e63aa0a1e4'
+          g=cfg['generation']
+          assert g['matched_between_sources'] is True
+          assert g['max_new_tokens']==768
+          assert g['require_eos_before_limit'] is True
+          assert g['temperature']==0.7
+          assert g['top_p']==0.9
+          assert g['random_seed']==42
+          assert cfg['review_allocation']['primary_analysis_unit']=='case'
+          PY
+      - name: Compile and import H8 generation entry point
+        run: |
+          uv run python -m py_compile scripts/h8_dhe_generate.py
+          uv run python scripts/h8_dhe_generate.py --help >/dev/null
