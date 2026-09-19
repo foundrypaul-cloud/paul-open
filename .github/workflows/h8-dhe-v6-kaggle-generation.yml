@@ -14,7 +14,9 @@ jobs:
       KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
       KAGGLE_USERNAME: paulfoundry
       SFT_DATASET: paulfoundry/paul-open-sft
-      V6_ARCHIVE_DATASET: paulfoundry/paul-open-dpo-v6-canonical-production
+      V6_PRODUCTION_KERNEL: paulfoundry/paul-open-dpo-v6-production
+      H8_DPO_DATASET: paulfoundry/h8-dpo-v6-adapter-20260919
+      H8_DPO_DATASET_TITLE: PAUL H8 DPO V6 Adapter 20260919
       H8_KERNEL_SLUG: paul-open-h8-dhe-v6-paired-generation
       MACHINE_SHAPE: NvidiaTeslaT4
       REPO_URL: https://github.com/foundrypaul-cloud/paul-open.git
@@ -30,12 +32,62 @@ jobs:
           python-version: '3.11'
       - name: Install Kaggle CLI
         run: python -m pip install --upgrade kaggle
-      - name: Verify Kaggle access and canonical private inputs
+      - name: Verify Kaggle access and canonical V6 production
         run: |
           set -euo pipefail
           test -n "$KAGGLE_API_TOKEN"
+          echo "Verifying SFT dataset access..."
           kaggle datasets files "$SFT_DATASET" >/dev/null
-          kaggle datasets files "$V6_ARCHIVE_DATASET" >/dev/null
+          echo "Verifying canonical V6 production kernel..."
+          STATUS=$(kaggle kernels status "$V6_PRODUCTION_KERNEL")
+          echo "$STATUS"
+          echo "$STATUS" | grep -qi complete
+
+      - name: Stage exact frozen V6 adapter as private H8 input
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROD_DIR="$RUNNER_TEMP/v6-production"
+          DATASET_DIR="$RUNNER_TEMP/h8-dpo-dataset"
+          mkdir -p "$PROD_DIR" "$DATASET_DIR"
+
+          kaggle kernels output "$V6_PRODUCTION_KERNEL" -p "$PROD_DIR"
+
+          DPO_WEIGHTS=$(find "$PROD_DIR" -path '*/final-dpo-adapter/dpo/adapter_model.safetensors' -print -quit)
+          test -n "$DPO_WEIGHTS"
+          DPO_DIR=$(dirname "$DPO_WEIGHTS")
+          test -f "$DPO_DIR/adapter_config.json"
+          test "$(sha256sum "$DPO_WEIGHTS" | awk '{print $1}')" = "$V6_WEIGHTS_SHA256"
+
+          cp "$DPO_DIR/adapter_config.json" "$DATASET_DIR/adapter_config.json"
+          cp "$DPO_WEIGHTS" "$DATASET_DIR/adapter_model.safetensors"
+
+          python - "$DATASET_DIR/dataset-metadata.json" <<'PY'
+          import json, os, pathlib, sys
+          title=os.environ['H8_DPO_DATASET_TITLE']
+          pathlib.Path(sys.argv[1]).write_text(json.dumps({
+              'title': title,
+              'id': os.environ['H8_DPO_DATASET'],
+              'licenses': [{'name':'Apache 2.0'}],
+          })+'\n')
+          PY
+
+          if kaggle datasets files "$H8_DPO_DATASET" >/dev/null 2>&1; then
+            kaggle datasets version -p "$DATASET_DIR" -m "H8 frozen V6 adapter refresh" --dir-mode zip
+          else
+            kaggle datasets create -p "$DATASET_DIR" --dir-mode zip
+          fi
+
+          READY=false
+          for _ in $(seq 1 18); do
+            if kaggle datasets files "$H8_DPO_DATASET" >/dev/null 2>&1; then
+              READY=true
+              break
+            fi
+            sleep 10
+          done
+          test "$READY" = true
+          echo "DPO_INPUT_DATASET=$H8_DPO_DATASET" >> "$GITHUB_ENV"
 
       - name: Build disposable H8 inference kernel
         shell: bash
@@ -226,7 +278,7 @@ jobs:
           p.write_text(t)
           PY
           cat > "$KERNEL_DIR/kernel-metadata.json" <<JSON
-          {"id":"${KAGGLE_USERNAME}/${H8_KERNEL_SLUG}","title":"PAUL Open H8 DHE V6 Paired Generation","code_file":"run_h8.py","language":"python","kernel_type":"script","is_private":"true","enable_gpu":"true","enable_internet":"true","machine_shape":"${MACHINE_SHAPE}","dataset_sources":["${SFT_DATASET}","${V6_ARCHIVE_DATASET}"],"competition_sources":[],"kernel_sources":[],"model_sources":[]}
+          {"id":"${KAGGLE_USERNAME}/${H8_KERNEL_SLUG}","title":"PAUL Open H8 DHE V6 Paired Generation","code_file":"run_h8.py","language":"python","kernel_type":"script","is_private":"true","enable_gpu":"true","enable_internet":"true","machine_shape":"${MACHINE_SHAPE}","dataset_sources":["${SFT_DATASET}","${DPO_INPUT_DATASET}"],"competition_sources":[],"kernel_sources":[],"model_sources":[]}
           JSON
           echo "KERNEL_DIR=$KERNEL_DIR" >> "$GITHUB_ENV"
 
