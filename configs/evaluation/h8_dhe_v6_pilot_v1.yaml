@@ -1,0 +1,107 @@
+h8_dhe_v6_pilot:
+  version: "1.0"
+  status: "frozen_pre_generation"
+  partition: "development"
+  case_manifest: "data/h8_dhe_v6_pilot_v1.jsonl"
+  prompt_freeze_revision: "2c100970d8d22d78078086a61a1e59a907899433"
+  prompt_freeze_evidence: "docs/H8_DHE_V6_PRECOMMIT_SPEC.md"
+  candidate_freeze_evidence: "docs/DPO_V6_CANDIDATE_FREEZE.md"
+  production_evidence: "docs/DPO_V6_PRODUCTION_DIAGNOSTIC_RESULTS.md"
+
+  base_model:
+    id: "google/gemma-4-E4B-it"
+    revision: "ee0ef6023621cff504d758262d4e04895a5af4a2"
+    config: "configs/models/gemma4_e4b_it.yaml"
+
+  sources:
+    reference:
+      private_label: "sft_reference"
+      logical_adapter: "paulfoundry/paul-open-sft"
+      adapter_config_sha256: "cff65bd42928536886168b09d9b133b25ac444c01d901d2a56d98c7b8b03a0ce"
+      adapter_weights_sha256: "73bab121009e2130f387b5deebfe1d15f4f7ac2afbd622164b11b3024000ec49"
+    candidate:
+      private_label: "dpo_v6_synthetic_corrective"
+      experiment_id: "paul_e4b_dpo_v6_synthetic_corrective"
+      source_revision: "c4c942d3c455c8745d4756ca2a775772b1215a4a"
+      production_run: 35446312134
+      production_job: 105905727395
+      training_dataset_sha256: "eca6b25c27f8c03d221854b2e7aee59f5da0e4f128cd2b9605c10453723dc732"
+      adapter_weights_sha256: "c6505d38987f4509017063fe044ec06f731badbb514bb47ccef788e63aa0a1e4"
+      adapter_bytes: 139602808
+
+  generation:
+    matched_between_sources: true
+    max_new_tokens: 768
+    require_eos_before_limit: true
+    response_instruction: >-
+      For this evaluation, give a complete but concise answer that a reviewer can
+      read comfortably in about 1–2 minutes. Aim for no more than about 300 words,
+      or an equivalent reading length in the requested language. Prioritize the
+      most important reasoning rather than exhaustively listing every possibility.
+    temperature: 0.7
+    top_p: 0.9
+    random_seed: 42
+    chat_template: "tokenizer_apply_chat_template"
+    add_generation_prompt: true
+    notes: >-
+      H8 preserves the established H7/H6 matched-generation safeguards: neutral
+      concision instruction, 768-token fail-closed ceiling, EOS requirement,
+      native-script checks, malformed-output and safety checks, and identical
+      sampling settings between SFT and V6.
+
+  required_outputs:
+    reference_jsonl: "outputs/h8_dhe/private/sft_reference.jsonl"
+    candidate_jsonl: "outputs/h8_dhe/private/dpo_v6_synthetic_corrective.jsonl"
+    generation_manifest: "outputs/h8_dhe/private/generation_manifest.json"
+    baseline_leakage_report: "outputs/h8_dhe/private/baseline_leakage_report.json"
+    development_separation_report: "outputs/h8_dhe/private/development_separation_report.json"
+    public_bundle_dir: "outputs/human_eval/public/h8_dhe_v6_pilot_v1"
+    private_mapping: ".human-eval-private/h8_dhe_v6_pilot_v1_mapping.json"
+
+  pre_form_gates:
+    - "generation_completed"
+    - "nonempty_output"
+    - "no_generation_truncation_gate"
+    - "display_prompt_matches_generation_prompt"
+    - "automated_safety_gate"
+    - "malformed_output_gate"
+    - "native_script_gate"
+    - "evaluation_partition_integrity"
+    - "canonical_baseline_contamination_gate"
+    - "h4_h5_h6_h7_and_prior_dpo_training_separation_gate"
+    - "candidate_hash_binding_gate"
+    - "prompt_freeze_provenance_gate"
+
+  human_batch:
+    builder: "scripts/build_human_eval_batch.py"
+    partition: "development"
+    variant_count: 2
+    deterministic_seed_required: true
+    comparisons_per_form: 3
+
+  review_allocation:
+    initial_valid_judgments_per_case: 3
+    disagreement_escalation_total: 5
+    exceptional_hard_cap: 7
+
+  interpretation:
+    primary_unit: "case"
+    report_case_level_preference: true
+    report_raw_judgments_descriptively: true
+    report_domain_language_breakdown: true
+    report_critical_failures_separately: true
+    small_sample_uncertainty_required: true
+
+  prohibitions:
+    expose_private_source_labels_to_reviewers: false
+    publish_private_mapping: false
+    reuse_h4_cases: false
+    reuse_h5_cases: false
+    reuse_h6_cases: false
+    reuse_h7_cases: false
+    reuse_prior_dpo_training_prompts: false
+    reuse_v6_training_prompts: false
+    revise_h8_prompts_after_candidate_output_inspection: false
+    reuse_canonical_baseline_cases: false
+    use_shae_material: false
+    treat_h8_as_final_superiority_evidence: false
