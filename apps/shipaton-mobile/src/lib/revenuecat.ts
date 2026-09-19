@@ -47,7 +47,7 @@ export async function refreshSubscription(): Promise<SubscriptionState> {
     configured = true;
   }
 
-  const customerInfo = await Purchases.getCustomerInfo();
+  const { customerInfo } = await Purchases.getCustomerInfo();
   return {
     available: true,
     configured: true,
