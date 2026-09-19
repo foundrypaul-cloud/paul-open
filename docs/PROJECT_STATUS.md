@@ -11,7 +11,7 @@ DPO V5 passed its data and production-validity gates but produced mixed automate
 
 DPO V6 was then authored as a separate 24-record synthetic corrective development iteration without using H7 blinded responses, hidden mappings, evaluator output, or SHAE material. Its canonical production run completed successfully on 2026-09-19. All 516 intended trainable tensors changed and the matched 50-case diagnostic produced a positive aggregate heuristic signal relative to SFT. That result advances V6 to fresh development evaluation; it does not establish superiority.
 
-A 12-case fresh H8 Development Human Evaluation prompt set is now precommitted for SFT-vs-V6 comparison. The H8 prompt-freeze and generation-contract CI both pass, and a manual-only Kaggle paired-generation workflow is merged and ready. H8 generation and human collection have not started. SHAE remains sealed.
+A 12-case fresh H8 Development Human Evaluation prompt set was precommitted for SFT-vs-V6 comparison before H8 response generation. Canonical matched generation completed successfully on 2026-09-19. The blinded reviewer batch contains 12 eligible cases, 0 identical pairs were skipped, canonical benchmark leakage is clean 12/12, and development-separation similarity remains below the frozen `<0.35` threshold. Human collection has not started. SHAE remains sealed.
 
 ## Experiment lineage
 
@@ -21,7 +21,7 @@ A 12-case fresh H8 Development Human Evaluation prompt set is now precommitted f
 - **DPO V5 / P10–P12:** 30-record corrective dataset passed the data/production gates; 516/516 intended LoRA tensors changed. Automated evidence was mixed and V5 was cleared only for H7 DHE.
 - **H7:** matched generation completed; planned multi-reviewer human collection was intentionally discontinued on 2026-09-19; no H7 human result and no promotion decision.
 - **DPO V6:** 24-record synthetic corrective dataset; canonical production completed successfully; 516/516 intended tensors changed; matched 50-case diagnostic favored V6 on the aggregate heuristic signal; not promoted.
-- **H8:** 12 fresh development prompts precommitted after production but before H8 response generation; prompt-freeze CI and generation-contract CI pass; manual-only Kaggle generation pipeline ready; generation/human collection not started.
+- **H8:** 12 fresh development prompts precommitted before response generation; canonical matched SFT/V6 generation completed successfully; blinded batch build and contamination/separation gates passed; human collection not started.
 
 The immutable Step-2 freeze remains `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
@@ -66,12 +66,23 @@ See [DPO_V6_PRODUCTION_DIAGNOSTIC_RESULTS.md](DPO_V6_PRODUCTION_DIAGNOSTIC_RESUL
 
 V6 is development-frozen to the exact production identity documented in `DPO_V6_CANDIDATE_FREEZE.md`.
 
-The H8 prompt-freeze CI and generation-contract CI have passed. The next gate is execution:
+Canonical H8 matched generation is complete:
 
-1. Manually dispatch `H8 DHE V6 Kaggle Paired Generation` on `main`; research-significant Kaggle execution remains manual-only.
-2. The exact SFT reference and frozen V6 adapter generate matched responses under the same locked generation contract.
-3. Verify the reviewer-safe blinded artifact and contamination/separation reports before opening collection.
-4. Collect blinded multi-reviewer human evaluation with case-level analysis.
+- run: `35457211935`
+- reviewer-safe artifact: `10588896454`
+- artifact digest: `sha256:79f130d0e20fa612540d3787ffbb13d1327860a5ec6a1ccb9247500187271588`
+- batch: `HEB1-B6BE09E2D6DB`
+- eligible cases: 12
+- identical pairs skipped: 0
+- canonical benchmark leakage: PASS, 12/12 clean
+- development separation: PASS, max token-set Jaccard `0.3235294117647059 < 0.35`
+
+The next gate is blinded multi-reviewer collection:
+
+1. Materialize the reviewer-safe H8 Forms payload from the canonical reviewer bundle.
+2. Open only the blinded reviewer forms; do not expose source labels or the private A/B mapping.
+3. Collect 3 independent valid judgments per case (36 initial case-level judgments), escalating only under the precommitted rules.
+4. Lock blinded case-level analysis before unblinding.
 5. Document the result before any decision about assurance-candidate freezing.
 
 No V7 checkpoint may be substituted into H8 under the V6 label. Any later training iteration requires a new experiment identity and evaluation round.
@@ -88,7 +99,7 @@ Supported:
 - V6 canonical production completed with 516/516 intended trainable tensors changed.
 - The matched 50-case V6 diagnostic produced 90.62 versus 89.18 for SFT, with 100% automated safety adherence for both.
 - V6 is frozen as the candidate identity for H8 development evaluation.
-- H8 contains fresh precommitted development prompts and has not yet generated responses.
+- H8 fresh matched generation completed successfully and passed the precommitted benchmark-leakage and development-separation gates.
 - SFT remains the reference checkpoint.
 - SHAE remains sealed.
 
@@ -97,7 +108,7 @@ Not supported:
 - DPO V6 is broadly superior to SFT.
 - DPO V6 has passed fresh held-out blinded human evaluation.
 - DPO V6 is assurance-frozen or promoted.
-- H8 has started generation or human collection.
+- H8 human collection has completed, or H8 establishes V6 superiority.
 - SHAE may be opened, has started, or has passed.
 
 ## Operational boundary
