@@ -1,0 +1,81 @@
+name: H8 Forms Materializer Verification
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/materialize_h8_forms_payload.py'
+      - 'data/h8_dhe_v6_pilot_v1.jsonl'
+      - '.github/workflows/h8-forms-materializer-verification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-h8-forms-materializer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build synthetic complementary H8 reviewer bundle
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          rows=[json.loads(x) for x in Path('data/h8_dhe_v6_pilot_v1.jsonl').read_text(encoding='utf-8').splitlines() if x.strip()]
+          root=Path('/tmp/h8-reviewer-bundle'); root.mkdir(parents=True,exist_ok=True)
+          for variant_id in ('V01','V02'):
+              comparisons=[]
+              for i,row in enumerate(rows, start=1):
+                  left=f"Reference response {i}"
+                  right=f"Candidate response {i}"
+                  if variant_id=='V02':
+                      left,right=right,left
+                  comparisons.append({
+                      'comparison_id':f'HEV1-H8SYN{i:03d}-{variant_id}',
+                      'domain':row['domain'],
+                      'language':row['language'],
+                      'reviewer_cohort':row['reviewer_cohort'],
+                      'prompt':row['prompt'],
+                      'response_a':left,
+                      'response_b':right,
+                  })
+              (root/f'variant_{variant_id.lower()}.json').write_text(json.dumps({
+                  'protocol_version':'1.0',
+                  'batch_id':'HEB1-H8SYNTHETIC000',
+                  'partition':'development',
+                  'variant_id':variant_id,
+                  'comparisons':comparisons,
+              },ensure_ascii=False),encoding='utf-8')
+          PY
+
+      - name: Materialize and verify grouped H8 forms payload
+        run: |
+          python scripts/materialize_h8_forms_payload.py /tmp/h8-reviewer-bundle /tmp/H8Payload.gs
+          python - <<'PY'
+          import json,re
+          from pathlib import Path
+          text=Path('/tmp/H8Payload.gs').read_text(encoding='utf-8')
+          marker='const PAUL_HUMAN_EVAL_SPEC = '
+          start=text.index(marker)+len(marker)
+          end=text.index(';\n',start)
+          payload=json.loads(text[start:end])
+          packets=payload['packets']
+          assert len(packets)==8, len(packets)
+          assert all(len(p['comparisons'])==3 for p in packets)
+          assert sum(p['sandbox_auto_close_after_submissions']*len(p['comparisons']) for p in packets)==36
+          assert len({p['batch_id'] for p in packets})==1
+          assert sum(p['variant_id']=='V01' for p in packets)==4
+          assert sum(p['variant_id']=='V02' for p in packets)==4
+          assert 'function createPaulHumanEvalH8Forms()' in text
+          assert 'preparePaulHumanEvalH8TriggerCapacity_(packets.length);' in text
+          assert 'PAUL_APPS_SCRIPT_TRIGGER_LIMIT_FOR_H8_ = 20' in text
+          assert 'sft_reference' not in text
+          assert 'dpo_v6_synthetic_corrective' not in text
+          assert 'private_mapping' not in text
+          print(json.dumps({'status':'PASS','packets':len(packets),'comparisons_per_packet':3,'initial_case_judgments':36}))
+          PY
