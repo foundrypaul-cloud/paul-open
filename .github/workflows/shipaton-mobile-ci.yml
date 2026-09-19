@@ -66,6 +66,7 @@ jobs:
         run: |
           npm run build
           npx cap add android
+          npm run assets:android
           npm run android:patch
           npx cap sync android
       - name: Compile debug APK
