@@ -6,6 +6,7 @@ experiment:
   model_revision: ee0ef6023621cff504d758262d4e04895a5af4a2
   dataset_path: data/train/dpo_v6/synthetic_corrective_v6.jsonl
   dataset_git_blob_sha: 0dba7994d7de0fc80e2778e053648ab124545074
+  dataset_sha256: eca6b25c27f8c03d221854b2e7aee59f5da0e4f128cd2b9605c10453723dc732
   dataset_records: 24
   adapter_source: paulfoundry/paul-open-sft
   adapter:
