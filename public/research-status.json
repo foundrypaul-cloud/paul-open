@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
-  "status_as_of": "2026-09-18",
+  "status_as_of": "2026-09-19",
   "model_research": {
     "base_model": "google/gemma-4-E4B-it",
     "reference_checkpoint": "SFT",
-    "latest_experimental_checkpoint": "DPO V5 Corrective",
+    "latest_experimental_checkpoint": "DPO V6 synthetic corrective dataset (untrained)",
     "superiority_established": false,
-    "current_conclusion": "DPO V5 is technically valid and cleared P12 only for precommitted H7 DHE with regression flags. H7 has no completed human result recorded. SFT remains reference; SHAE remains sealed."
+    "current_conclusion": "DPO V5 remains technically valid but H7 human collection was intentionally discontinued after matched generation, with no H7 human result or promotion claim. DPO V6 synthetic corrective development has begun; SFT remains reference and SHAE remains sealed."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
@@ -24,13 +24,13 @@
     "promoted_over_reference": false
   },
   "human_evaluation": {
-    "stage": "H7_precommitted_pending_human_result",
+    "stage": "H7_generation_complete_human_collection_discontinued",
     "h4_complete": true,
     "h5_complete": true,
     "h6_complete": true,
     "h7_cases": 6,
     "h7_human_result_recorded": false,
-    "next_gate": "Complete precommitted H7 blinded DHE for SFT vs DPO V5. Do not open SHAE."
+    "next_gate": "Audit DPO V6 synthetic corrective data, then train and evaluate on fresh held-out prompts. Any owner-only review is non-independent development evidence. Do not open SHAE."
   },
   "assurance": {
     "shae_sealed": true,
@@ -49,5 +49,13 @@
     "may_say_dpo_v5_passed_h7": false,
     "may_say_dpo_v5_is_superior_to_sft": false,
     "may_start_shae": false
+  },
+  "dpo_v6": {
+    "stage": "synthetic_corrective_dataset_authored",
+    "dataset_records": 24,
+    "trained": false,
+    "evaluated": false,
+    "promoted": false,
+    "h7_content_used_for_training": false
   }
 }
