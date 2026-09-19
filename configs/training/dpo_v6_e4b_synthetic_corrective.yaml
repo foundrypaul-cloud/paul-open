@@ -24,6 +24,7 @@ experiment:
   tokenizer:
     tokenizer_json_sha256: cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f
     chat_template_sha256: 0a2c8073c878ab1da004bee933a998606537bbb62016310352c7285c3f01c5b5
+    expected_max_formatted_length: 349
   runtime:
     transformers_version: 5.15.0
     trl_version: 1.10.0
