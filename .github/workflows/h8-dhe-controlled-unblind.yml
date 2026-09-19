@@ -1,0 +1,193 @@
+name: H8 DHE Controlled Unblind
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/h8-dhe-controlled-unblind.yml'
+      - 'data/h8_dhe_v6_pilot_v1_blinded_analysis_lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unblind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+      KAGGLE_USERNAME: paulfoundry
+      H8_KERNEL: paulfoundry/paul-open-h8-dhe-v6-paired-generation
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Kaggle CLI
+        run: python -m pip install --upgrade kaggle
+
+      - name: Verify blinded analysis lock
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          lock=json.loads(Path('data/h8_dhe_v6_pilot_v1_blinded_analysis_lock.json').read_text())
+          assert lock['state']=='BLINDED_ANALYSIS_LOCKED'
+          assert lock['experiment']=='H8_DHE_V6_PILOT_V1'
+          assert lock['partition']=='development'
+          assert lock['batch_id']=='HEB1-B6BE09E2D6DB'
+          assert lock['collection']['collected_case_judgments']==36
+          assert lock['collection']['target_case_judgments']==36
+          assert lock['collection']['adaptive_escalation_required'] is False
+          assert lock['collection']['all_active_forms_closed'] is True
+          assert lock['durability']['private_response_snapshot_created'] is True
+          assert lock['durability']['normalized_judgment_count']==36
+          assert lock['blinding']['private_mapping_opened'] is False
+          assert lock['blinding']['source_identity_used_in_lock'] is False
+          assert lock['blinding']['shae_accessed'] is False
+          assert len(lock['blinded_case_results'])==12
+          assert sum(r['judgments'] for r in lock['blinded_case_results'])==36
+          assert lock['summary']['unanimous_cases']==12
+          print('H8 blinded analysis lock verified')
+          PY
+
+      - name: Download private H8 kernel output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KAGGLE_API_TOKEN"
+          mkdir -p "$RUNNER_TEMP/h8-private"
+          kaggle kernels output "$H8_KERNEL" -p "$RUNNER_TEMP/h8-private"
+          MAPPING=$(find "$RUNNER_TEMP/h8-private" -type f -path '*/private_mapping/mapping.json' -print -quit)
+          test -n "$MAPPING"
+          echo "MAPPING=$MAPPING" >> "$GITHUB_ENV"
+
+      - name: Create safe H8 unblinded aggregate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p h8-unblinded-safe
+          python - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+
+          lock=json.loads(Path('data/h8_dhe_v6_pilot_v1_blinded_analysis_lock.json').read_text())
+          mp=Path(os.environ['MAPPING'])
+          mapping=json.loads(mp.read_text())
+          if mapping.get('batch_id') != lock['batch_id']:
+              raise SystemExit('private mapping batch mismatch')
+
+          labels={mapping['sources']['left']['label'], mapping['sources']['right']['label']}
+          expected={'sft_reference','dpo_v6_synthetic_corrective'}
+          if labels != expected:
+              raise SystemExit(f'unexpected source labels: {sorted(labels)}')
+
+          entries={e['comparison_id']:e for e in mapping['entries']}
+          source_metric={
+              'dpo_v6_synthetic_corrective':'candidate_preferred',
+              'sft_reference':'reference_preferred',
+          }
+          totals={
+              'candidate_preferred':0,
+              'reference_preferred':0,
+              'about_equal':0,
+              'neither_good':0,
+              'not_sure':0,
+          }
+          case_totals={
+              'candidate_preferred':0,
+              'reference_preferred':0,
+              'about_equal':0,
+              'neither_good':0,
+              'not_sure':0,
+          }
+          by_case={}
+
+          for row in lock['blinded_case_results']:
+              outcome=row['canonical_v01_outcome']
+              judgments=int(row['judgments'])
+              if outcome in ('A','B'):
+                  entry=entries.get(row['comparison_id'])
+                  if entry is None:
+                      raise SystemExit(f"mapping missing comparison for {row['case']}")
+                  source=entry['response_a_source'] if outcome=='A' else entry['response_b_source']
+                  metric=source_metric[source]
+              elif outcome=='NEITHER':
+                  metric='neither_good'
+              elif outcome=='EQUAL':
+                  metric='about_equal'
+              elif outcome=='NOT_SURE':
+                  metric='not_sure'
+              else:
+                  raise SystemExit(f"unexpected locked outcome for {row['case']}: {outcome}")
+
+              totals[metric]+=judgments
+              case_totals[metric]+=1
+              by_case[row['case']]={
+                  'outcome':metric,
+                  'judgments':judgments,
+                  'agreement':int(row['agreement']),
+              }
+
+          if sum(totals.values()) != 36:
+              raise SystemExit('aggregate judgment total mismatch')
+          if sum(case_totals.values()) != 12:
+              raise SystemExit('aggregate case total mismatch')
+
+          mapping_hash=hashlib.sha256(mp.read_bytes()).hexdigest()
+          result={
+              'schema_version':'1.0',
+              'experiment':'H8_DHE_V6_PILOT_V1',
+              'partition':'development',
+              'batch_id':lock['batch_id'],
+              'state':'UNBLINDED_AGGREGATE_READY',
+              'analysis_lock_state':lock['state'],
+              'analysis_lock_case_judgments':36,
+              'analysis_lock_cases':12,
+              'candidate':'dpo_v6_synthetic_corrective',
+              'reference':'sft_reference',
+              'mapping_sha256':mapping_hash,
+              'judgment_totals':totals,
+              'case_totals':case_totals,
+              'by_case':by_case,
+              'unanimous_cases':lock['summary']['unanimous_cases'],
+              'reviewer_identity_independence_technically_verified':False,
+              'mapping_content_exposed':False,
+              'private_seed_exposed':False,
+              'shae_accessed':False,
+              'note':'Safe aggregate only. The private A/B mapping and seed are intentionally omitted. Reviewer identity-level independence was not collected by the instrument and is not technically verified.'
+          }
+          Path('h8-unblinded-safe/h8_unblinded_aggregate.json').write_text(
+              json.dumps(result,indent=2,sort_keys=True)+'\n'
+          )
+          print(json.dumps({
+              'status':'PASS',
+              'case_judgments':36,
+              'cases':12,
+              'safe_output':'h8_unblinded_aggregate.json'
+          }))
+          PY
+
+      - name: Assert private material is absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find h8-unblinded-safe -type f | wc -l)" -eq 1
+          ! grep -R '"seed"' h8-unblinded-safe
+          ! grep -R 'response_a_source' h8-unblinded-safe
+          ! grep -R 'response_b_source' h8-unblinded-safe
+          ! grep -R '"left"' h8-unblinded-safe
+          ! grep -R '"right"' h8-unblinded-safe
+
+      - name: Upload safe H8 unblinding aggregate
+        uses: actions/upload-artifact@v4
+        with:
+          name: h8-dhe-unblinded-safe-aggregate
+          path: h8-unblinded-safe/h8_unblinded_aggregate.json
+          if-no-files-found: error
+          retention-days: 30
