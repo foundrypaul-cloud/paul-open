@@ -4,9 +4,9 @@
   "model_research": {
     "base_model": "google/gemma-4-E4B-it",
     "reference_checkpoint": "SFT",
-    "latest_experimental_checkpoint": "DPO V6 synthetic corrective dataset (untrained)",
+    "latest_experimental_checkpoint": "DPO V6 Synthetic Corrective (trained; development-frozen for H8)",
     "superiority_established": false,
-    "current_conclusion": "DPO V5 remains technically valid but H7 human collection was intentionally discontinued after matched generation, with no H7 human result or promotion claim. DPO V6 synthetic corrective development has begun; SFT remains reference and SHAE remains sealed."
+    "current_conclusion": "DPO V6 completed canonical production successfully and produced a positive matched 50-case diagnostic signal versus SFT, but it is not promoted. A fresh 12-case H8 development evaluation is prompt-frozen and generation has not started. SFT remains reference and SHAE remains sealed."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
@@ -23,14 +23,45 @@
     "p12_automated_gate": "cleared_for_precommitted_h7_with_regression_flags",
     "promoted_over_reference": false
   },
+  "dpo_v6": {
+    "stage": "production_complete_h8_prompt_frozen",
+    "dataset_records": 24,
+    "dataset_sha256": "eca6b25c27f8c03d221854b2e7aee59f5da0e4f128cd2b9605c10453723dc732",
+    "source_revision": "c4c942d3c455c8745d4756ca2a775772b1215a4a",
+    "production_run": 35446312134,
+    "production_job": 105905727395,
+    "public_artifact": 10586544611,
+    "public_artifact_digest": "sha256:78e32163461051ee625ca79aaf99e6b7fefd1884caae89ed9cc41818b76404da",
+    "final_adapter_weights_sha256": "c6505d38987f4509017063fe044ec06f731badbb514bb47ccef788e63aa0a1e4",
+    "trained": true,
+    "technical_validity": "pass",
+    "intended_trainable_tensors": 516,
+    "changed_trainable_tensors": 516,
+    "diagnostic_evaluated": true,
+    "diagnostic_cases": 50,
+    "diagnostic_v6_mean_rubric": 90.62,
+    "diagnostic_sft_mean_rubric": 89.18,
+    "diagnostic_v6_keyword_coverage": 0.765,
+    "diagnostic_sft_keyword_coverage": 0.73,
+    "diagnostic_safety_adherence_v6": 1.0,
+    "diagnostic_safety_adherence_sft": 1.0,
+    "fresh_heldout_human_evaluated": false,
+    "development_candidate_frozen": true,
+    "promoted": false,
+    "h7_content_used_for_training": false
+  },
   "human_evaluation": {
-    "stage": "H7_generation_complete_human_collection_discontinued",
+    "stage": "H8_prompt_frozen_generation_not_started",
     "h4_complete": true,
     "h5_complete": true,
     "h6_complete": true,
     "h7_cases": 6,
     "h7_human_result_recorded": false,
-    "next_gate": "Audit DPO V6 synthetic corrective data, then train and evaluate on fresh held-out prompts. Any owner-only review is non-independent development evidence. Do not open SHAE."
+    "h8_cases": 12,
+    "h8_prompt_frozen": true,
+    "h8_generation_started": false,
+    "h8_human_result_recorded": false,
+    "next_gate": "Verify H8 prompt-freeze CI, generate matched SFT/V6 responses from the exact frozen candidate, then conduct blinded multi-reviewer case-level development evaluation. Do not open SHAE."
   },
   "assurance": {
     "shae_sealed": true,
@@ -41,21 +72,17 @@
     "project_status": "docs/PROJECT_STATUS.md",
     "v5_p10": "docs/DPO_V5_P10_AUDIT.md",
     "v5_p11_p12": "docs/DPO_V5_P11_P12_RESULTS.md",
+    "v6_results": "docs/DPO_V6_PRODUCTION_DIAGNOSTIC_RESULTS.md",
+    "v6_candidate_freeze": "docs/DPO_V6_CANDIDATE_FREEZE.md",
+    "h8_precommit": "docs/H8_DHE_V6_PRECOMMIT_SPEC.md",
     "h7_precommit": "docs/H7_DHE_V5_PRECOMMIT_SPEC.md",
     "h6_analysis": "docs/H6_DHE_V4_PILOT_V1_UNBLINDED_ANALYSIS.md"
   },
   "public_claims": {
-    "may_say_dpo_v5_is_technically_valid": true,
-    "may_say_dpo_v5_passed_h7": false,
-    "may_say_dpo_v5_is_superior_to_sft": false,
+    "may_say_dpo_v6_is_technically_valid": true,
+    "may_say_dpo_v6_diagnostic_signal_exceeded_matched_sft": true,
+    "may_say_dpo_v6_is_superior_to_sft": false,
+    "may_say_dpo_v6_passed_fresh_human_evaluation": false,
     "may_start_shae": false
-  },
-  "dpo_v6": {
-    "stage": "synthetic_corrective_dataset_authored",
-    "dataset_records": 24,
-    "trained": false,
-    "evaluated": false,
-    "promoted": false,
-    "h7_content_used_for_training": false
   }
 }
