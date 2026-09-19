@@ -119,3 +119,11 @@ desktop.ini
 *.temp
 scratch/
 /outputs/
+
+
+# ----- Node / Mobile Product Build Outputs -----
+node_modules/
+apps/shipaton-mobile/android/
+apps/shipaton-mobile/ios/
+apps/shipaton-mobile/.vite/
+services/shipaton-ai/.npm/
