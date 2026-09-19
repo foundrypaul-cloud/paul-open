@@ -1,12 +1,12 @@
 {
   "schema_version": "1.0",
-  "status_as_of": "2026-09-19",
+  "status_as_of": "2026-09-20",
   "model_research": {
     "base_model": "google/gemma-4-E4B-it",
     "reference_checkpoint": "SFT",
     "latest_experimental_checkpoint": "DPO V6 Synthetic Corrective (trained; development-frozen for H8)",
     "superiority_established": false,
-    "current_conclusion": "DPO V6 completed canonical production successfully and produced a positive matched 50-case diagnostic signal versus SFT, but it is not promoted. Fresh 12-case H8 matched generation completed successfully and passed contamination/separation gates. Private blinded human collection is now open to recruited reviewers; no H8 result exists yet. SFT remains reference and SHAE remains sealed."
+    "current_conclusion": "DPO V6 remains unpromoted. H8 matched generation passed its integrity gates; 36 blinded case-level judgments were collected, all active forms were closed, and the blinded case-level analysis is locked before source identity is consulted. Reviewer identity-level independence is not technically verifiable from the instrument. SFT remains reference and SHAE remains sealed."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
@@ -51,7 +51,7 @@
     "h7_content_used_for_training": false
   },
   "human_evaluation": {
-    "stage": "H8_blinded_collection_open_private",
+    "stage": "H8_blinded_analysis_locked",
     "h4_complete": true,
     "h5_complete": true,
     "h6_complete": true,
@@ -61,7 +61,7 @@
     "h8_prompt_frozen": true,
     "h8_generation_started": true,
     "h8_human_result_recorded": false,
-    "next_gate": "Collect 3 independent valid judgments per H8 case, enforce reviewer competence and no complementary-variant exposure, close collection at the frozen allocation target or escalation rule, then commit the blinded case-level analysis lock before unblinding. Do not open SHAE.",
+    "next_gate": "Run controlled unblinding against the private H8 mapping and publish only the safe aggregate. Preserve the reviewer-independence limitation. Do not open SHAE.",
     "h8_precommit_ci": "pass",
     "h8_generation_contract_ci": "pass",
     "h8_generation_pipeline_ready": true,
@@ -73,8 +73,11 @@
     "h8_development_separation": "pass",
     "h8_max_development_token_jaccard": 0.3235294117647059,
     "h8_human_collection_started": true,
-    "h8_human_collection_complete": false,
-    "h8_initial_case_judgment_target": 36
+    "h8_human_collection_complete": true,
+    "h8_initial_case_judgment_target": 36,
+    "h8_collected_case_judgments": 36,
+    "h8_blinded_analysis_locked": true,
+    "h8_reviewer_identity_independence_technically_verified": false
   },
   "assurance": {
     "shae_sealed": true,
@@ -91,7 +94,8 @@
     "h7_precommit": "docs/H7_DHE_V5_PRECOMMIT_SPEC.md",
     "h6_analysis": "docs/H6_DHE_V4_PILOT_V1_UNBLINDED_ANALYSIS.md",
     "h8_generation": "docs/H8_DHE_V6_GENERATION_RECORD.md",
-    "h8_collection_launch": "docs/H8_DHE_V6_COLLECTION_LAUNCH.md"
+    "h8_collection_launch": "docs/H8_DHE_V6_COLLECTION_LAUNCH.md",
+    "h8_analysis_lock": "docs/H8_DHE_V6_PILOT_V1_ANALYSIS_LOCK.md"
   },
   "public_claims": {
     "may_say_dpo_v6_is_technically_valid": true,
