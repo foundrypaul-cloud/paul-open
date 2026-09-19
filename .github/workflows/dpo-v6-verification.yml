@@ -1,0 +1,61 @@
+name: DPO V6 Data and Contract Verification
+on:
+  pull_request:
+    paths:
+      - 'data/train/dpo_v6/**'
+      - 'configs/training/dpo_v6_e4b_synthetic_corrective.yaml'
+      - 'scripts/dpo_v6_e4b_train.py'
+      - '.github/workflows/dpo-v6-verification.yml'
+      - '.github/workflows/kaggle-dpo-v6-production.yml'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - name: Verify V6 dataset schema, provenance, uniqueness and prior-data separation
+        run: |
+          python - <<'PY'
+          import json, subprocess, unicodedata
+          from pathlib import Path
+          p=Path('data/train/dpo_v6/synthetic_corrective_v6.jsonl')
+          assert subprocess.check_output(['git','hash-object',str(p)],text=True).strip()=='0dba7994d7de0fc80e2778e053648ab124545074'
+          rows=[json.loads(x) for x in p.read_text(encoding='utf-8').splitlines() if x.strip()]
+          assert len(rows)==24
+          required={'id','track','domain','language','rejection_reason','prompt','chosen','rejected','metadata'}
+          for r in rows:
+              assert required <= set(r), r.get('id')
+              assert r['id'].startswith('paul_dpo_v6_')
+              assert r['prompt'].strip() and r['chosen'].strip() and r['rejected'].strip() and r['chosen']!=r['rejected']
+              m=r['metadata']; assert m.get('synthetic') is True and m.get('human_verified') is False and m.get('development_only') is True and m.get('h7_content_used') is False
+          for k in ('id','prompt','chosen','rejected'):
+              vals=[r[k] for r in rows]; assert len(vals)==len(set(vals)), f'duplicate {k}'
+          comparison=[]
+          for q in ('data/h4_dhe_pilot_v1.jsonl','data/h5_dhe_v3_pilot_v1.jsonl','data/h6_dhe_v4_pilot_v1.jsonl','data/train/dpo_train.jsonl','data/train/dpo_v2_corrective.jsonl','data/train/dpo_v5_corrective.jsonl'):
+              z=Path(q)
+              if z.is_file(): comparison += [(q,json.loads(x)) for x in z.read_text(encoding='utf-8').splitlines() if x.strip()]
+          for folder in ('data/train/dpo_v3','data/train/dpo_v4','data/train/dpo_v5'):
+              for z in sorted(Path(folder).glob('*.jsonl')): comparison += [(str(z),json.loads(x)) for x in z.read_text(encoding='utf-8').splitlines() if x.strip()]
+          prior={r.get('prompt','') for _,r in comparison}; assert not {r['prompt'] for r in rows}&prior
+          def toks(s):
+              text=unicodedata.normalize('NFKC',s).casefold(); out=[]; cur=[]
+              for ch in text:
+                  if unicodedata.category(ch)[0] in {'L','N','M'} or ch=='_': cur.append(ch)
+                  elif cur: out.append(''.join(cur)); cur=[]
+              if cur: out.append(''.join(cur))
+              return set(out)
+          best=(0,None,None)
+          for r in rows:
+              a=toks(r['prompt'])
+              for src,q in comparison:
+                  b=toks(q.get('prompt','')); u=a|b; score=len(a&b)/len(u) if u else 0
+                  if score>best[0]: best=(score,r['id'],src)
+          assert best[0] < .35, best
+          print({'status':'PASS','records':24,'max_prior_prompt_token_jaccard':best})
+          PY
+      - name: Compile V6 wrapper
+        run: python -m py_compile scripts/dpo_v6_e4b_train.py
