@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "status_as_of": "2026-09-19",
-  "state": "h8_blinded_collection_open_private",
+  "status_as_of": "2026-09-20",
+  "state": "h8_blinded_analysis_locked",
   "internal_stage": "H8",
   "public_participation_enabled": false,
   "provider": "google_forms",
@@ -43,7 +43,7 @@
     "multi_reviewer_collection_completed": false,
     "decision": "no_human_result_no_promotion_claim"
   },
-  "public_message": "H8 fresh matched SFT-vs-V6 generation completed successfully and passed the precommitted contamination/separation gates. Private blinded multi-reviewer collection is open to recruited reviewers; no H8 human preference result exists yet. SFT remains reference and SHAE remains sealed.",
+  "public_message": "H8 private collection is closed. The 36 blinded case-level judgments are frozen in a blinded analysis lock; source identity has not yet been consulted. Reviewer identity-level independence is not technically verifiable from the instrument. SFT remains reference and SHAE remains sealed.",
   "safety": {
     "reviewer_links_publicly_allowed": false,
     "response_sheets_publicly_allowed": false,
@@ -63,7 +63,7 @@
     "prompts_precommitted_before_response_generation": true,
     "matched_generation_complete": true,
     "human_result_recorded": false,
-    "state": "blinded_collection_open_private",
+    "state": "blinded_analysis_locked",
     "generation_run": 35457211935,
     "reviewer_safe_artifact": 10588896454,
     "batch_id": "HEB1-B6BE09E2D6DB",
@@ -73,8 +73,11 @@
     "initial_valid_judgments_per_case": 3,
     "initial_case_judgment_target": 36,
     "human_collection_started": true,
-    "human_collection_completed": false,
+    "human_collection_completed": true,
     "reviewer_links_public": false,
-    "email_collection": false
+    "email_collection": false,
+    "collected_case_judgments": 36,
+    "blinded_analysis_locked": true,
+    "reviewer_identity_independence_technically_verified": false
   }
 }
