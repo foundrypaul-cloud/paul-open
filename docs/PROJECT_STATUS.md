@@ -5,45 +5,106 @@
 
 ## Current position
 
-PAUL Open has completed successive development cycles through DPO V4/H6 and has trained and technically validated DPO V5 Corrective. The historical SFT checkpoint remains the reference.
+PAUL Open has completed technically valid development training through DPO V6 Synthetic Corrective. The historical SFT adapter remains the reference checkpoint because no DPO checkpoint has yet passed the full clean held-out, preservation, blinded-human, and sealed-assurance evidence chain required for promotion.
 
-DPO V5 passed the P10 corrective-data audit and P11 production validity gates. P12 automated evidence was mixed: safety and technical gates passed, while the 50-case diagnostic showed both positive signals and regression flags. P12 therefore cleared V5 only for the already-precommitted H7 Development Human Evaluation (DHE), not for promotion.
+DPO V5 passed its data and production-validity gates but produced mixed automated evidence. H7 matched generation completed, after which the planned multi-reviewer H7 collection was intentionally discontinued without a human preference result.
 
-Six fresh H7 cases were frozen before V5 output inspection and matched generation completed successfully. On 2026-09-19 the planned multi-reviewer H7 human collection was intentionally discontinued to shorten the development loop; therefore H7 has no human preference result and cannot support a V5 promotion claim. A separate DPO V6 synthetic corrective-data iteration has begun without using H7 blinded responses or mappings. SHAE remains sealed and has not started.
+DPO V6 was then authored as a separate 24-record synthetic corrective development iteration without using H7 blinded responses, hidden mappings, evaluator output, or SHAE material. Its canonical production run completed successfully on 2026-09-19. All 516 intended trainable tensors changed and the matched 50-case diagnostic produced a positive aggregate heuristic signal relative to SFT. That result advances V6 to fresh development evaluation; it does not establish superiority.
+
+A 12-case fresh H8 Development Human Evaluation prompt set is now precommitted for SFT-vs-V6 comparison. H8 generation and human collection have not started. SHAE remains sealed.
 
 ## Experiment lineage
 
 - **DPO V2 / H4:** technically valid; H4 mixed; no promotion.
 - **DPO V3 / H5:** technically valid; H5 ended 9–9 in judgments and failed the pre-specified STEM/Hindi preservation objective; no promotion.
 - **DPO V4 / H6:** H6 collected 18 judgments. SFT was preferred on five cases (15 judgments); all three Educator judgments selected neither response; no promotion.
-- **DPO V5 / P10–P12:** 30-record corrective dataset passed P10; production completed with 516/516 intended LoRA tensors changed and completion gate PASS. Automated P12 evidence was mixed and cleared V5 only for H7 DHE.
-- **H7:** matched generation completed; planned multi-reviewer human collection intentionally discontinued on 2026-09-19; no H7 human result and no promotion decision.
-- **DPO V6:** synthetic corrective-data development iteration initiated with fresh training prompts; not yet trained or promoted.
+- **DPO V5 / P10–P12:** 30-record corrective dataset passed the data/production gates; 516/516 intended LoRA tensors changed. Automated evidence was mixed and V5 was cleared only for H7 DHE.
+- **H7:** matched generation completed; planned multi-reviewer human collection was intentionally discontinued on 2026-09-19; no H7 human result and no promotion decision.
+- **DPO V6:** 24-record synthetic corrective dataset; canonical production completed successfully; 516/516 intended tensors changed; matched 50-case diagnostic favored V6 on the aggregate heuristic signal; not promoted.
+- **H8:** 12 fresh development prompts precommitted after production but before H8 response generation; generation/human collection not started.
 
 The immutable Step-2 freeze remains `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
-## DPO V5 technical evidence
+## DPO V6 canonical production evidence
 
-Canonical P11 production evidence records source revision `08a0857bbd5a93d58b8ca64a61625e69f68bf442`, 30 dataset records, four configured epochs, global step 8, final train loss `0.682159423828125`, and 516/516 intended trainable tensors changed.
+Canonical production:
 
-The P12 matched 50-case automated diagnostic completed without execution failures and with 100% automated safety / anti-anthropomorphism adherence. Its aggregate heuristic signal was lower for V5 than SFT (89.53 vs 90.66), while some domain signals improved and others regressed. These metrics are diagnostic, not a human-preference or superiority result.
+- source revision: `c4c942d3c455c8745d4756ca2a775772b1215a4a`
+- GitHub Actions run: `35446312134`
+- job: `105905727395`
+- public Actions artifact: `10586544611`
+- artifact digest: `sha256:78e32163461051ee625ca79aaf99e6b7fefd1884caae89ed9cc41818b76404da`
+- training records: 24
+- dataset SHA-256: `eca6b25c27f8c03d221854b2e7aee59f5da0e4f128cd2b9605c10453723dc732`
+- configured epochs: 4
+- trainer global step: 8
+- final train loss: `0.646148681640625`
+- intended trainable tensors changed: 516 / 516
+- final V6 adapter safetensors SHA-256: `c6505d38987f4509017063fe044ec06f731badbb514bb47ccef788e63aa0a1e4`
 
-See [DPO_V5_P10_AUDIT.md](DPO_V5_P10_AUDIT.md) and [DPO_V5_P11_P12_RESULTS.md](DPO_V5_P11_P12_RESULTS.md).
+The sanitized public evidence is permanently copied to `artifacts/public-evidence/dpo-v6-production.json`.
+
+## DPO V6 matched diagnostic
+
+Both SFT and V6 completed 50/50 cases with zero execution failures.
+
+| Metric | SFT | DPO V6 | Delta |
+|---|---:|---:|---:|
+| Mean heuristic rubric | 89.18 | 90.62 | +1.44 |
+| Mean keyword coverage | 0.730 | 0.765 | +0.035 |
+| Automated safety adherence | 100% | 100% | 0 |
+| Cases flagged for human review | 20 | 19 | -1 |
+| Mean latency | 37.527 s | 40.109 s | +2.582 s |
+
+This is a positive matched diagnostic signal. It remains heuristic development evidence, not a clean held-out human-preference result.
+
+The SFT aggregate has varied across separately executed diagnostics, so cross-run headline scores must not be treated as one fixed leaderboard. Matched comparisons and case-level evaluation remain the relevant evidence.
+
+See [DPO_V6_PRODUCTION_DIAGNOSTIC_RESULTS.md](DPO_V6_PRODUCTION_DIAGNOSTIC_RESULTS.md) and [DPO_V6_CANDIDATE_FREEZE.md](DPO_V6_CANDIDATE_FREEZE.md).
 
 ## Current development gate
 
-H7 remains development evidence, not final assurance. Its matched generation completed, but the precommitted multi-reviewer collection was not completed, so H7 provides no human preference result. Development has moved to the separately documented DPO V6 synthetic corrective-data track. V6 must pass data gates, training validity, and a fresh held-out evaluation before any development decision. Any project-owner-only evaluation must be disclosed as single-evaluator, non-independent evidence. SHAE remains sealed.
+V6 is development-frozen to the exact production identity documented in `DPO_V6_CANDIDATE_FREEZE.md`.
+
+The next gate is H8:
+
+1. CI verifies the 12-case H8 prompt freeze against H4–H7, DPO V1–V6 training data, and the canonical benchmark leakage checker.
+2. The exact SFT reference and frozen V6 adapter generate matched responses under the same generation contract.
+3. Blinded multi-reviewer human evaluation is collected with case-level analysis.
+4. The result is documented before any decision about assurance-candidate freezing.
+
+No V7 checkpoint may be substituted into H8 under the V6 label. Any later training iteration requires a new experiment identity and evaluation round.
+
+SHAE remains sealed and may not be opened merely because the V6 diagnostic was positive.
 
 ## Claim boundary
 
-Supported: DPO V2–V5 are technically valid experimental/development checkpoints; H4–H6 are completed DHE rounds; DPO V5 passed P10/P11 technical and contamination gates; P12 was mixed; H7 matched generation completed but human collection was discontinued without a result; DPO V6 synthetic corrective development has begun; SFT remains the reference; SHAE remains sealed.
+Supported:
 
-Not supported: DPO V5 is superior to SFT; DPO V5 passed H7 human evaluation; DPO V5 is assurance-frozen; DPO V6 has been trained, evaluated, or promoted; SHAE may be opened, has started, or has passed.
+- DPO V2–V6 are technically valid trained development checkpoints.
+- H4–H6 are completed DHE rounds.
+- H7 matched generation completed but human collection was discontinued without a result.
+- V6 canonical production completed with 516/516 intended trainable tensors changed.
+- The matched 50-case V6 diagnostic produced 90.62 versus 89.18 for SFT, with 100% automated safety adherence for both.
+- V6 is frozen as the candidate identity for H8 development evaluation.
+- H8 contains fresh precommitted development prompts and has not yet generated responses.
+- SFT remains the reference checkpoint.
+- SHAE remains sealed.
+
+Not supported:
+
+- DPO V6 is broadly superior to SFT.
+- DPO V6 has passed fresh held-out blinded human evaluation.
+- DPO V6 is assurance-frozen or promoted.
+- H8 has started generation or human collection.
+- SHAE may be opened, has started, or has passed.
 
 ## Operational boundary
 
-The 2026-09-13 accidental duplicate V4/V5 Kaggle launches are documented non-canonical operational side effects and must not be substituted for canonical experiment evidence. Research-significant Kaggle production workflows are now manual-dispatch only.
+The 2026-09-13 accidental duplicate V4/V5 Kaggle launches remain documented non-canonical operational side effects. Research-significant Kaggle production workflows are manual-dispatch only.
+
+Private Kaggle outputs, checkpoints, reviewer mappings, raw human-evaluation responses, and SHAE material remain outside the public repository. Only explicitly sanitized aggregate evidence and cryptographic digests may cross the public boundary.
 
 ## Public website state
 
-The website is a presentation layer and should consume the machine-readable files under `public/`. No public human-evaluation round is accepting responses. Reviewer links, response sheets, private A/B mappings and SHAE material remain non-public.
+The website is a presentation layer and should consume the machine-readable files under `public/`. No public human-evaluation round is currently accepting responses. Reviewer links, response sheets, private A/B mappings, and SHAE material remain non-public.

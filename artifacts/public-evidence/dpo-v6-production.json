@@ -1,0 +1,136 @@
+{
+  "adapter_digest_count": 2,
+  "adapter_weight_digests": [
+    {
+      "bytes": 139602808,
+      "sha256": "c6505d38987f4509017063fe044ec06f731badbb514bb47ccef788e63aa0a1e4"
+    },
+    {
+      "bytes": 139602808,
+      "sha256": "c6505d38987f4509017063fe044ec06f731badbb514bb47ccef788e63aa0a1e4"
+    }
+  ],
+  "publication_policy": "aggregate_allowlist_only",
+  "records": [
+    {
+      "data": {
+        "average_latency_seconds": 40.109,
+        "benchmark_version": "1.0.0",
+        "completed_cases": 50,
+        "experiment_id": "exp_gemma4_e4b_dpo_20260919_142814",
+        "failed_cases": 0,
+        "mean_rubric_score": 90.62,
+        "model_id": "google/gemma-4-E4B-it",
+        "peak_vram_gib": 2.4,
+        "persistence_mode": "runtime_local",
+        "status": "SUCCESS",
+        "timestamp_utc": "2026-09-19T15:01:40.778558+00:00",
+        "total_cases": 50
+      },
+      "kind": "status"
+    },
+    {
+      "data": {
+        "manifest": {
+          "benchmark_version": "1.0.0",
+          "completed_cases": 50,
+          "experiment_id": "exp_gemma4_e4b_dpo_20260919_142814",
+          "failed_cases": 0,
+          "model_id": "google/gemma-4-E4B-it",
+          "model_revision": "main",
+          "persistence_mode": "runtime_local",
+          "status": "SUCCESS",
+          "timestamp_utc": "2026-09-19T15:01:40.235702+00:00",
+          "total_cases": 50
+        },
+        "overall_summary": {
+          "automated_metric_coverage": "100%",
+          "cases_flagged_for_human_review": 19,
+          "mean_keyword_coverage": 0.765,
+          "mean_latency_seconds": 40.109,
+          "mean_rubric_score": 90.62,
+          "overall_safety_adherence": 1.0,
+          "peak_vram_observed_gb": 2.4,
+          "total_cases_evaluated": 50,
+          "total_evaluation_time_seconds": 2005.43
+        }
+      },
+      "kind": "results"
+    },
+    {
+      "data": {
+        "average_latency_seconds": 37.527,
+        "benchmark_version": "1.0.0",
+        "completed_cases": 50,
+        "experiment_id": "exp_gemma4_e4b_sft_20260919_135638",
+        "failed_cases": 0,
+        "mean_rubric_score": 89.18,
+        "model_id": "google/gemma-4-E4B-it",
+        "peak_vram_gib": 2.33,
+        "persistence_mode": "runtime_local",
+        "status": "SUCCESS",
+        "timestamp_utc": "2026-09-19T14:27:56.130631+00:00",
+        "total_cases": 50
+      },
+      "kind": "status"
+    },
+    {
+      "data": {
+        "manifest": {
+          "benchmark_version": "1.0.0",
+          "completed_cases": 50,
+          "experiment_id": "exp_gemma4_e4b_sft_20260919_135638",
+          "failed_cases": 0,
+          "model_id": "google/gemma-4-E4B-it",
+          "model_revision": "main",
+          "persistence_mode": "runtime_local",
+          "status": "SUCCESS",
+          "timestamp_utc": "2026-09-19T14:27:55.338256+00:00",
+          "total_cases": 50
+        },
+        "overall_summary": {
+          "automated_metric_coverage": "100%",
+          "cases_flagged_for_human_review": 20,
+          "mean_keyword_coverage": 0.73,
+          "mean_latency_seconds": 37.527,
+          "mean_rubric_score": 89.18,
+          "overall_safety_adherence": 1.0,
+          "peak_vram_observed_gb": 2.33,
+          "total_cases_evaluated": 50,
+          "total_evaluation_time_seconds": 1876.34
+        }
+      },
+      "kind": "results"
+    },
+    {
+      "data": {
+        "adapter_config_sha256": "cff65bd42928536886168b09d9b133b25ac444c01d901d2a56d98c7b8b03a0ce",
+        "adapter_weights_sha256": "73bab121009e2130f387b5deebfe1d15f4f7ac2afbd622164b11b3024000ec49",
+        "authentic_update_evidence": {
+          "changed_tensor_count": 516,
+          "finite": true,
+          "intended_tensor_count": 516
+        },
+        "configured_epochs": 4,
+        "dataset_records": 24,
+        "dataset_sha256": "eca6b25c27f8c03d221854b2e7aee59f5da0e4f128cd2b9605c10453723dc732",
+        "experiment_id": "paul_e4b_dpo_v6_synthetic_corrective",
+        "model_id": "google/gemma-4-E4B-it",
+        "model_revision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
+        "source_revision": "c4c942d3c455c8745d4756ca2a775772b1215a4a",
+        "train_metrics": {
+          "epoch": 4.0,
+          "train_loss": 0.646148681640625,
+          "train_runtime": 308.4718,
+          "train_samples_per_second": 0.311,
+          "train_steps_per_second": 0.026
+        },
+        "trainer_global_step": 8
+      },
+      "kind": "training_manifest"
+    }
+  ],
+  "schema_version": 1,
+  "source_classification": "private_kaggle_output",
+  "structured_record_count": 5
+}
