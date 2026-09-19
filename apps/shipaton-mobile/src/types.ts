@@ -20,6 +20,9 @@ export interface ResearchSnapshot {
   referenceCheckpoint: string;
   currentConclusion: string;
   superiorityEstablished: boolean;
+  diagnosticCases: number;
+  diagnosticV6MeanRubric: number;
+  diagnosticSftMeanRubric: number;
   h8CandidatePreferred: number | null;
   h8ReferencePreferred: number | null;
   h8AboutEqual: number | null;

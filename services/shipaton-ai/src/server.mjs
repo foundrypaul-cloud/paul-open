@@ -60,6 +60,7 @@ function rateLimited(req) {
 }
 
 async function readJson(req) {
+  req.setEncoding('utf8');
   let body = '';
   for await (const chunk of req) {
     body += chunk;
