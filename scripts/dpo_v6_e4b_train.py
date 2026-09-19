@@ -29,7 +29,7 @@ def validate_dataset() -> None:
 def install_contract():
     contract=copy.deepcopy(v2.LOCKED_EXPERIMENT)
     e=contract["experiment"]; t=contract["training"]
-    e.update({"id":"paul_e4b_dpo_v6_synthetic_corrective","name":"PAUL Open E4B DPO V6 Synthetic Corrective","provenance":"POST-H7 ABBREVIATED DEVELOPMENT — SYNTHETIC CORRECTIVE DATA; V5 TRAINING METHODOLOGY PRESERVED","dataset_path":str(DATASET_PATH),"dataset_sha256":DATASET_SHA256,"dataset_records":DATASET_RECORDS})
+    e.update({"id":"paul_e4b_dpo_v6_synthetic_corrective","name":"PAUL Open E4B DPO V6 Synthetic Corrective","provenance":"POST-H7 ABBREVIATED DEVELOPMENT — SYNTHETIC CORRECTIVE DATA; V5 TRAINING METHODOLOGY PRESERVED","dataset_path":str(DATASET_PATH),"dataset_git_blob_sha":DATASET_GIT_BLOB_SHA,"dataset_sha256":DATASET_SHA256,"dataset_records":DATASET_RECORDS})
     t["dpo_config"]["output_dir"]="./results/dpo_v6_synthetic_corrective"
     v2.LOCKED_EXPERIMENT=contract
 
