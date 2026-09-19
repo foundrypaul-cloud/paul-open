@@ -6,7 +6,7 @@
     "reference_checkpoint": "SFT",
     "latest_experimental_checkpoint": "DPO V6 Synthetic Corrective (trained; development-frozen for H8)",
     "superiority_established": false,
-    "current_conclusion": "DPO V6 completed canonical production successfully and produced a positive matched 50-case diagnostic signal versus SFT, but it is not promoted. Fresh 12-case H8 matched generation completed successfully; the blinded batch and contamination/separation gates passed, while human collection has not started. SFT remains reference and SHAE remains sealed."
+    "current_conclusion": "DPO V6 completed canonical production successfully and produced a positive matched 50-case diagnostic signal versus SFT, but it is not promoted. Fresh 12-case H8 matched generation completed successfully and passed contamination/separation gates. Private blinded human collection is now open to recruited reviewers; no H8 result exists yet. SFT remains reference and SHAE remains sealed."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
@@ -51,7 +51,7 @@
     "h7_content_used_for_training": false
   },
   "human_evaluation": {
-    "stage": "H8_generation_complete_collection_not_started",
+    "stage": "H8_blinded_collection_open_private",
     "h4_complete": true,
     "h5_complete": true,
     "h6_complete": true,
@@ -61,7 +61,7 @@
     "h8_prompt_frozen": true,
     "h8_generation_started": true,
     "h8_human_result_recorded": false,
-    "next_gate": "Materialize the H8 reviewer forms from the canonical reviewer-safe bundle, conduct blinded multi-reviewer collection with 3 valid judgments per case, and lock case-level analysis before unblinding. Do not open SHAE.",
+    "next_gate": "Collect 3 independent valid judgments per H8 case, enforce reviewer competence and no complementary-variant exposure, close collection at the frozen allocation target or escalation rule, then commit the blinded case-level analysis lock before unblinding. Do not open SHAE.",
     "h8_precommit_ci": "pass",
     "h8_generation_contract_ci": "pass",
     "h8_generation_pipeline_ready": true,
@@ -72,7 +72,9 @@
     "h8_canonical_baseline_leakage": "pass_12_of_12_clean",
     "h8_development_separation": "pass",
     "h8_max_development_token_jaccard": 0.3235294117647059,
-    "h8_human_collection_started": false
+    "h8_human_collection_started": true,
+    "h8_human_collection_complete": false,
+    "h8_initial_case_judgment_target": 36
   },
   "assurance": {
     "shae_sealed": true,
@@ -88,7 +90,8 @@
     "h8_precommit": "docs/H8_DHE_V6_PRECOMMIT_SPEC.md",
     "h7_precommit": "docs/H7_DHE_V5_PRECOMMIT_SPEC.md",
     "h6_analysis": "docs/H6_DHE_V4_PILOT_V1_UNBLINDED_ANALYSIS.md",
-    "h8_generation": "docs/H8_DHE_V6_GENERATION_RECORD.md"
+    "h8_generation": "docs/H8_DHE_V6_GENERATION_RECORD.md",
+    "h8_collection_launch": "docs/H8_DHE_V6_COLLECTION_LAUNCH.md"
   },
   "public_claims": {
     "may_say_dpo_v6_is_technically_valid": true,
