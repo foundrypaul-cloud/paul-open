@@ -6,7 +6,7 @@
     "reference_checkpoint": "SFT",
     "latest_experimental_checkpoint": "DPO V6 Synthetic Corrective (trained; development-frozen for H8)",
     "superiority_established": false,
-    "current_conclusion": "DPO V6 completed canonical production successfully and produced a positive matched 50-case diagnostic signal versus SFT, but it is not promoted. A fresh 12-case H8 development evaluation is prompt-frozen and generation has not started. SFT remains reference and SHAE remains sealed."
+    "current_conclusion": "DPO V6 completed canonical production successfully and produced a positive matched 50-case diagnostic signal versus SFT, but it is not promoted. The fresh 12-case H8 development evaluation is prompt-frozen; both precommit and generation-contract CI passed, and the manual-only matched-generation pipeline is ready but has not been dispatched. SFT remains reference and SHAE remains sealed."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
@@ -43,8 +43,8 @@
     "diagnostic_sft_mean_rubric": 89.18,
     "diagnostic_v6_keyword_coverage": 0.765,
     "diagnostic_sft_keyword_coverage": 0.73,
-    "diagnostic_safety_adherence_v6": 1.0,
-    "diagnostic_safety_adherence_sft": 1.0,
+    "diagnostic_safety_adherence_v6": 1,
+    "diagnostic_safety_adherence_sft": 1,
     "fresh_heldout_human_evaluated": false,
     "development_candidate_frozen": true,
     "promoted": false,
@@ -61,7 +61,10 @@
     "h8_prompt_frozen": true,
     "h8_generation_started": false,
     "h8_human_result_recorded": false,
-    "next_gate": "Verify H8 prompt-freeze CI, generate matched SFT/V6 responses from the exact frozen candidate, then conduct blinded multi-reviewer case-level development evaluation. Do not open SHAE."
+    "next_gate": "Manually dispatch the H8 DHE V6 Kaggle Paired Generation workflow on main, verify the reviewer-safe artifact, then conduct blinded multi-reviewer case-level development evaluation. Do not open SHAE.",
+    "h8_precommit_ci": "pass",
+    "h8_generation_contract_ci": "pass",
+    "h8_generation_pipeline_ready": true
   },
   "assurance": {
     "shae_sealed": true,
