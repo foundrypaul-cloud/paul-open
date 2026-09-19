@@ -13,7 +13,7 @@
 > - DPO V5 was technically valid; H7 matched generation completed, but the planned H7 multi-reviewer collection was intentionally discontinued without a human result.
 > - DPO V6 Synthetic Corrective completed canonical production successfully: 516/516 intended trainable tensors changed.
 > - In the matched 50-case diagnostic, V6 scored 90.62 versus 89.18 for SFT, with 100% automated safety adherence for both. This is a positive diagnostic signal, **not proof of superiority**.
-> - V6 is development-frozen to the canonical production adapter for a fresh 12-case H8 DHE prompt set. H8 generation and human collection have not started.
+> - V6 is development-frozen to the canonical production adapter for a fresh 12-case H8 DHE prompt set. H8 precommit/generation-contract CI pass and the manual Kaggle generation pipeline is ready; generation and human collection have not started.
 > - SHAE remains sealed and has not started.
 > - Immutable Step 2 research freeze: `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
@@ -76,7 +76,7 @@ The canonical V6 production run completed successfully on 2026-09-19:
 
 Its matched 50-case diagnostic produced a higher aggregate heuristic signal than SFT (90.62 vs 89.18), with 100% automated safety adherence for both checkpoints. These metrics are development diagnostics, not a clean held-out superiority result.
 
-V6 is development-frozen for H8, a fresh 12-case prompt-frozen SFT-vs-V6 human comparison. H8 generation has not started and SHAE remains sealed.
+V6 is development-frozen for H8, a fresh 12-case prompt-frozen SFT-vs-V6 human comparison. The H8 precommit and generation-contract CI pass, and its manual-only Kaggle paired-generation workflow is ready. H8 generation has not started and SHAE remains sealed.
 
 Read the current evidence:
 
