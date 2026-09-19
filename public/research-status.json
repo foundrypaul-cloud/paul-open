@@ -6,7 +6,7 @@
     "reference_checkpoint": "SFT",
     "latest_experimental_checkpoint": "DPO V6 Synthetic Corrective (trained; development-frozen for H8)",
     "superiority_established": false,
-    "current_conclusion": "DPO V6 remains unpromoted. H8 matched generation passed its integrity gates; 36 blinded case-level judgments were collected, all active forms were closed, and the blinded case-level analysis is locked before source identity is consulted. Reviewer identity-level independence is not technically verifiable from the instrument. SFT remains reference and SHAE remains sealed."
+    "current_conclusion": "DPO V6 completed canonical production and a positive matched automated diagnostic, but the fresh H8 development human comparison did not satisfy the promotion gate. H8 case-level outcomes were SFT preferred 6, V6 preferred 3, neither good 2, about equal 1. V6 is not promoted; SFT remains the reference checkpoint and SHAE remains sealed."
   },
   "step2_freeze": {
     "branch": "research-freeze/step2-dpo-v2-20260909",
@@ -24,7 +24,7 @@
     "promoted_over_reference": false
   },
   "dpo_v6": {
-    "stage": "production_complete_h8_generation_complete",
+    "stage": "h8_complete_no_promotion",
     "dataset_records": 24,
     "dataset_sha256": "eca6b25c27f8c03d221854b2e7aee59f5da0e4f128cd2b9605c10453723dc732",
     "source_revision": "c4c942d3c455c8745d4756ca2a775772b1215a4a",
@@ -45,13 +45,21 @@
     "diagnostic_sft_keyword_coverage": 0.73,
     "diagnostic_safety_adherence_v6": 1,
     "diagnostic_safety_adherence_sft": 1,
-    "fresh_heldout_human_evaluated": false,
+    "fresh_heldout_human_evaluated": true,
     "development_candidate_frozen": true,
     "promoted": false,
-    "h7_content_used_for_training": false
+    "h7_content_used_for_training": false,
+    "h8_case_totals": {
+      "candidate_preferred": 3,
+      "reference_preferred": 6,
+      "about_equal": 1,
+      "neither_good": 2,
+      "not_sure": 0
+    },
+    "h8_reviewer_identity_independence_technically_verified": false
   },
   "human_evaluation": {
-    "stage": "H8_blinded_analysis_locked",
+    "stage": "H8_complete_no_promotion",
     "h4_complete": true,
     "h5_complete": true,
     "h6_complete": true,
@@ -60,8 +68,8 @@
     "h8_cases": 12,
     "h8_prompt_frozen": true,
     "h8_generation_started": true,
-    "h8_human_result_recorded": false,
-    "next_gate": "Run controlled unblinding against the private H8 mapping and publish only the safe aggregate. Preserve the reviewer-independence limitation. Do not open SHAE.",
+    "h8_human_result_recorded": true,
+    "next_gate": "Keep SHAE sealed. If research continues, start a new development iteration under a new experiment identity and a new precommitted evaluation round; do not substitute a V7 checkpoint into H8.",
     "h8_precommit_ci": "pass",
     "h8_generation_contract_ci": "pass",
     "h8_generation_pipeline_ready": true,
@@ -77,7 +85,18 @@
     "h8_initial_case_judgment_target": 36,
     "h8_collected_case_judgments": 36,
     "h8_blinded_analysis_locked": true,
-    "h8_reviewer_identity_independence_technically_verified": false
+    "h8_reviewer_identity_independence_technically_verified": false,
+    "h8_complete": true,
+    "h8_decision": "retain_sft_reference_do_not_promote_v6",
+    "h8_case_totals": {
+      "candidate_preferred": 3,
+      "reference_preferred": 6,
+      "about_equal": 1,
+      "neither_good": 2,
+      "not_sure": 0
+    },
+    "h8_controlled_unblind_run": 35462516736,
+    "h8_safe_unblind_artifact": 10591050193
   },
   "assurance": {
     "shae_sealed": true,
@@ -95,13 +114,16 @@
     "h6_analysis": "docs/H6_DHE_V4_PILOT_V1_UNBLINDED_ANALYSIS.md",
     "h8_generation": "docs/H8_DHE_V6_GENERATION_RECORD.md",
     "h8_collection_launch": "docs/H8_DHE_V6_COLLECTION_LAUNCH.md",
-    "h8_analysis_lock": "docs/H8_DHE_V6_PILOT_V1_ANALYSIS_LOCK.md"
+    "h8_analysis_lock": "docs/H8_DHE_V6_PILOT_V1_ANALYSIS_LOCK.md",
+    "h8_results": "docs/H8_DHE_V6_PILOT_V1_RESULTS.md"
   },
   "public_claims": {
     "may_say_dpo_v6_is_technically_valid": true,
     "may_say_dpo_v6_diagnostic_signal_exceeded_matched_sft": true,
     "may_say_dpo_v6_is_superior_to_sft": false,
     "may_say_dpo_v6_passed_fresh_human_evaluation": false,
-    "may_start_shae": false
+    "may_start_shae": false,
+    "may_say_h8_completed_development_evaluation": true,
+    "may_say_h8_reference_preferred_more_cases": true
   }
 }

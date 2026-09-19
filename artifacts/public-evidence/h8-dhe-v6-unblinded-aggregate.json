@@ -1,0 +1,47 @@
+{
+  "analysis_lock_case_judgments": 36,
+  "analysis_lock_cases": 12,
+  "analysis_lock_state": "BLINDED_ANALYSIS_LOCKED",
+  "batch_id": "HEB1-B6BE09E2D6DB",
+  "by_case": {
+    "H8-DHE-001": {"agreement": 3, "judgments": 3, "outcome": "reference_preferred"},
+    "H8-DHE-002": {"agreement": 3, "judgments": 3, "outcome": "neither_good"},
+    "H8-DHE-003": {"agreement": 3, "judgments": 3, "outcome": "candidate_preferred"},
+    "H8-DHE-004": {"agreement": 3, "judgments": 3, "outcome": "neither_good"},
+    "H8-DHE-005": {"agreement": 3, "judgments": 3, "outcome": "reference_preferred"},
+    "H8-DHE-006": {"agreement": 3, "judgments": 3, "outcome": "reference_preferred"},
+    "H8-DHE-007": {"agreement": 3, "judgments": 3, "outcome": "reference_preferred"},
+    "H8-DHE-008": {"agreement": 3, "judgments": 3, "outcome": "reference_preferred"},
+    "H8-DHE-009": {"agreement": 3, "judgments": 3, "outcome": "candidate_preferred"},
+    "H8-DHE-010": {"agreement": 3, "judgments": 3, "outcome": "candidate_preferred"},
+    "H8-DHE-011": {"agreement": 3, "judgments": 3, "outcome": "reference_preferred"},
+    "H8-DHE-012": {"agreement": 3, "judgments": 3, "outcome": "about_equal"}
+  },
+  "candidate": "dpo_v6_synthetic_corrective",
+  "case_totals": {
+    "about_equal": 1,
+    "candidate_preferred": 3,
+    "neither_good": 2,
+    "not_sure": 0,
+    "reference_preferred": 6
+  },
+  "experiment": "H8_DHE_V6_PILOT_V1",
+  "judgment_totals": {
+    "about_equal": 3,
+    "candidate_preferred": 9,
+    "neither_good": 6,
+    "not_sure": 0,
+    "reference_preferred": 18
+  },
+  "mapping_content_exposed": false,
+  "mapping_sha256": "00cfd5ce446423a0674314f6f3a7dc2f8cc44d348212e4a8266bab0c0f6a6de9",
+  "note": "Safe aggregate only. The private A/B mapping and seed are intentionally omitted. Reviewer identity-level independence was not collected by the instrument and is not technically verified.",
+  "partition": "development",
+  "private_seed_exposed": false,
+  "reference": "sft_reference",
+  "reviewer_identity_independence_technically_verified": false,
+  "schema_version": "1.0",
+  "shae_accessed": false,
+  "state": "UNBLINDED_AGGREGATE_READY",
+  "unanimous_cases": 12
+}

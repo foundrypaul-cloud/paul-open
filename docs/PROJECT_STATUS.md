@@ -1,6 +1,6 @@
 # PAUL Open — Current Research Status
 
-**Status date:** 2026-09-19  
+**Status date:** 2026-09-20  
 **Public research repository:** `foundrypaul-cloud/paul-open`
 
 ## Current position
@@ -11,7 +11,7 @@ DPO V5 passed its data and production-validity gates but produced mixed automate
 
 DPO V6 was then authored as a separate 24-record synthetic corrective development iteration without using H7 blinded responses, hidden mappings, evaluator output, or SHAE material. Its canonical production run completed successfully on 2026-09-19. All 516 intended trainable tensors changed and the matched 50-case diagnostic produced a positive aggregate heuristic signal relative to SFT. That result advances V6 to fresh development evaluation; it does not establish superiority.
 
-A 12-case fresh H8 Development Human Evaluation prompt set was precommitted for SFT-vs-V6 comparison before H8 response generation. Canonical matched generation completed successfully on 2026-09-19. The blinded reviewer batch contains 12 eligible cases, 0 identical pairs were skipped, canonical benchmark leakage is clean 12/12, and development-separation similarity remains below the frozen `<0.35` threshold. Private blinded collection is closed at 36 case-level judgments. The blinded case-level analysis is locked before source identity is consulted. All 12 cases reached 3-of-3 agreement. Reviewer identity-level independence is not technically verifiable from the instrument, so that limitation remains attached to H8. SHAE remains sealed.
+A 12-case fresh H8 Development Human Evaluation prompt set was precommitted for SFT-vs-V6 comparison before H8 response generation. Canonical matched generation completed successfully on 2026-09-19. The blinded reviewer batch contains 12 eligible cases, 0 identical pairs were skipped, canonical benchmark leakage is clean 12/12, and development-separation similarity remains below the frozen `<0.35` threshold. Private blinded collection closed at 36 case-level judgments and controlled unblinding completed successfully. H8 preferred SFT on 6 cases and V6 on 3; 2 cases were judged poor on both sides and 1 was about equal. V6 therefore fails the precommitted promotion gate. Reviewer identity-level independence is not technically verifiable from the instrument, so that limitation remains attached to H8. SHAE remains sealed.
 
 ## Experiment lineage
 
@@ -21,7 +21,7 @@ A 12-case fresh H8 Development Human Evaluation prompt set was precommitted for 
 - **DPO V5 / P10–P12:** 30-record corrective dataset passed the data/production gates; 516/516 intended LoRA tensors changed. Automated evidence was mixed and V5 was cleared only for H7 DHE.
 - **H7:** matched generation completed; planned multi-reviewer human collection was intentionally discontinued on 2026-09-19; no H7 human result and no promotion decision.
 - **DPO V6:** 24-record synthetic corrective dataset; canonical production completed successfully; 516/516 intended tensors changed; matched 50-case diagnostic favored V6 on the aggregate heuristic signal; not promoted.
-- **H8:** 12 fresh development prompts precommitted before response generation; canonical matched SFT/V6 generation completed successfully; integrity gates passed; 36 case-level judgments collected; all forms closed; blinded case-level analysis locked; controlled unblinding pending.
+- **H8:** complete. Controlled unblinding after the blinded lock produced case-level outcomes of SFT 6, V6 3, neither 2, equal 1. V6 is not promoted; SFT remains reference.
 
 The immutable Step-2 freeze remains `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
@@ -77,11 +77,19 @@ Canonical H8 matched generation is complete:
 - canonical benchmark leakage: PASS, 12/12 clean
 - development separation: PASS, max token-set Jaccard `0.3235294117647059 < 0.35`
 
-H8 collection is closed and the blinded analysis is locked. The frozen blinded summary is 5 canonical-A cases, 4 canonical-B cases, 2 neither-good cases, and 1 about-equal case, with 3-of-3 agreement on all 12 cases. These A/B labels are display-side identities only, not model identities.
+H8 controlled unblinding is complete. The safe case-level result is:
 
-The next gate is controlled unblinding against the private H8 mapping. The safe aggregate must preserve the reviewer-independence limitation and may not access SHAE.
+- SFT preferred: 6 cases
+- DPO V6 preferred: 3 cases
+- neither good: 2 cases
+- about equal: 1 case
+- not sure: 0 cases
 
-See `docs/H8_DHE_V6_COLLECTION_LAUNCH.md` and `docs/H8_DHE_V6_PILOT_V1_ANALYSIS_LOCK.md`.
+All 12 cases had 3-of-3 agreement in the collected response set. The corresponding raw judgment totals are 18 SFT, 9 V6, 6 neither, and 3 equal. The directional 3-of-9 V6 case-win fraction is too imprecise for a strong statistical claim (`p = 0.5078125` two-sided exact binomial; exact 95% interval about `0.0749–0.7007`).
+
+The H8 advancement gate is not met. V6 is not promoted and is not frozen as an assurance candidate. SFT remains reference and SHAE stays sealed.
+
+See `docs/H8_DHE_V6_PILOT_V1_RESULTS.md`.
 
 No V7 checkpoint may be substituted into H8 under the V6 label. Any later training iteration requires a new experiment identity and evaluation round.
 
@@ -97,14 +105,14 @@ Supported:
 - V6 canonical production completed with 516/516 intended trainable tensors changed.
 - The matched 50-case V6 diagnostic produced 90.62 versus 89.18 for SFT, with 100% automated safety adherence for both.
 - V6 is frozen as the candidate identity for H8 development evaluation.
-- H8 fresh matched generation completed successfully and passed the precommitted benchmark-leakage and development-separation gates.
+- H8 development evaluation completed: SFT was preferred on 6 cases, V6 on 3, 2 were neither-good, and 1 was equal.
 - SFT remains the reference checkpoint.
 - SHAE remains sealed.
 
 Not supported:
 
 - DPO V6 is broadly superior to SFT.
-- DPO V6 has passed fresh held-out blinded human evaluation.
+- DPO V6 passed the H8 promotion gate or is superior to SFT.
 - DPO V6 is assurance-frozen or promoted.
 - H8 establishes V6 superiority, or reviewer identity-level independence is technically verified from the current instrument.
 - SHAE may be opened, has started, or has passed.
