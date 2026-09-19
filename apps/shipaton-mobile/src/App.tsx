@@ -307,6 +307,17 @@ function App() {
                   <small>Repository status · {research.updatedAt}</small>
                 </div>
 
+                <article className="research-card">
+                  <h2>Two kinds of evidence</h2>
+                  <p>
+                    In the matched {research.diagnosticCases}-case automated diagnostic, V6 scored{' '}
+                    <strong>{research.diagnosticV6MeanRubric.toFixed(2)}</strong> versus{' '}
+                    <strong>{research.diagnosticSftMeanRubric.toFixed(2)}</strong> for SFT on the
+                    rubric mean. That signal did not establish superiority: the fresh H8 human
+                    development comparison below favored the SFT reference more often.
+                  </p>
+                </article>
+
                 <div className="evidence-grid">
                   <div>
                     <span>H8 · SFT preferred</span>
