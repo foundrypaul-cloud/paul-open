@@ -5,7 +5,7 @@
 [Website](https://open.paulfoundry.com/) · [Current research status](docs/PROJECT_STATUS.md) · [Public repository boundary](docs/PUBLIC_REPOSITORY_BOUNDARY.md) · [E4B experiment journey](docs/EXPERIMENT_JOURNEY_E4B.md) · [Contributing](CONTRIBUTING.md)
 
 > [!IMPORTANT]
-> **Current research state — 19 September 2026**
+> **Current research state — 20 September 2026**
 >
 > - Base model: `google/gemma-4-E4B-it`.
 > - The historical SFT adapter remains the **reference checkpoint**.
@@ -13,7 +13,7 @@
 > - DPO V5 was technically valid; H7 matched generation completed, but the planned H7 multi-reviewer collection was intentionally discontinued without a human result.
 > - DPO V6 Synthetic Corrective completed canonical production successfully: 516/516 intended trainable tensors changed.
 > - In the matched 50-case diagnostic, V6 scored 90.62 versus 89.18 for SFT, with 100% automated safety adherence for both. This is a positive diagnostic signal, **not proof of superiority**.
-> - V6 is development-frozen to the canonical production adapter for a fresh 12-case H8 DHE. Matched SFT/V6 generation completed successfully, all contamination/separation gates passed, and private collection is closed at 36 case-level judgments and the blinded case-level analysis is locked before source identity is consulted; reviewer identity-level independence is not technically verifiable from the instrument.
+> - H8 development evaluation is complete. SFT was preferred on 6 cases, V6 on 3, 2 cases were judged poor on both sides, and 1 was about equal. V6 is **not promoted**; reviewer identity-level independence is not technically verifiable from the instrument.
 > - SHAE remains sealed and has not started.
 > - Immutable Step 2 research freeze: `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
@@ -76,7 +76,7 @@ The canonical V6 production run completed successfully on 2026-09-19:
 
 Its matched 50-case diagnostic produced a higher aggregate heuristic signal than SFT (90.62 vs 89.18), with 100% automated safety adherence for both checkpoints. These metrics are development diagnostics, not a clean held-out superiority result.
 
-V6 is development-frozen for H8, a fresh 12-case prompt-frozen SFT-vs-V6 human comparison. Canonical matched generation completed successfully on run `35457211935`; the reviewer batch contains 12 eligible cases with 0 identical pairs, the benchmark-leakage audit is clean 12/12, and development-separation similarity remains below the frozen `<0.35` threshold. Private H8 collection is closed and the blinded case-level analysis is locked; controlled unblinding is the next gate and SHAE remains sealed.
+V6 completed H8, a fresh 12-case prompt-frozen SFT-vs-V6 development comparison. Controlled unblinding after the blinded lock found SFT preferred on 6 cases and V6 on 3, with 2 neither-good cases and 1 about-equal case. The precommitted H8 advancement gate was not met, so V6 is not promoted and SHAE remains sealed.
 
 Read the current evidence:
 
@@ -86,7 +86,9 @@ Read the current evidence:
 - [`docs/H8_DHE_V6_GENERATION_RECORD.md`](docs/H8_DHE_V6_GENERATION_RECORD.md)
 - [`docs/H8_DHE_V6_COLLECTION_LAUNCH.md`](docs/H8_DHE_V6_COLLECTION_LAUNCH.md)
 - [`docs/H8_DHE_V6_PILOT_V1_ANALYSIS_LOCK.md`](docs/H8_DHE_V6_PILOT_V1_ANALYSIS_LOCK.md)
+- [`docs/H8_DHE_V6_PILOT_V1_RESULTS.md`](docs/H8_DHE_V6_PILOT_V1_RESULTS.md)
 - [`artifacts/public-evidence/dpo-v6-production.json`](artifacts/public-evidence/dpo-v6-production.json)
+- [`artifacts/public-evidence/h8-dhe-v6-unblinded-aggregate.json`](artifacts/public-evidence/h8-dhe-v6-unblinded-aggregate.json)
 
 ### DPO V2 Corrective
 
