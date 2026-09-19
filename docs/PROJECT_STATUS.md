@@ -1,6 +1,6 @@
 # PAUL Open — Current Research Status
 
-**Status date:** 2026-09-18  
+**Status date:** 2026-09-19  
 **Public research repository:** `foundrypaul-cloud/paul-open`
 
 ## Current position
@@ -9,7 +9,7 @@ PAUL Open has completed successive development cycles through DPO V4/H6 and has 
 
 DPO V5 passed the P10 corrective-data audit and P11 production validity gates. P12 automated evidence was mixed: safety and technical gates passed, while the 50-case diagnostic showed both positive signals and regression flags. P12 therefore cleared V5 only for the already-precommitted H7 Development Human Evaluation (DHE), not for promotion.
 
-Six fresh H7 cases were frozen before V5 output inspection. The repository contains H7 generation, verification, candidate-binding and Forms-materialization machinery, but no completed H7 human-evaluation result is currently recorded. SHAE remains sealed and has not started.
+Six fresh H7 cases were frozen before V5 output inspection and matched generation completed successfully. On 2026-09-19 the planned multi-reviewer H7 human collection was intentionally discontinued to shorten the development loop; therefore H7 has no human preference result and cannot support a V5 promotion claim. A separate DPO V6 synthetic corrective-data iteration has begun without using H7 blinded responses or mappings. SHAE remains sealed and has not started.
 
 ## Experiment lineage
 
@@ -17,7 +17,8 @@ Six fresh H7 cases were frozen before V5 output inspection. The repository conta
 - **DPO V3 / H5:** technically valid; H5 ended 9–9 in judgments and failed the pre-specified STEM/Hindi preservation objective; no promotion.
 - **DPO V4 / H6:** H6 collected 18 judgments. SFT was preferred on five cases (15 judgments); all three Educator judgments selected neither response; no promotion.
 - **DPO V5 / P10–P12:** 30-record corrective dataset passed P10; production completed with 516/516 intended LoRA tensors changed and completion gate PASS. Automated P12 evidence was mixed and cleared V5 only for H7 DHE.
-- **H7:** six fresh development prompts precommitted before V5 output inspection; human evaluation remains the next required gate.
+- **H7:** matched generation completed; planned multi-reviewer human collection intentionally discontinued on 2026-09-19; no H7 human result and no promotion decision.
+- **DPO V6:** synthetic corrective-data development iteration initiated with fresh training prompts; not yet trained or promoted.
 
 The immutable Step-2 freeze remains `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
@@ -29,15 +30,15 @@ The P12 matched 50-case automated diagnostic completed without execution failure
 
 See [DPO_V5_P10_AUDIT.md](DPO_V5_P10_AUDIT.md) and [DPO_V5_P11_P12_RESULTS.md](DPO_V5_P11_P12_RESULTS.md).
 
-## H7 next gate
+## Current development gate
 
-H7 is development evidence, not final assurance. Its six prompts were frozen before V5 output inspection under [H7_DHE_V5_PRECOMMIT_SPEC.md](H7_DHE_V5_PRECOMMIT_SPEC.md). The required sequence is matched SFT/V5 generation, hard-gate verification, blinded collection, durability audit, blinded analysis lock, controlled unblinding, and a recorded development decision. No promotion claim is permitted before those steps are evidenced.
+H7 remains development evidence, not final assurance. Its matched generation completed, but the precommitted multi-reviewer collection was not completed, so H7 provides no human preference result. Development has moved to the separately documented DPO V6 synthetic corrective-data track. V6 must pass data gates, training validity, and a fresh held-out evaluation before any development decision. Any project-owner-only evaluation must be disclosed as single-evaluator, non-independent evidence. SHAE remains sealed.
 
 ## Claim boundary
 
-Supported: DPO V2–V5 are technically valid experimental/development checkpoints; H4–H6 are completed DHE rounds; DPO V5 passed P10/P11 technical and contamination gates; P12 is mixed and cleared V5 only for H7; SFT remains the reference; H7 is the next development gate; SHAE remains sealed.
+Supported: DPO V2–V5 are technically valid experimental/development checkpoints; H4–H6 are completed DHE rounds; DPO V5 passed P10/P11 technical and contamination gates; P12 was mixed; H7 matched generation completed but human collection was discontinued without a result; DPO V6 synthetic corrective development has begun; SFT remains the reference; SHAE remains sealed.
 
-Not supported: DPO V5 is superior to SFT; DPO V5 has passed human evaluation; DPO V5 is assurance-frozen; H7 is complete; SHAE may be opened, has started, or has passed.
+Not supported: DPO V5 is superior to SFT; DPO V5 passed H7 human evaluation; DPO V5 is assurance-frozen; DPO V6 has been trained, evaluated, or promoted; SHAE may be opened, has started, or has passed.
 
 ## Operational boundary
 

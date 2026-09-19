@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
-  "status_as_of": "2026-09-18",
-  "state": "h7_precommitted_pending_human_result",
+  "status_as_of": "2026-09-19",
+  "state": "h7_generation_complete_human_collection_discontinued",
   "internal_stage": "H7",
   "public_participation_enabled": false,
-  "provider": "google_forms",
+  "provider": "none",
   "protocol_version": "1.0",
   "study_type": "blinded_pairwise_response_preference",
   "completed_rounds": {
@@ -39,13 +39,20 @@
     "cases": 6,
     "prompts_precommitted_before_candidate_output_inspection": true,
     "human_result_recorded": false,
-    "state": "pending_blinded_human_evaluation"
+    "state": "matched_generation_complete_human_collection_discontinued",
+    "multi_reviewer_collection_completed": false,
+    "decision": "no_human_result_no_promotion_claim"
   },
-  "public_message": "PAUL Open has completed H4-H6 DHE. DPO V5 passed technical and contamination gates and awaits precommitted H7 blinded DHE. SFT remains reference and SHAE remains sealed.",
+  "public_message": "H7 matched generation completed, but its planned multi-reviewer human collection was intentionally discontinued without a human result. DPO V6 synthetic corrective development has begun. SFT remains reference and SHAE remains sealed.",
   "safety": {
     "reviewer_links_publicly_allowed": false,
     "response_sheets_publicly_allowed": false,
     "private_ab_mapping_publicly_allowed": false,
     "shae_material_publicly_allowed": false
+  },
+  "v6": {
+    "stage": "synthetic_corrective_development",
+    "owner_may_evaluate_future_heldout_comparison": true,
+    "evaluator_independence": "non_independent_single_evaluator_if_owner_only"
   }
 }
