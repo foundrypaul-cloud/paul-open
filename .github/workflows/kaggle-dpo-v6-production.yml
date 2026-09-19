@@ -40,26 +40,38 @@ jobs:
           KERNEL_DIR="$RUNNER_TEMP/paul-open-dpo-v6-preflight"
           mkdir -p "$KERNEL_DIR"
           cat > "$KERNEL_DIR/preflight.py" <<'PY'
-          import subprocess
+          import json, subprocess
           from pathlib import Path
           repo_url='__REPO_URL__'; target_commit='__TARGET_COMMIT__'; adapter_dataset='__ADAPTER_DATASET__'
           repo=Path('/tmp/paul-open')
-          subprocess.run(['git','clone',repo_url,str(repo)],check=True)
-          subprocess.run(['git','-C',str(repo),'checkout',target_commit],check=True)
-          actual=subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()
-          if actual != target_commit: raise SystemExit(f'commit mismatch: {actual}')
-          subprocess.run(['python','-m','pip','install','--upgrade','uv'],check=True)
-          subprocess.run(['uv','sync','--frozen'],cwd=repo,check=True)
-          input_root=Path('/kaggle/input')
-          matches=sorted({p.parent for p in input_root.rglob('adapter_config.json') if (p.parent/'adapter_model.safetensors').is_file()})
-          if len(matches)!=1: raise SystemExit(f'expected one adapter from {adapter_dataset}, found {matches}')
-          subprocess.run([
-            'uv','run','python',str(repo/'scripts/dpo_v6_e4b_train.py'),
-            '--config',str(repo/'configs/training/dpo_v6_e4b_synthetic_corrective.yaml'),
-            '--adapter',str(matches[0]),
-            '--output-dir','/kaggle/working/paul_e4b_dpo_v6_synthetic_corrective',
-            '--preflight-only',
-          ],cwd=repo,check=True)
+          evidence=Path('/kaggle/working/failure_summary.json')
+          stage='bootstrap'
+          try:
+              stage='clone'
+              subprocess.run(['git','clone',repo_url,str(repo)],check=True)
+              stage='checkout'
+              subprocess.run(['git','-C',str(repo),'checkout',target_commit],check=True)
+              actual=subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()
+              if actual != target_commit: raise RuntimeError('source revision mismatch')
+              stage='install_uv'
+              subprocess.run(['python','-m','pip','install','--upgrade','uv'],check=True)
+              stage='sync_environment'
+              subprocess.run(['uv','sync','--frozen'],cwd=repo,check=True)
+              stage='resolve_adapter'
+              input_root=Path('/kaggle/input')
+              matches=sorted({p.parent for p in input_root.rglob('adapter_config.json') if (p.parent/'adapter_model.safetensors').is_file()})
+              if len(matches)!=1: raise RuntimeError('adapter resolution failed')
+              stage='trainer_preflight'
+              subprocess.run([
+                'uv','run','python',str(repo/'scripts/dpo_v6_e4b_train.py'),
+                '--config',str(repo/'configs/training/dpo_v6_e4b_synthetic_corrective.yaml'),
+                '--adapter',str(matches[0]),
+                '--output-dir','/kaggle/working/paul_e4b_dpo_v6_synthetic_corrective',
+                '--preflight-only',
+              ],cwd=repo,check=True)
+          except BaseException as exc:
+              evidence.write_text(json.dumps({'status':'FAIL','failed_stage':stage,'exception_type':type(exc).__name__},sort_keys=True)+'\\n')
+              raise
           PY
           python - "$KERNEL_DIR/preflight.py" <<'PY'
           import os,pathlib,sys
