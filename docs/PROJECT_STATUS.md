@@ -11,7 +11,7 @@ DPO V5 passed its data and production-validity gates but produced mixed automate
 
 DPO V6 was then authored as a separate 24-record synthetic corrective development iteration without using H7 blinded responses, hidden mappings, evaluator output, or SHAE material. Its canonical production run completed successfully on 2026-09-19. All 516 intended trainable tensors changed and the matched 50-case diagnostic produced a positive aggregate heuristic signal relative to SFT. That result advances V6 to fresh development evaluation; it does not establish superiority.
 
-A 12-case fresh H8 Development Human Evaluation prompt set was precommitted for SFT-vs-V6 comparison before H8 response generation. Canonical matched generation completed successfully on 2026-09-19. The blinded reviewer batch contains 12 eligible cases, 0 identical pairs were skipped, canonical benchmark leakage is clean 12/12, and development-separation similarity remains below the frozen `<0.35` threshold. Private blinded human collection is now open to recruited reviewers. No H8 preference result exists yet. SHAE remains sealed.
+A 12-case fresh H8 Development Human Evaluation prompt set was precommitted for SFT-vs-V6 comparison before H8 response generation. Canonical matched generation completed successfully on 2026-09-19. The blinded reviewer batch contains 12 eligible cases, 0 identical pairs were skipped, canonical benchmark leakage is clean 12/12, and development-separation similarity remains below the frozen `<0.35` threshold. Private blinded collection is closed at 36 case-level judgments. The blinded case-level analysis is locked before source identity is consulted. All 12 cases reached 3-of-3 agreement. Reviewer identity-level independence is not technically verifiable from the instrument, so that limitation remains attached to H8. SHAE remains sealed.
 
 ## Experiment lineage
 
@@ -21,7 +21,7 @@ A 12-case fresh H8 Development Human Evaluation prompt set was precommitted for 
 - **DPO V5 / P10–P12:** 30-record corrective dataset passed the data/production gates; 516/516 intended LoRA tensors changed. Automated evidence was mixed and V5 was cleared only for H7 DHE.
 - **H7:** matched generation completed; planned multi-reviewer human collection was intentionally discontinued on 2026-09-19; no H7 human result and no promotion decision.
 - **DPO V6:** 24-record synthetic corrective dataset; canonical production completed successfully; 516/516 intended tensors changed; matched 50-case diagnostic favored V6 on the aggregate heuristic signal; not promoted.
-- **H8:** 12 fresh development prompts precommitted before response generation; canonical matched SFT/V6 generation completed successfully; blinded batch build and contamination/separation gates passed; private blinded collection is open, with no result recorded yet.
+- **H8:** 12 fresh development prompts precommitted before response generation; canonical matched SFT/V6 generation completed successfully; integrity gates passed; 36 case-level judgments collected; all forms closed; blinded case-level analysis locked; controlled unblinding pending.
 
 The immutable Step-2 freeze remains `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
@@ -77,16 +77,11 @@ Canonical H8 matched generation is complete:
 - canonical benchmark leakage: PASS, 12/12 clean
 - development separation: PASS, max token-set Jaccard `0.3235294117647059 < 0.35`
 
-The reviewer-safe collection surfaces are provisioned and private blinded collection is open. The next gate is collection closure and blinded analysis:
+H8 collection is closed and the blinded analysis is locked. The frozen blinded summary is 5 canonical-A cases, 4 canonical-B cases, 2 neither-good cases, and 1 about-equal case, with 3-of-3 agreement on all 12 cases. These A/B labels are display-side identities only, not model identities.
 
-1. Collect 3 independent valid judgments per case (36 initial case-level judgments), enforcing reviewer competence and no complementary-variant exposure.
-2. Escalate only under the precommitted disagreement/tie/not-sure/material-uncertainty rules.
-3. Close the relevant forms when their frozen allocation is satisfied.
-4. Preserve and integrity-check the accepted response set.
-5. Lock blinded case-level analysis before consulting the private A/B mapping.
-6. Document the result before any decision about assurance-candidate freezing.
+The next gate is controlled unblinding against the private H8 mapping. The safe aggregate must preserve the reviewer-independence limitation and may not access SHAE.
 
-See `docs/H8_DHE_V6_COLLECTION_LAUNCH.md`.
+See `docs/H8_DHE_V6_COLLECTION_LAUNCH.md` and `docs/H8_DHE_V6_PILOT_V1_ANALYSIS_LOCK.md`.
 
 No V7 checkpoint may be substituted into H8 under the V6 label. Any later training iteration requires a new experiment identity and evaluation round.
 
@@ -111,7 +106,7 @@ Not supported:
 - DPO V6 is broadly superior to SFT.
 - DPO V6 has passed fresh held-out blinded human evaluation.
 - DPO V6 is assurance-frozen or promoted.
-- H8 human collection has completed, or H8 establishes V6 superiority.
+- H8 establishes V6 superiority, or reviewer identity-level independence is technically verified from the current instrument.
 - SHAE may be opened, has started, or has passed.
 
 ## Operational boundary
