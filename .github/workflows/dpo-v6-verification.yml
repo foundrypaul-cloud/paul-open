@@ -20,10 +20,11 @@ jobs:
       - name: Verify V6 dataset schema, provenance, uniqueness and prior-data separation
         run: |
           python - <<'PY'
-          import json, subprocess, unicodedata
+          import hashlib, json, subprocess, unicodedata
           from pathlib import Path
           p=Path('data/train/dpo_v6/synthetic_corrective_v6.jsonl')
           assert subprocess.check_output(['git','hash-object',str(p)],text=True).strip()=='0dba7994d7de0fc80e2778e053648ab124545074'
+          assert hashlib.sha256(p.read_bytes()).hexdigest()=='eca6b25c27f8c03d221854b2e7aee59f5da0e4f128cd2b9605c10453723dc732'
           rows=[json.loads(x) for x in p.read_text(encoding='utf-8').splitlines() if x.strip()]
           assert len(rows)==24
           required={'id','track','domain','language','rejection_reason','prompt','chosen','rejected','metadata'}

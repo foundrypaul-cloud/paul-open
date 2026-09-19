@@ -10,6 +10,7 @@ from scripts import dpo_v2_e4b_train as v2
 DATASET_PATH=Path("data/train/dpo_v6/synthetic_corrective_v6.jsonl")
 DATASET_GIT_BLOB_SHA="0dba7994d7de0fc80e2778e053648ab124545074"
 DATASET_RECORDS=24
+DATASET_SHA256="eca6b25c27f8c03d221854b2e7aee59f5da0e4f128cd2b9605c10453723dc732"
 CONFIG_PATH="configs/training/dpo_v6_e4b_synthetic_corrective.yaml"
 
 def validate_dataset() -> None:
@@ -28,7 +29,7 @@ def validate_dataset() -> None:
 def install_contract():
     contract=copy.deepcopy(v2.LOCKED_EXPERIMENT)
     e=contract["experiment"]; t=contract["training"]
-    e.update({"id":"paul_e4b_dpo_v6_synthetic_corrective","name":"PAUL Open E4B DPO V6 Synthetic Corrective","provenance":"POST-H7 ABBREVIATED DEVELOPMENT — SYNTHETIC CORRECTIVE DATA; V5 TRAINING METHODOLOGY PRESERVED","dataset_path":str(DATASET_PATH),"dataset_records":DATASET_RECORDS})
+    e.update({"id":"paul_e4b_dpo_v6_synthetic_corrective","name":"PAUL Open E4B DPO V6 Synthetic Corrective","provenance":"POST-H7 ABBREVIATED DEVELOPMENT — SYNTHETIC CORRECTIVE DATA; V5 TRAINING METHODOLOGY PRESERVED","dataset_path":str(DATASET_PATH),"dataset_sha256":DATASET_SHA256,"dataset_records":DATASET_RECORDS})
     t["dpo_config"]["output_dir"]="./results/dpo_v6_synthetic_corrective"
     v2.LOCKED_EXPERIMENT=contract
 
