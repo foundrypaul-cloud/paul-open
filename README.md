@@ -5,14 +5,16 @@
 [Website](https://open.paulfoundry.com/) · [Current research status](docs/PROJECT_STATUS.md) · [Public repository boundary](docs/PUBLIC_REPOSITORY_BOUNDARY.md) · [E4B experiment journey](docs/EXPERIMENT_JOURNEY_E4B.md) · [Contributing](CONTRIBUTING.md)
 
 > [!IMPORTANT]
-> **Current research state — 18 September 2026**
+> **Current research state — 19 September 2026**
 >
 > - Base model: `google/gemma-4-E4B-it`.
 > - The historical SFT adapter remains the **reference checkpoint**.
-> - DPO V2/H4, DPO V3/H5, and DPO V4/H6 are completed development cycles; none earned promotion over SFT.
-> - DPO V5 Corrective is technically valid and P12 cleared it only for the precommitted H7 DHE with regression flags.
-> - The existing 50-case SFT-vs-DPO V2 comparison is useful diagnostically but is **contaminated for DPO V2** and must not be used as clean held-out superiority evidence.
-> - H7 contains six fresh development cases frozen before V5 output inspection; no completed H7 human-evaluation result is recorded yet. SHAE remains sealed.
+> - DPO V2/H4, DPO V3/H5, and DPO V4/H6 completed development cycles without promotion over SFT.
+> - DPO V5 was technically valid; H7 matched generation completed, but the planned H7 multi-reviewer collection was intentionally discontinued without a human result.
+> - DPO V6 Synthetic Corrective completed canonical production successfully: 516/516 intended trainable tensors changed.
+> - In the matched 50-case diagnostic, V6 scored 90.62 versus 89.18 for SFT, with 100% automated safety adherence for both. This is a positive diagnostic signal, **not proof of superiority**.
+> - V6 is development-frozen to the canonical production adapter for a fresh 12-case H8 DHE prompt set. H8 generation and human collection have not started.
+> - SHAE remains sealed and has not started.
 > - Immutable Step 2 research freeze: `research-freeze/step2-dpo-v2-20260909` at `ac899e879f930f25b2081550bd8c5dd5c983df35`.
 
 The detailed, evidence-oriented status is maintained in [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md).
@@ -50,7 +52,7 @@ The project separates four evidence layers:
 3. **Behavioral quality** — are responses actually better under task-specific review?
 4. **Model superiority** — does improvement hold under clean evaluation, preservation checks, robustness testing, and blinded human preference?
 
-DPO V2 through V5 have produced technically valid experimental checkpoints, but model superiority has not been established. DPO V5 awaits H7.
+DPO V2 through V6 have produced technically valid experimental checkpoints, but model superiority has not been established. V6 is now frozen for fresh H8 development evaluation.
 
 ---
 
@@ -58,7 +60,30 @@ DPO V2 through V5 have produced technically valid experimental checkpoints, but 
 
 The current research line follows:
 
-`Gemma 4 E4B` → `PAUL SFT reference` → `DPO V2/H4` → `DPO V3/H5` → `DPO V4/H6` → `DPO V5` → `H7 DHE`
+`Gemma 4 E4B` → `PAUL SFT reference` → `DPO V2/H4` → `DPO V3/H5` → `DPO V4/H6` → `DPO V5/H7` → `DPO V6` → `H8 DHE`
+
+### DPO V6 Synthetic Corrective
+
+The canonical V6 production run completed successfully on 2026-09-19:
+
+- source revision: `c4c942d3c455c8745d4756ca2a775772b1215a4a`
+- training records: 24
+- configured epochs: 4
+- global step: 8
+- train loss: `0.646148681640625`
+- intended trainable tensors changed: 516 / 516
+- final adapter safetensors SHA-256: `c6505d38987f4509017063fe044ec06f731badbb514bb47ccef788e63aa0a1e4`
+
+Its matched 50-case diagnostic produced a higher aggregate heuristic signal than SFT (90.62 vs 89.18), with 100% automated safety adherence for both checkpoints. These metrics are development diagnostics, not a clean held-out superiority result.
+
+V6 is development-frozen for H8, a fresh 12-case prompt-frozen SFT-vs-V6 human comparison. H8 generation has not started and SHAE remains sealed.
+
+Read the current evidence:
+
+- [`docs/DPO_V6_PRODUCTION_DIAGNOSTIC_RESULTS.md`](docs/DPO_V6_PRODUCTION_DIAGNOSTIC_RESULTS.md)
+- [`docs/DPO_V6_CANDIDATE_FREEZE.md`](docs/DPO_V6_CANDIDATE_FREEZE.md)
+- [`docs/H8_DHE_V6_PRECOMMIT_SPEC.md`](docs/H8_DHE_V6_PRECOMMIT_SPEC.md)
+- [`artifacts/public-evidence/dpo-v6-production.json`](artifacts/public-evidence/dpo-v6-production.json)
 
 ### DPO V2 Corrective
 
