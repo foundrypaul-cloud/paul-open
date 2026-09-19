@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "experiment": "H8_DHE_V6_PILOT_V1",
+  "partition": "development",
+  "batch_id": "HEB1-B6BE09E2D6DB",
+  "state": "BLINDED_ANALYSIS_LOCKED",
+  "locked_at_utc": "2026-09-19T18:45:00Z",
+  "collection": {
+    "initial_valid_judgments_per_case": 3,
+    "case_count": 12,
+    "target_case_judgments": 36,
+    "collected_case_judgments": 36,
+    "form_submissions": 18,
+    "variant_v01_case_judgments": 18,
+    "variant_v02_case_judgments": 18,
+    "adaptive_escalation_required": false,
+    "all_active_forms_closed": true,
+    "all_required_confidence_answers": "Yes — confidently"
+  },
+  "durability": {
+    "status": "PASS_WITH_LIMITATION",
+    "private_response_snapshot_created": true,
+    "raw_form_submission_count": 18,
+    "normalized_judgment_count": 36,
+    "private_normalized_snapshot_sha256": "132b4ba6fb7107c6f592c456601cc5598dff681b668f13beccac1107b191eed7",
+    "private_snapshot_hash_method": "sha256(compact JSON serialization of the 36 normalized private rows in frozen collection order)",
+    "public_response_ids_exposed": false,
+    "limitation": "The connector-created Forms did not use the earlier Apps Script normalized-plus-backup-ledger runtime. A private post-closure snapshot was created instead."
+  },
+  "reviewer_independence": {
+    "identity_collection_enabled": false,
+    "technically_verifiable_from_form_data": false,
+    "operator_reported_collection_complete": true,
+    "claim_boundary": "The response set contains separate submissions, but reviewer identity was intentionally not collected. Do not represent identity-level independence as technically verified from the instrument."
+  },
+  "blinding": {
+    "private_mapping_opened": false,
+    "source_identity_used_in_lock": false,
+    "canonicalization_rule": "V01 display A/B defines canonical A/B; V02 A/B is swapped to the complementary canonical side before aggregation.",
+    "shae_accessed": false
+  },
+  "blinded_case_results": [
+    {"case":"H8-DHE-001","comparison_id":"HEV1-A3BD0088227F","canonical_v01_outcome":"B","judgments":3,"agreement":3},
+    {"case":"H8-DHE-002","comparison_id":"HEV1-0E87B60A23CB","canonical_v01_outcome":"NEITHER","judgments":3,"agreement":3},
+    {"case":"H8-DHE-003","comparison_id":"HEV1-612092863B12","canonical_v01_outcome":"B","judgments":3,"agreement":3},
+    {"case":"H8-DHE-004","comparison_id":"HEV1-00D291E9D179","canonical_v01_outcome":"NEITHER","judgments":3,"agreement":3},
+    {"case":"H8-DHE-005","comparison_id":"HEV1-F670DB31BCB2","canonical_v01_outcome":"A","judgments":3,"agreement":3},
+    {"case":"H8-DHE-006","comparison_id":"HEV1-5C88BD805CAD","canonical_v01_outcome":"A","judgments":3,"agreement":3},
+    {"case":"H8-DHE-007","comparison_id":"HEV1-C4E0AC93BF50","canonical_v01_outcome":"B","judgments":3,"agreement":3},
+    {"case":"H8-DHE-008","comparison_id":"HEV1-A4299E67DF69","canonical_v01_outcome":"A","judgments":3,"agreement":3},
+    {"case":"H8-DHE-009","comparison_id":"HEV1-DF329BB8B85F","canonical_v01_outcome":"A","judgments":3,"agreement":3},
+    {"case":"H8-DHE-010","comparison_id":"HEV1-92EA5279DDBA","canonical_v01_outcome":"A","judgments":3,"agreement":3},
+    {"case":"H8-DHE-011","comparison_id":"HEV1-853074A585C1","canonical_v01_outcome":"B","judgments":3,"agreement":3},
+    {"case":"H8-DHE-012","comparison_id":"HEV1-4C10AFB84335","canonical_v01_outcome":"EQUAL","judgments":3,"agreement":3}
+  ],
+  "summary": {
+    "unanimous_cases": 12,
+    "canonical_a_preferred_cases": 5,
+    "canonical_b_preferred_cases": 4,
+    "neither_good_cases": 2,
+    "about_equal_cases": 1,
+    "not_sure_cases": 0,
+    "disagreement_cases": 0,
+    "required_confidence_failures": 0
+  },
+  "next_state": "CONTROLLED_UNBLIND",
+  "interpretation": "Development human evaluation only. Source identity remains unopened at lock time. Reviewer identity-level independence is not technically verifiable from the instrument, so any later interpretation must preserve that limitation. SHAE remains sealed."
+}
