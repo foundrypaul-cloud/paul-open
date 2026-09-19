@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "status_as_of": "2026-09-19",
-  "state": "h7_generation_complete_human_collection_discontinued",
-  "internal_stage": "H7",
+  "state": "h8_generation_complete_collection_preparing",
+  "internal_stage": "H8",
   "public_participation_enabled": false,
-  "provider": "none",
+  "provider": "google_forms_preparing",
   "protocol_version": "1.0",
   "study_type": "blinded_pairwise_response_preference",
   "completed_rounds": {
@@ -43,7 +43,7 @@
     "multi_reviewer_collection_completed": false,
     "decision": "no_human_result_no_promotion_claim"
   },
-  "public_message": "H7 matched generation completed, but its planned multi-reviewer human collection was intentionally discontinued without a human result. DPO V6 synthetic corrective development has begun. SFT remains reference and SHAE remains sealed.",
+  "public_message": "H8 fresh matched SFT-vs-V6 generation completed successfully and passed the precommitted contamination/separation gates. Blinded multi-reviewer collection is being prepared; no H8 human preference result exists yet. SFT remains reference and SHAE remains sealed.",
   "safety": {
     "reviewer_links_publicly_allowed": false,
     "response_sheets_publicly_allowed": false,
@@ -51,8 +51,26 @@
     "shae_material_publicly_allowed": false
   },
   "v6": {
-    "stage": "synthetic_corrective_development",
+    "stage": "development_frozen_h8_generation_complete",
     "owner_may_evaluate_future_heldout_comparison": true,
     "evaluator_independence": "non_independent_single_evaluator_if_owner_only"
+  },
+  "h8": {
+    "partition": "development",
+    "candidate": "DPO V6 Synthetic Corrective",
+    "reference": "SFT",
+    "cases": 12,
+    "prompts_precommitted_before_response_generation": true,
+    "matched_generation_complete": true,
+    "human_result_recorded": false,
+    "state": "matched_generation_complete_collection_not_started",
+    "generation_run": 35457211935,
+    "reviewer_safe_artifact": 10588896454,
+    "batch_id": "HEB1-B6BE09E2D6DB",
+    "leakage_gate": "pass_12_of_12_clean",
+    "development_separation_gate": "pass",
+    "max_development_token_jaccard": 0.3235294117647059,
+    "initial_valid_judgments_per_case": 3,
+    "initial_case_judgment_target": 36
   }
 }
