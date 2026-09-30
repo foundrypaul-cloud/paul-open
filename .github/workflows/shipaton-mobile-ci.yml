@@ -72,3 +72,11 @@ jobs:
       - name: Compile debug APK
         working-directory: apps/shipaton-mobile/android
         run: ./gradlew assembleDebug
+
+      - name: Upload judge/demo debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: paul-open-shipaton-debug-apk
+          path: apps/shipaton-mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
