@@ -71,10 +71,32 @@ After Shipaton: stronger source-grounded science answers, teacher workflows, sav
 
 The production companion currently uses a hosted Gemini service. It does **not** claim that the experimental DPO V6 checkpoint is the production model. PAUL Open research remains an independent open evaluation program and its current evidence does not establish DPO V6 superiority.
 
+## Award-category notes
+
+### RevenueCat Design Award
+
+PAUL Open uses a deliberately focused mobile learning flow rather than an AI-dashboard pattern: three study modes, a compact language switcher, clear Pro gating, and a separate research-transparency surface. Judges should look at the multilingual typography, evidence cards, Pro/paywall transition, and the way the UI separates a production Gemini runtime from experimental research claims.
+
+### RevenueCat Peace Prize
+
+The product is designed to make rigorous science learning more accessible across language boundaries. The first release supports English, Hindi and Bengali, while the Research lens teaches users to separate observation from inference, identify confounders, and think about how claims can be tested. The intended social benefit is broader access to scientific reasoning, not just answer generation.
+
+### #BuildInPublic Award
+
+The public PAUL Open repository preserves the project history, including negative evaluation results. In particular, DPO V6 improved an automated diagnostic but was not promoted after the fresh H8 development comparison favored the SFT reference more often. That result directly changed the product: the app now exposes the research boundary rather than turning a higher aggregate metric into a marketing claim.
+
+### HAMM Award
+
+Use this category only after the native purchase path has been validated. The monetization strategy keeps Explain and Tutor useful on the free tier, while Pro unlocks the evidence-first Research lens and raises the daily learning limit. RevenueCat owns the native paywall, entitlement state, restore flow and Customer Center; localized pricing remains store-managed.
+
+## Judge access
+
+Before final submission, add the real free-trial or promo-code instructions that let judges exercise every Pro feature. Do not submit a placeholder or an untested code.
+
 ## Submission links to fill only when real
 
 - Google Play: **ADD FINAL PUBLIC STORE URL**
 - Demo video: **ADD FINAL PUBLIC VIDEO URL**
 - Source: https://github.com/foundrypaul-cloud/paul-open
-- Product website: https://www.paulfoundry.com/
+- Product website: https://open.paulfoundry.com/
 - Build-in-public posts: **ADD PUBLIC POST URLS**
