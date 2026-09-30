@@ -1,12 +1,14 @@
 # Shipaton 2026 — release checklist
 
+> Code verification refreshed 2026-09-30. Shipaton Mobile CI run #9 and Public Repository Safety Check run #63 passed on the final judge-readiness implementation; PR #83 adds a downloadable debug APK artifact without changing product behavior.
+
 ## Code gate
 
-- [ ] Shipaton Mobile CI passes: typecheck, web build, API tests, Android debug build.
+- [x] Shipaton Mobile CI passes: typecheck, web build, API tests, Android debug build.
 - [ ] No secret or private research material in the mobile bundle.
-- [ ] Public-boundary CI passes.
-- [ ] Production app fetches research status from the public repository.
-- [ ] App clearly states production runtime is separate from experimental PAUL Open checkpoints.
+- [x] Public-boundary CI passes.
+- [x] App implementation fetches research status from the canonical public repository.
+- [x] App clearly states production runtime is separate from experimental PAUL Open checkpoints.
 
 ## AI service gate
 
@@ -31,11 +33,11 @@
 - [ ] App updates to Pro immediately after purchase.
 - [ ] Restore works after reinstall/test reset.
 - [ ] Customer Center opens for Pro customer.
-- [ ] MainActivity launchMode is `singleTop`.
+- [x] Android generation/CI patch enforces MainActivity launchMode `singleTop`.
 
 ## Store gate
 
-- [ ] App ID/package: `com.paulfoundry.paulopen`.
+- [x] App ID/package: `com.paulfoundry.paulopen`.
 - [ ] Privacy policy publicly reachable.
 - [ ] Support URL publicly reachable.
 - [ ] 1024×1024 app icon.
@@ -56,11 +58,11 @@
 
 ## Submission gate
 
-- [ ] Devpost copy reconciled with the final build.
+- [x] Devpost copy reconciled with the verified implementation and 2026 category requirements.
 - [ ] Public store URL added.
 - [ ] <=2-minute public demo video added.
 - [ ] App icon and screenshot uploaded.
-- [ ] RevenueCat integration described accurately.
+- [x] RevenueCat integration described accurately at code level; account-level purchase validation remains required.
 - [ ] Relevant prize categories selected.
 - [ ] #Shipaton / #BuildInPublic URLs added.
 - [ ] Final submission reviewed against official rules before deadline.
