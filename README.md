@@ -4,6 +4,21 @@
 
 [Website](https://open.paulfoundry.com/) · [Current research status](docs/PROJECT_STATUS.md) · [Public repository boundary](docs/PUBLIC_REPOSITORY_BOUNDARY.md) · [E4B experiment journey](docs/EXPERIMENT_JOURNEY_E4B.md) · [Contributing](CONTRIBUTING.md)
 
+## PAUL Open: the research organization
+
+**PAUL Open's public portal is [open.paulfoundry.com](https://open.paulfoundry.com/programs).** It presents a wider research portfolio under PAUL Foundry, including medical-imaging research (PAUL KRSNA / RSNA), computational chemistry (PAUL Enveda / CASMI), sports analytics, Gemma 4 developer-agent work, the separate developer-agent research-paper track, and public foundation-model post-training/evaluation.
+
+**This repository remains the canonical public evidence source for the original Gemma SFT/DPO and human-evaluation research line.** The wider organization includes separate, independently governed research programs; it does not imply that competition-specific code, data or results are public here.
+
+- **KRSNA and Enveda:** separate private competition research. Only public challenge links should appear on the portal; no internal repository mirrors or unpublished results.
+- **Sports analytics:** research direction; no unsupported competition score or project URL is asserted.
+- **Gemma 4 Developer Agent and Paper Track:** two distinct Kaggle competition tracks; the existence of a track is not an award or model-performance claim.
+- **Gemma post-training and human evaluation:** the original public work documented in this repository, with its unchanged evidence and checkpoint-promotion rules.
+
+See [Research programs](https://open.paulfoundry.com/programs). PAUL Foundry remains the parent organization; the portal and this repository must distinguish published evidence from private studies and research still being scoped.
+
+---
+
 > [!IMPORTANT]
 > **Current research state — 20 September 2026**
 >
