@@ -1,8 +1,8 @@
 # PAUL Open
 
-**PAUL Open** is Paul Foundry's public, open-source research initiative for building and evaluating reproducible AI systems for multilingual knowledge work, science education, tutoring, teacher assistance, human-centered interaction, and scientific research.
+**PAUL Open** is the public, open-source AI research initiative of **PAUL Foundry**, operated by **PAUL FOUNDRY TECHNOLOGIES PRIVATE LIMITED** (India). It builds and evaluates reproducible AI systems for multilingual knowledge work, science education, tutoring, teacher assistance, human-centered interaction, and scientific research.
 
-[Website](https://open.paulfoundry.com/) · [Current research status](docs/PROJECT_STATUS.md) · [Public repository boundary](docs/PUBLIC_REPOSITORY_BOUNDARY.md) · [E4B experiment journey](docs/EXPERIMENT_JOURNEY_E4B.md) · [Contributing](CONTRIBUTING.md)
+[Research portal](https://open.paulfoundry.com/) · [Parent company — PAUL Foundry](https://www.paulfoundry.com/) · [Current research status](docs/PROJECT_STATUS.md) · [Public repository boundary](docs/PUBLIC_REPOSITORY_BOUNDARY.md) · [E4B experiment journey](docs/EXPERIMENT_JOURNEY_E4B.md) · [Contributing](CONTRIBUTING.md)
 
 ## PAUL Open: the research organization
 
